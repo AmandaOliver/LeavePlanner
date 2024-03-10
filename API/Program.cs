@@ -15,6 +15,8 @@ builder.Services.AddEntityFrameworkMySQL()
 
 var app = builder.Build();
 
+System.Diagnostics.Debug.WriteLine(" hello world ");
+
 app.MapGet("/employees", async(LeavePlannerContext dbContext) => { 
     var employees=await dbContext.Employees.ToListAsync();
     return employees;
