@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react'
 import { CreateCompany } from './pages/createCompany'
 
 function App() {
-  const { isLoading, user } = useAuth0()
+  const { isLoading, user, getAccessTokenSilently } = useAuth0()
   const [verifyingUser, setVerifyingUser] = useState(true)
   const [isEmployee, setIsEmployee] = useState(false)
   const navigate = useNavigate()
@@ -21,7 +21,8 @@ function App() {
     console.log(user)
     const checkUser = async () => {
       setVerifyingUser(true)
-      console.log('verifying')
+      const accessToken = await getAccessTokenSilently()
+
       try {
         const response = await fetch(
           `${process.env.REACT_APP_API_SERVER_URL}/api/employee/check-employee?email=${user?.email}`,
@@ -29,6 +30,7 @@ function App() {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
             },
           }
         )
@@ -41,14 +43,12 @@ function App() {
     if (user?.email) {
       checkUser()
     }
-  }, [user])
+  }, [user, getAccessTokenSilently])
 
   if (isLoading) {
     return <LoadingPage />
   }
-  // if (!isEmployee) {
-  //   navigate('create-company')
-  // }
+
   return (
     <Routes>
       <Route path="/" element={<AuthenticationGuard component={HomePage} />} />
@@ -56,10 +56,10 @@ function App() {
         path="/profile"
         element={<AuthenticationGuard component={ProfilePage} />}
       />
-      {/* <Route
+      <Route
         path="/create-company"
         element={<AuthenticationGuard component={CreateCompany} />}
-      /> */}
+      />
       <Route path="/callback" element={<CallbackPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

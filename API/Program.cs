@@ -1,5 +1,6 @@
 using LeavePlanner.Data;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using MySql.EntityFrameworkCore.Extensions;
 
@@ -25,6 +26,17 @@ builder.Services.AddEntityFrameworkMySQL()
                     options.UseMySQL(builder.Configuration.GetConnectionString("LeavePlannerDB"));
                 });
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = $"https://dev-pcb54t1svzog7cdm.us.auth0.com/";
+        options.Audience = "https://leaveplanner.com";;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true
+        };
+    });
 
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
@@ -38,6 +50,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowSpecificOrigin");
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 // https://www.googleapis.com/calendar/v3/calendars/en.italian%23holiday%40group.v.calendar.google.com/events?key=AIzaSyD8hdrcLyIKD6lXD-0nGAPWJerZz1c3n5c
@@ -70,6 +83,6 @@ app.MapGet("/api/employee/check-employee", async (string email, LeavePlannerCont
     {
         return Results.NotFound("User is not an employee.");
     }
-});
+}).RequireAuthorization();;
 
 app.Run();
