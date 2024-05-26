@@ -9,7 +9,7 @@ public partial class Organization
 
     public string Name { get; set; } = null!;
 
-    public int? Head { get; set; }
+    public string? Head { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 

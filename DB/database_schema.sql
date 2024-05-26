@@ -12,17 +12,17 @@ CREATE TABLE Countries (
 CREATE TABLE Organizations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    head INT
+    head VARCHAR(255)
 );
 
 -- Create the Employees table without foreign keys
 CREATE TABLE Employees (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id VARCHAR(255) PRIMARY KEY,
     picture VARCHAR(100),
     email VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     organization INT,
-    managedBy INT,
+    managedBy VARCHAR(255),
     country VARCHAR(50),
     isManager BOOLEAN DEFAULT FALSE,
     isOrgOwner BOOLEAN DEFAULT FALSE,
@@ -35,16 +35,16 @@ CREATE TABLE Leaves (
     type ENUM('sickLeave', 'paidTimeOff', 'unpaidTimeOff', 'bankHoliday'),
     dateStart DATETIME NOT NULL,
     dateEnd DATETIME NOT NULL,
-    owner INT,
-    approvedBy INT -- NULL if not approved, employee ID if approved
+    owner VARCHAR(255),
+    approvedBy VARCHAR(255) -- NULL if not approved, employee ID if approved
 );
 
 -- Create the Notifications table without foreign keys
 CREATE TABLE Notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    creator INT NOT NULL,
+    creator VARCHAR(255) NOT NULL,
     leaveId INT,
-    recipient INT NOT NULL
+    recipient VARCHAR(255) NOT NULL
 );
 
 -- Add foreign key constraints to Organizations

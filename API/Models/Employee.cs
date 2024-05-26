@@ -5,7 +5,7 @@ namespace LeavePlanner.Models;
 
 public partial class Employee
 {
-    public int Id { get; set; }
+    public string Id { get; set; }
 
     public string? Picture { get; set; }
 
@@ -15,7 +15,7 @@ public partial class Employee
 
     public int? Organization { get; set; }
 
-    public int? ManagedBy { get; set; }
+    public string? ManagedBy { get; set; }
 
     public string? Country { get; set; }
 

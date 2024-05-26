@@ -1,10 +1,15 @@
 import { Navigation } from '../components/navigation'
+import { useEmployeeModel } from '../models/Employee'
 
 export const HomePage = () => {
+  const { currentEmployee } = useEmployeeModel()
+
   return (
     <>
       <Navigation></Navigation>
-      <div>Home page</div>
+      {currentEmployee && (
+        <div>Welcome to LeavePlanner {currentEmployee.name}</div>
+      )}
     </>
   )
 }

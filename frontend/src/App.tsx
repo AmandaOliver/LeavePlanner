@@ -8,47 +8,15 @@ import { useAuth0 } from '@auth0/auth0-react'
 import LoadingPage from './pages/loading'
 import { AuthenticationGuard } from './authentication-guard'
 import { ProfilePage } from './pages/profile'
-import { useEffect, useState } from 'react'
-import { CreateCompany } from './pages/createCompany'
+import { CreateOrganizationAndEmployee } from './pages/createOrganizationAndEmployee'
+import { SetupOrganization } from './pages/setupOrganization'
 
 function App() {
-  const { isLoading, user, getAccessTokenSilently } = useAuth0()
-  const [verifyingUser, setVerifyingUser] = useState(true)
-  const [isEmployee, setIsEmployee] = useState(false)
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    console.log(user)
-    const checkUser = async () => {
-      setVerifyingUser(true)
-      const accessToken = await getAccessTokenSilently()
-
-      try {
-        const response = await fetch(
-          `${process.env.REACT_APP_API_SERVER_URL}/api/employee/check-employee?email=${user?.email}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        )
-        setIsEmployee(true)
-      } catch (error) {
-        setIsEmployee(false)
-      }
-      setVerifyingUser(false)
-    }
-    if (user?.email) {
-      checkUser()
-    }
-  }, [user, getAccessTokenSilently])
+  const { isLoading } = useAuth0()
 
   if (isLoading) {
     return <LoadingPage />
   }
-
   return (
     <Routes>
       <Route path="/" element={<AuthenticationGuard component={HomePage} />} />
@@ -57,8 +25,14 @@ function App() {
         element={<AuthenticationGuard component={ProfilePage} />}
       />
       <Route
-        path="/create-company"
-        element={<AuthenticationGuard component={CreateCompany} />}
+        path="/create-organization"
+        element={
+          <AuthenticationGuard component={CreateOrganizationAndEmployee} />
+        }
+      />
+      <Route
+        path="/setup-organization/:id"
+        element={<AuthenticationGuard component={SetupOrganization} />}
       />
       <Route path="/callback" element={<CallbackPage />} />
       <Route path="*" element={<NotFoundPage />} />

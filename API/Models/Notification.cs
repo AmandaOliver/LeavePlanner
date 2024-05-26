@@ -7,11 +7,11 @@ public partial class Notification
 {
     public int Id { get; set; }
 
-    public int Creator { get; set; }
+    public string Creator { get; set; }
 
     public int? LeaveId { get; set; }
 
-    public int Recipient { get; set; }
+    public string Recipient { get; set; }
 
     public virtual Employee CreatorNavigation { get; set; } = null!;
 

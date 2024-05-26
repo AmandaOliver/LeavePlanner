@@ -13,9 +13,9 @@ public partial class Leave
 
     public DateTime DateEnd { get; set; }
 
-    public int? Owner { get; set; }
+    public string? Owner { get; set; }
 
-    public int? ApprovedBy { get; set; }
+    public string? ApprovedBy { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 

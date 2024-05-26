@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using MySql.EntityFrameworkCore.Extensions;
+using Microsoft.OpenApi.Models;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,7 +20,39 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
+    
+    // Define the security scheme for JWT
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    // Add the security requirement
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+});
 builder.Services.AddEntityFrameworkMySQL()
                 .AddDbContext<LeavePlannerContext>(options =>
                 {
@@ -53,6 +86,11 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapOrganizationsEndpoints();
+app.MapEmployeesEndpoints();
+app.MapEmployeeOrganizationEndpoints();
+
+
 // https://www.googleapis.com/calendar/v3/calendars/en.italian%23holiday%40group.v.calendar.google.com/events?key=AIzaSyD8hdrcLyIKD6lXD-0nGAPWJerZz1c3n5c
 
 app.MapGet("/countries", async (LeavePlannerContext dbContext) => {
@@ -65,24 +103,7 @@ app.MapGet("/countries", async (LeavePlannerContext dbContext) => {
         return Results.Problem(ex.Message);  // Sends a 500 Internal Server Error with the exception message
     }
 });
-app.MapGet("/api/employee/check-employee", async (string email, LeavePlannerContext context) =>
-{
-    if (string.IsNullOrEmpty(email))
-    {
-        return Results.BadRequest("Email is required.");
-    }
 
-    var employee = await context.Employees
-                                .FirstOrDefaultAsync(e => e.Email.ToLower() == email.ToLower());
 
-    if (employee != null)
-    {
-        return Results.Ok("User is an employee.");
-    }
-    else
-    {
-        return Results.NotFound("User is not an employee.");
-    }
-}).RequireAuthorization();;
 
 app.Run();
