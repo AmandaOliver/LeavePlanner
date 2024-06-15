@@ -5,8 +5,6 @@ namespace LeavePlanner.Models;
 
 public partial class Employee
 {
-    public string Id { get; set; }
-
     public string? Picture { get; set; }
 
     public string Email { get; set; } = null!;

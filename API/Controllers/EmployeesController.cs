@@ -6,13 +6,13 @@ public static class EmployeesController
 {
     public static void MapEmployeesEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/employee/{id}", GetEmployee).RequireAuthorization();
+        endpoints.MapGet("/employee/{email}", GetEmployee).RequireAuthorization();
     }
-	public static async Task<IResult> GetEmployee(string id, LeavePlannerContext context)
+	public static async Task<IResult> GetEmployee(string email, LeavePlannerContext context)
     {
 
         var employee = await context.Employees
-                                    .FirstOrDefaultAsync(e => e.Id == id);
+                                    .FirstOrDefaultAsync(e => e.Email == email);
 
         if (employee != null)
         {

@@ -24,7 +24,7 @@ export const useEmployeeModel = () => {
       const accessToken = await getAccessTokenSilently()
 
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/employee/${user?.sub}`,
+        `${process.env.REACT_APP_API_SERVER_URL}/employee/${user?.email}`,
         {
           method: 'GET',
           headers: {

@@ -44,17 +44,14 @@ public partial class LeavePlannerContext : DbContext
 
         modelBuilder.Entity<Employee>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.HasKey(e => e.Email).HasName("PRIMARY");
 
             entity.ToTable("Employees", "LeavePlanner");
-
-            entity.HasIndex(e => e.Email, "email").IsUnique();
 
             entity.HasIndex(e => e.ManagedBy, "fk_employee_managedBy");
 
             entity.HasIndex(e => e.Organization, "idx_organization");
 
-            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Country)
                 .HasMaxLength(50)
                 .HasColumnName("country");

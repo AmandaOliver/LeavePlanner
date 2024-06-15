@@ -32,7 +32,6 @@ public static class EmployeeOrganizationController
         // Create new employee and set the IsOrgOwner property to true
         var employee = new Employee
         {
-            Id = model.EmployeeId,
             Picture = model.Picture,
             Email = model.Email,
             Name = model.Name,
@@ -45,7 +44,7 @@ public static class EmployeeOrganizationController
         context.Employees.Add(employee);
         await context.SaveChangesAsync();
 
-        return Results.Ok(new { EmployeeId = employee.Id, OrganizationId = organization.Id });
+        return Results.Ok(new { EmployeeEmail = employee.Email, OrganizationId = organization.Id });
         // return Results.Ok(new { EmployeeId = "something", OrganizationId = 1 });
 
     }

@@ -17,9 +17,8 @@ CREATE TABLE Organizations (
 
 -- Create the Employees table without foreign keys
 CREATE TABLE Employees (
-    id VARCHAR(255) PRIMARY KEY,
     picture VARCHAR(100),
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     organization INT,
     managedBy VARCHAR(255),
@@ -49,23 +48,23 @@ CREATE TABLE Notifications (
 
 -- Add foreign key constraints to Organizations
 ALTER TABLE Organizations
-    ADD CONSTRAINT fk_organization_head FOREIGN KEY (head) REFERENCES Employees(id);
+    ADD CONSTRAINT fk_organization_head FOREIGN KEY (head) REFERENCES Employees(email);
 
 -- Add foreign key constraints to Employees
 ALTER TABLE Employees
     ADD CONSTRAINT fk_employee_organization FOREIGN KEY (organization) REFERENCES Organizations(id),
-    ADD CONSTRAINT fk_employee_managedBy FOREIGN KEY (managedBy) REFERENCES Employees(id);
+    ADD CONSTRAINT fk_employee_managedBy FOREIGN KEY (managedBy) REFERENCES Employees(email);
 
 -- Add foreign key constraints to Leaves
 ALTER TABLE Leaves
-    ADD CONSTRAINT fk_leave_owner FOREIGN KEY (owner) REFERENCES Employees(id),
-    ADD CONSTRAINT fk_leave_approvedBy FOREIGN KEY (approvedBy) REFERENCES Employees(id);
+    ADD CONSTRAINT fk_leave_owner FOREIGN KEY (owner) REFERENCES Employees(email),
+    ADD CONSTRAINT fk_leave_approvedBy FOREIGN KEY (approvedBy) REFERENCES Employees(email);
 
 -- Add foreign key constraints to Notifications
 ALTER TABLE Notifications
-    ADD CONSTRAINT fk_notification_creator FOREIGN KEY (creator) REFERENCES Employees(id),
+    ADD CONSTRAINT fk_notification_creator FOREIGN KEY (creator) REFERENCES Employees(email),
     ADD CONSTRAINT fk_notification_leave FOREIGN KEY (leaveId) REFERENCES Leaves(id),
-    ADD CONSTRAINT fk_notification_recipient FOREIGN KEY (recipient) REFERENCES Employees(id);
+    ADD CONSTRAINT fk_notification_recipient FOREIGN KEY (recipient) REFERENCES Employees(email);
 
 -- Add indexes to commonly queried fields
 CREATE INDEX idx_organization ON Employees(organization);
