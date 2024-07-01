@@ -64,6 +64,7 @@ export const SetupHead = ({
       country: selectedCountry,
       paidTimeOff: ptoDays,
       isManager: false,
+      organization: currentOrganization.id,
     })
     setHead(head)
   }

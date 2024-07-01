@@ -1,28 +1,31 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { useEmployeeModel } from './Employee'
 
 export type createOrganizationAndEmployeeResponseBodyType = {
-  employeeId: string
   organizationId: number
 }
 
 export type OrganizationType = {
-  id: string
+  id: number
   name: string
   head: string
 }
 
 export const useOrganizationModel = () => {
   const { id } = useParams()
+  const { currentEmployee } = useEmployeeModel()
   const { user, getAccessTokenSilently } = useAuth0()
   const [isLoadingOrganization, setIsLoadingOrganization] = useState(false)
   const [currentOrganization, setCurrentOrganization] =
     useState<OrganizationType>()
 
   useEffect(() => {
-    if (id) {
-      const getOrganization = async (id: string) => {
+    const organizationId =
+      (id && parseInt(id)) || (currentEmployee && currentEmployee.organization)
+    if (organizationId) {
+      const getOrganization = async (id: number) => {
         const accessToken = await getAccessTokenSilently()
         if (!user) return false
         const response = await fetch(
@@ -42,9 +45,9 @@ export const useOrganizationModel = () => {
         }
       }
       setIsLoadingOrganization(true)
-      getOrganization(id)
+      getOrganization(organizationId)
     }
-  }, [id, user, getAccessTokenSilently])
+  }, [id, user, getAccessTokenSilently, currentEmployee])
 
   const createOrganizationAndEmployee = async (name: string) => {
     const accessToken = await getAccessTokenSilently()

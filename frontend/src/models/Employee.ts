@@ -1,7 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useOrganizationModel } from './Organization'
 export type EmployeeType = {
   id?: string
   picture?: string
@@ -21,12 +20,12 @@ export type CreateEmployeeParamType = {
   paidTimeOff: number
   isManager: boolean
   managedBy?: string
+  organization: number
 }
 export const useEmployeeModel = () => {
   const { user, getAccessTokenSilently } = useAuth0()
   const [currentEmployee, setCurrentEmployee] = useState<EmployeeType>()
   const [hasCheckedEmployee, setHasCheckedEmployee] = useState(false)
-  const { currentOrganization } = useOrganizationModel()
   const navigate = useNavigate()
   const createEmployee = async ({
     email,
@@ -34,6 +33,7 @@ export const useEmployeeModel = () => {
     paidTimeOff,
     isManager,
     managedBy,
+    organization,
   }: CreateEmployeeParamType): Promise<EmployeeType> => {
     const accessToken = await getAccessTokenSilently()
 
@@ -51,7 +51,7 @@ export const useEmployeeModel = () => {
           paidTimeOff,
           isManager,
           managedBy: managedBy || null,
-          organization: currentOrganization?.id,
+          organization: organization,
         }),
       }
     )
