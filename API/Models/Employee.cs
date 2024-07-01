@@ -9,7 +9,7 @@ public partial class Employee
 
     public string Email { get; set; } = null!;
 
-    public string Name { get; set; } = null!;
+    public string? Name { get; set; }
 
     public int? Organization { get; set; }
 
@@ -29,9 +29,9 @@ public partial class Employee
 
     public virtual ICollection<Employee> InverseManagedByNavigation { get; set; } = new List<Employee>();
 
-    public virtual ICollection<Leave> LeafApprovedByNavigations { get; set; } = new List<Leave>();
+    public virtual ICollection<Leave> LeaveApprovedByNavigations { get; set; } = new List<Leave>();
 
-    public virtual ICollection<Leave> LeafOwnerNavigations { get; set; } = new List<Leave>();
+    public virtual ICollection<Leave> LeaveOwnerNavigations { get; set; } = new List<Leave>();
 
     public virtual Employee? ManagedByNavigation { get; set; }
 
@@ -40,6 +40,4 @@ public partial class Employee
     public virtual ICollection<Notification> NotificationRecipientNavigations { get; set; } = new List<Notification>();
 
     public virtual Organization? OrganizationNavigation { get; set; }
-
-    public virtual ICollection<Organization> Organizations { get; set; } = new List<Organization>();
 }

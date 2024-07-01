@@ -1,9 +1,6 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Http;
-using System.Threading.Tasks;
-using LeavePlanner.Models;
+using Microsoft.EntityFrameworkCore;
 using LeavePlanner.Data;
+using LeavePlanner.Models;
 
 public static class EmployeeOrganizationController
 {
@@ -14,7 +11,7 @@ public static class EmployeeOrganizationController
 
     public static async Task<IResult> CreateEmployeeAndOrganization(EmployeeOrganizationCreateModel model, LeavePlannerContext context)
     {
-         if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Name) || string.IsNullOrEmpty(model.OrganizationName))
+        if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Name) || string.IsNullOrEmpty(model.OrganizationName))
         {
             return Results.BadRequest("Invalid data.");
         }
@@ -44,8 +41,7 @@ public static class EmployeeOrganizationController
         context.Employees.Add(employee);
         await context.SaveChangesAsync();
 
-        return Results.Ok(new { EmployeeEmail = employee.Email, OrganizationId = organization.Id });
-        // return Results.Ok(new { EmployeeId = "something", OrganizationId = 1 });
+        return Results.Ok(new { OrganizationId = organization.Id });
 
     }
 }

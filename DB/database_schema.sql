@@ -11,15 +11,14 @@ CREATE TABLE Countries (
 -- Create the Organizations table without foreign keys
 CREATE TABLE Organizations (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    head VARCHAR(255)
+    name VARCHAR(255) NOT NULL
 );
 
 -- Create the Employees table without foreign keys
 CREATE TABLE Employees (
     picture VARCHAR(100),
     email VARCHAR(255) NOT NULL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) DEFAULT NULL,
     organization INT,
     managedBy VARCHAR(255),
     country VARCHAR(50),
@@ -45,10 +44,6 @@ CREATE TABLE Notifications (
     leaveId INT,
     recipient VARCHAR(255) NOT NULL
 );
-
--- Add foreign key constraints to Organizations
-ALTER TABLE Organizations
-    ADD CONSTRAINT fk_organization_head FOREIGN KEY (head) REFERENCES Employees(email);
 
 -- Add foreign key constraints to Employees
 ALTER TABLE Employees

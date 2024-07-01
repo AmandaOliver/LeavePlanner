@@ -10,7 +10,6 @@ export const ProfilePage = () => {
 
   return (
     <>
-      <Navigation></Navigation>
       <h1>Profile Page</h1>
       <div>
         <img src={user.picture} alt="Profile" />

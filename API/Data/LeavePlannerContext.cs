@@ -26,6 +26,9 @@ public partial class LeavePlannerContext : DbContext
 
     public virtual DbSet<Organization> Organizations { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseMySQL("server=127.0.0.1;port=3306;user=root;password=;database=LeavePlanner;");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Country>(entity =>
@@ -52,6 +55,7 @@ public partial class LeavePlannerContext : DbContext
 
             entity.HasIndex(e => e.Organization, "idx_organization");
 
+            entity.Property(e => e.Email).HasColumnName("email");
             entity.Property(e => e.Country)
                 .HasMaxLength(50)
                 .HasColumnName("country");
@@ -59,7 +63,6 @@ public partial class LeavePlannerContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp")
                 .HasColumnName("created_at");
-            entity.Property(e => e.Email).HasColumnName("email");
             entity.Property(e => e.IsManager)
                 .HasDefaultValueSql("'0'")
                 .HasColumnName("isManager");
@@ -124,11 +127,11 @@ public partial class LeavePlannerContext : DbContext
                 .HasColumnType("timestamp")
                 .HasColumnName("updated_at");
 
-            entity.HasOne(d => d.ApprovedByNavigation).WithMany(p => p.LeafApprovedByNavigations)
+            entity.HasOne(d => d.ApprovedByNavigation).WithMany(p => p.LeaveApprovedByNavigations)
                 .HasForeignKey(d => d.ApprovedBy)
                 .HasConstraintName("fk_leave_approvedBy");
 
-            entity.HasOne(d => d.OwnerNavigation).WithMany(p => p.LeafOwnerNavigations)
+            entity.HasOne(d => d.OwnerNavigation).WithMany(p => p.LeaveOwnerNavigations)
                 .HasForeignKey(d => d.Owner)
                 .HasConstraintName("fk_leave_owner");
         });
@@ -171,14 +174,11 @@ public partial class LeavePlannerContext : DbContext
 
             entity.ToTable("Organizations", "LeavePlanner");
 
-            entity.HasIndex(e => e.Head, "fk_organization_head");
-
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp")
                 .HasColumnName("created_at");
-            entity.Property(e => e.Head).HasColumnName("head");
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .HasColumnName("name");
@@ -187,10 +187,6 @@ public partial class LeavePlannerContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp")
                 .HasColumnName("updated_at");
-
-            entity.HasOne(d => d.HeadNavigation).WithMany(p => p.Organizations)
-                .HasForeignKey(d => d.Head)
-                .HasConstraintName("fk_organization_head");
         });
 
         OnModelCreatingPartial(modelBuilder);
