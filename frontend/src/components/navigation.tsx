@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { LogoutButton } from './logoutButton'
 import { useEmployeeModel } from '../models/Employee'
 import { useOrganizationModel } from '../models/Organization'
+import logo from '../../src/android-chrome-192x192.png' // Adjust the path to your logo
 
 export const Navigation = () => {
   const { currentEmployee } = useEmployeeModel()
@@ -10,7 +11,13 @@ export const Navigation = () => {
     <nav>
       <ul>
         <li>
-          <NavLink to="/">Home</NavLink>
+          <NavLink to="/">
+            <img
+              src={logo}
+              alt="LeavePlanner Logo"
+              style={{ height: '40px', width: '40px' }}
+            />
+          </NavLink>
         </li>
         <li>
           <NavLink to="/profile">Profile</NavLink>
