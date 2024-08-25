@@ -8,6 +8,8 @@ public static class EmployeesController
     {
         endpoints.MapGet("/employee/{email}", GetEmployee).RequireAuthorization();
         endpoints.MapPost("/employee", CreateEmployee).RequireAuthorization();
+        endpoints.MapPut("/employee/{email}", UpdateEmployee).RequireAuthorization();
+
 
     }
     public static async Task<IResult> CreateEmployee(EmployeeCreateModel model, LeavePlannerContext context)
@@ -28,7 +30,6 @@ public static class EmployeesController
                 Organization = model.Organization,
                 ManagedBy = model.ManagedBy,
                 IsOrgOwner = false,
-                IsManager = model.IsManager,
                 PaidTimeOff = model.PaidTimeOff,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -62,6 +63,34 @@ public static class EmployeesController
         else
         {
             return Results.NotFound("User is not an employee.");
+        }
+    }
+
+    public static async Task<IResult> UpdateEmployee(string email, EmployeeUpdateModel model, LeavePlannerContext context)
+    {
+        // Find the existing employee by email
+        var employee = await context.Employees.FirstOrDefaultAsync(e => e.Email == email);
+
+        if (employee == null)
+        {
+            return Results.NotFound("Employee not found.");
+        }
+
+        // Update employee fields with provided data
+        employee.Country = model.Country ?? employee.Country;
+        employee.PaidTimeOff = model.PaidTimeOff != 0 ? model.PaidTimeOff : employee.PaidTimeOff;
+        employee.UpdatedAt = DateTime.UtcNow;
+
+        try
+        {
+            // Save changes to the database
+            await context.SaveChangesAsync();
+            return Results.Ok(employee);
+        }
+        catch (Exception ex)
+        {
+            // Log the exception (ex) as needed
+            return Results.Problem("An error occurred while updating the employee.");
         }
     }
 }

@@ -6,6 +6,7 @@ import LoadingPage from './pages/loading'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { EmployeeRoutes } from './components/employeeRoutes'
+import { AuthenticationGuard } from './authentication-guard'
 
 const queryClient = new QueryClient()
 
@@ -17,7 +18,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ReactQueryDevtools initialIsOpen={false} />
-      <EmployeeRoutes />
+      <AuthenticationGuard component={EmployeeRoutes} />
     </QueryClientProvider>
   )
 }

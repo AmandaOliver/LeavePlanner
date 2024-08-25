@@ -22,7 +22,6 @@ CREATE TABLE Employees (
     organization INT,
     managedBy VARCHAR(255),
     country VARCHAR(50),
-    isManager BOOLEAN DEFAULT FALSE,
     isOrgOwner BOOLEAN DEFAULT FALSE,
     paidTimeOff INT DEFAULT 0
 );

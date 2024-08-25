@@ -2,14 +2,12 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 export type EmployeeType = {
-  id?: string
   picture?: string
   email: string
   name?: string
   organization: number
   managedBy?: string
-  country?: string
-  isManager: boolean
+  country: string
   isOrgOwner: boolean
   paidTimeOff: number
   subordinates?: Array<EmployeeType>
@@ -19,11 +17,14 @@ export type CreateEmployeeParamType = {
   email: string
   country: string
   paidTimeOff: number
-  isManager: boolean
   managedBy: string | null // null if it's the head
   organization: number
 }
 
+export type UpdateEmployeeParamType = {
+  country: string
+  paidTimeOff: number
+}
 export const useEmployeeModel = () => {
   const { user, getAccessTokenSilently } = useAuth0()
   const queryClient = useQueryClient()
@@ -60,7 +61,6 @@ export const useEmployeeModel = () => {
       email,
       country,
       paidTimeOff,
-      isManager,
       managedBy,
       organization,
     }: CreateEmployeeParamType) => {
@@ -77,7 +77,6 @@ export const useEmployeeModel = () => {
             email,
             country,
             paidTimeOff,
-            isManager,
             managedBy: managedBy || null,
             organization: organization,
           }),
@@ -89,12 +88,43 @@ export const useEmployeeModel = () => {
       queryClient.invalidateQueries({
         queryKey: ['employee', user?.email],
       })
+      queryClient.invalidateQueries({
+        queryKey: ['organization'],
+      })
     },
   })
-
+  const updateEmployeeMutation = useMutation({
+    mutationFn: async (updateData: UpdateEmployeeParamType) => {
+      const accessToken = await getAccessTokenSilently()
+      const response = await fetch(
+        `${process.env.REACT_APP_API_SERVER_URL}/employee/${user?.email}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(updateData),
+        }
+      )
+      if (!response.ok) {
+        throw new Error('Failed to update employee')
+      }
+      return await response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['employee', user?.email],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['organization'],
+      })
+    },
+  })
   return {
     currentEmployee: employeeQuery.data,
     isLoading: employeeQuery.isLoading,
     createEmployee: createEmployeeMutation.mutateAsync,
+    updateEmployee: updateEmployeeMutation.mutateAsync,
   }
 }

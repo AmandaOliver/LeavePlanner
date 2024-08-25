@@ -63,9 +63,6 @@ public partial class LeavePlannerContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp")
                 .HasColumnName("created_at");
-            entity.Property(e => e.IsManager)
-                .HasDefaultValueSql("'0'")
-                .HasColumnName("isManager");
             entity.Property(e => e.IsOrgOwner)
                 .HasDefaultValueSql("'0'")
                 .HasColumnName("isOrgOwner");

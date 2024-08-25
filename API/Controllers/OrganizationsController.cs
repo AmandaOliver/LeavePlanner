@@ -42,6 +42,8 @@ public static class OrganizationsController
             {
                 Name = manager.Name,
                 Email = manager.Email,
+                Country = manager.Country,
+                PaidTimeOff = manager.PaidTimeOff,
                 Subordinates = BuildEmployeeHierarchy(subordinates, allEmployees)
             };
             result.Add(employeeDto);
@@ -53,6 +55,8 @@ public static class OrganizationsController
     {
         public string? Name { get; set; }
         public string Email { get; set; } = null!;
+        public string? Country { get; set; }
+        public int? PaidTimeOff { get; set; }
         public List<EmployeeDto> Subordinates { get; set; } = new List<EmployeeDto>();
     }
 }

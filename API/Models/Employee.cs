@@ -17,8 +17,6 @@ public partial class Employee
 
     public string? Country { get; set; }
 
-    public bool? IsManager { get; set; }
-
     public bool? IsOrgOwner { get; set; }
 
     public int? PaidTimeOff { get; set; }
