@@ -1,27 +1,19 @@
-import {
-  ChangeEvent,
-  Dispatch,
-  FormEvent,
-  SetStateAction,
-  useRef,
-  useState,
-} from 'react'
-import { EmployeeType, CreateEmployeeParamType } from '../models/Employee'
-import { OrganizationType } from '../models/Organization'
-import { CountriesType } from '../models/Countries'
+import { ChangeEvent, FormEvent, useRef, useState } from 'react'
+import { useEmployeeModel } from '../models/Employee'
+import { useOrganizationModel } from '../models/Organization'
+import { useCountriesModel } from '../models/Countries'
+import LoadingPage from '../pages/loading'
 
-export const SetupHead = ({
-  currentOrganization,
-  createEmployee,
-  countries,
-  setHead,
+export const SetupEmployee = ({
+  managerEmail,
 }: {
-  currentOrganization: OrganizationType
-  createEmployee: (param: CreateEmployeeParamType) => Promise<EmployeeType>
-  countries: CountriesType
-  setHead: Dispatch<SetStateAction<EmployeeType>>
+  managerEmail: string | null
 }) => {
-  const [orgHeadEmail, setOrgHeadEmail] = useState('')
+  const { countries, isLoading: isLoadingCountries } = useCountriesModel()
+  const { currentOrganization, isLoading: isLoadingOrganization } =
+    useOrganizationModel()
+  const { createEmployee } = useEmployeeModel()
+  const [employeeEmail, setEmployeeEmail] = useState('')
   const [selectedCountry, setSelectedCountry] = useState('')
   const [ptoDays, setPtoDays] = useState(0)
   const [emailError, setEmailError] = useState<string | null>(null)
@@ -29,9 +21,9 @@ export const SetupHead = ({
 
   const emailRef = useRef<HTMLInputElement>(null)
   const ptoRef = useRef<HTMLInputElement>(null)
-
+  if (isLoadingCountries || isLoadingOrganization) return <LoadingPage />
   const handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setOrgHeadEmail(event.target.value)
+    setEmployeeEmail(event.target.value)
     setEmailError(null)
   }
   const handlePtoChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -59,31 +51,27 @@ export const SetupHead = ({
   }
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const head = await createEmployee({
-      email: orgHeadEmail,
+    await createEmployee({
+      email: employeeEmail,
       country: selectedCountry,
       paidTimeOff: ptoDays,
       isManager: false,
+      managedBy: managerEmail,
       organization: currentOrganization.id,
     })
-    setHead(head)
   }
   return (
     <form onSubmit={handleSubmit}>
       <div>
-        <h1>
-          To setup the employee hierarchy of {currentOrganization?.name}, first,
-          setup the head of the organization
-        </h1>
         <label>Enter the email *</label>
         <input
           type="email"
           name="headEmail"
           id="headEmail"
-          value={orgHeadEmail}
+          value={employeeEmail}
           onChange={handleEmailChange}
           onBlur={handleEmailBlur}
-          placeholder="head@yourorganization.com"
+          placeholder="name@yourorganization.com"
           required
           ref={emailRef}
         />

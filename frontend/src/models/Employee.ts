@@ -1,7 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 export type EmployeeType = {
   id?: string
@@ -14,6 +12,7 @@ export type EmployeeType = {
   isManager: boolean
   isOrgOwner: boolean
   paidTimeOff: number
+  subordinates?: Array<EmployeeType>
 }
 
 export type CreateEmployeeParamType = {
@@ -21,7 +20,7 @@ export type CreateEmployeeParamType = {
   country: string
   paidTimeOff: number
   isManager: boolean
-  managedBy?: string
+  managedBy: string | null // null if it's the head
   organization: number
 }
 

@@ -21,14 +21,13 @@ public static class EmployeesController
         using var transaction = await context.Database.BeginTransactionAsync();
         try
         {
-            var isHead = string.IsNullOrEmpty(model.ManagedBy);
             var employee = new Employee
             {
                 Email = model.Email,
                 Country = model.Country,
                 Organization = model.Organization,
                 ManagedBy = model.ManagedBy,
-                IsOrgOwner = isHead,
+                IsOrgOwner = false,
                 IsManager = model.IsManager,
                 PaidTimeOff = model.PaidTimeOff,
                 CreatedAt = DateTime.UtcNow,

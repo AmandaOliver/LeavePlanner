@@ -11,8 +11,6 @@ namespace LeavePlanner.Models
 
 		public string Country { get; set; } = null!;
 
-		public bool IsManager { get; set; } = false;
-
 		public int PaidTimeOff { get; set; } = 0;
 	}
 }

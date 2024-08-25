@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEmployeeModel } from './Employee'
+import { EmployeeType, useEmployeeModel } from './Employee'
 
 export type createOrganizationAndEmployeeResponseBodyType = {
   organizationId: number
@@ -10,6 +10,7 @@ export type OrganizationType = {
   id: number
   name: string
   head: string
+  tree: EmployeeType
 }
 
 export const useOrganizationModel = () => {
