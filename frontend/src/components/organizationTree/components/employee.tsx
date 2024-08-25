@@ -8,7 +8,6 @@ export const Employee = ({ employee }: { employee: EmployeeType }) => {
   const { deleteEmployee } = useEmployeeModel()
   const isHead = !employee.managedBy
   const isManager = employee.subordinates && employee.subordinates.length > 0
-  console.log(employee.email, isHead, isManager)
   const canBeDeleted = !isHead || (isHead && !isManager)
   return (
     <>

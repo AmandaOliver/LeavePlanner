@@ -96,6 +96,7 @@ public static class EmployeesController
                                         IsOrgOwner = e.IsOrgOwner,
                                         PaidTimeOff = e.PaidTimeOff,
                                         CreatedAt = e.CreatedAt,
+                                        Picture = e.Picture,
                                         Subordinates = new List<EmployeeWithSubordinates>()
                                     })
                                     .FirstOrDefaultAsync();

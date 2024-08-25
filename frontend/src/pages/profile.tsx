@@ -1,20 +1,31 @@
-import { useAuth0 } from '@auth0/auth0-react'
+import { useEmployeeModel } from '../models/Employee'
 
 export const ProfilePage = () => {
-  const { user } = useAuth0()
-
-  if (!user) {
-    return null
-  }
+  const { currentEmployee } = useEmployeeModel()
 
   return (
     <>
       <h1>Profile Page</h1>
       <div>
-        <img src={user.picture} alt="Profile" />
+        <img src={currentEmployee?.picture} alt="Profile" />
         <div>
-          <h2>{user.name}</h2>
-          <p>{user.email}</p>
+          <h2>{currentEmployee?.name}</h2>
+          <p>{currentEmployee?.email}</p>
+          <p>{currentEmployee?.paidTimeOff} days of paid time off</p>
+          <p>Resides in {currentEmployee?.country}</p>
+          <p>Manager's email: {currentEmployee?.managedBy}</p>
+          {currentEmployee?.subordinates?.length ? (
+            <>
+              <p>Manages:</p>
+              <ul>
+                {currentEmployee?.subordinates.map((employee) => (
+                  <li>{employee.email}</li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            ''
+          )}
         </div>
       </div>
     </>
