@@ -21,7 +21,6 @@ public static class EmployeeOrganizationController
         {
             Name = model.OrganizationName,
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
         };
         context.Organizations.Add(organization);
         await context.SaveChangesAsync();
@@ -36,7 +35,6 @@ public static class EmployeeOrganizationController
             IsOrgOwner = true,
             Organization = organization.Id,
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
         };
         context.Employees.Add(employee);
         await context.SaveChangesAsync();

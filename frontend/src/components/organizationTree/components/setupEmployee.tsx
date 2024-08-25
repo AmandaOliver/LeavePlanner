@@ -7,9 +7,11 @@ import LoadingPage from '../../../pages/loading'
 export const SetupEmployee = ({
   managerEmail,
   employee,
+  isHead,
 }: {
   managerEmail?: string | null
   employee?: EmployeeType
+  isHead?: boolean
 }) => {
   const { countries, isLoading: isLoadingCountries } = useCountriesModel()
   const { currentOrganization, isLoading: isLoadingOrganization } =
@@ -72,6 +74,7 @@ export const SetupEmployee = ({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (managerEmail) {
+      // we are creating an employee
       await createEmployee({
         email: employeeEmail,
         country: selectedCountry,
@@ -81,16 +84,28 @@ export const SetupEmployee = ({
       })
     }
     if (employee) {
+      // we are updating an employee
       await updateEmployee({
+        email: employeeEmail,
         country: selectedCountry,
         paidTimeOff: ptoDays,
+      })
+    }
+    if (isHead) {
+      // we are creating the head of the organization
+      await createEmployee({
+        email: employeeEmail,
+        country: selectedCountry,
+        paidTimeOff: ptoDays,
+        managedBy: null,
+        organization: currentOrganization.id,
       })
     }
   }
   return (
     <form onSubmit={handleSubmit}>
-      {/* if managerEmail is present, we are editing, and can't edit emails as they are the key */}
-      {managerEmail && (
+      {/* if we are editing we can't change the email */}
+      {!employee && (
         <div>
           <label>Enter the email *</label>
           <input

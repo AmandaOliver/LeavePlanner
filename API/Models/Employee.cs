@@ -17,13 +17,11 @@ public partial class Employee
 
     public string? Country { get; set; }
 
-    public bool? IsOrgOwner { get; set; }
+    public bool IsOrgOwner { get; set; } = false;
 
     public int? PaidTimeOff { get; set; }
 
     public DateTime? CreatedAt { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<Employee> InverseManagedByNavigation { get; set; } = new List<Employee>();
 

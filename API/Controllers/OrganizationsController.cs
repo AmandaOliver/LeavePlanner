@@ -31,32 +31,25 @@ public static class OrganizationsController
             return Results.NotFound("Organization does not exists.");
         }
     }
-    private static List<EmployeeDto> BuildEmployeeHierarchy(List<Employee> managers, List<Employee> allEmployees)
+    private static List<EmployeeWithSubordinates> BuildEmployeeHierarchy(List<Employee> managers, List<Employee> allEmployees)
     {
-        var result = new List<EmployeeDto>();
+        var result = new List<EmployeeWithSubordinates>();
 
         foreach (var manager in managers)
         {
             var subordinates = allEmployees.Where(e => e.ManagedBy == manager.Email).ToList();
-            var employeeDto = new EmployeeDto
+            var employeeDto = new EmployeeWithSubordinates
             {
                 Name = manager.Name,
                 Email = manager.Email,
                 Country = manager.Country,
                 PaidTimeOff = manager.PaidTimeOff,
+                ManagedBy = manager.ManagedBy,
                 Subordinates = BuildEmployeeHierarchy(subordinates, allEmployees)
             };
             result.Add(employeeDto);
         }
 
         return result;
-    }
-    public class EmployeeDto
-    {
-        public string? Name { get; set; }
-        public string Email { get; set; } = null!;
-        public string? Country { get; set; }
-        public int? PaidTimeOff { get; set; }
-        public List<EmployeeDto> Subordinates { get; set; } = new List<EmployeeDto>();
     }
 }

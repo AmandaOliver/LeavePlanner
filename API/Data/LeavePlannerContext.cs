@@ -77,12 +77,6 @@ public partial class LeavePlannerContext : DbContext
             entity.Property(e => e.Picture)
                 .HasMaxLength(100)
                 .HasColumnName("picture");
-            entity.Property(e => e.UpdatedAt)
-                .ValueGeneratedOnAddOrUpdate()
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp")
-                .HasColumnName("updated_at");
-
             entity.HasOne(d => d.ManagedByNavigation).WithMany(p => p.InverseManagedByNavigation)
                 .HasForeignKey(d => d.ManagedBy)
                 .HasConstraintName("fk_employee_managedBy");
@@ -118,11 +112,6 @@ public partial class LeavePlannerContext : DbContext
             entity.Property(e => e.Type)
                 .HasColumnType("enum('sickLeave','paidTimeOff','unpaidTimeOff','bankHoliday')")
                 .HasColumnName("type");
-            entity.Property(e => e.UpdatedAt)
-                .ValueGeneratedOnAddOrUpdate()
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp")
-                .HasColumnName("updated_at");
 
             entity.HasOne(d => d.ApprovedByNavigation).WithMany(p => p.LeaveApprovedByNavigations)
                 .HasForeignKey(d => d.ApprovedBy)
@@ -179,11 +168,6 @@ public partial class LeavePlannerContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .HasColumnName("name");
-            entity.Property(e => e.UpdatedAt)
-                .ValueGeneratedOnAddOrUpdate()
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp")
-                .HasColumnName("updated_at");
         });
 
         OnModelCreatingPartial(modelBuilder);

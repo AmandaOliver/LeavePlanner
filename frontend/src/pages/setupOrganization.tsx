@@ -10,10 +10,10 @@ export const SetupOrganization = () => {
 
   return (
     <>
-      {!currentOrganization.tree && (
+      {!currentOrganization.tree.length && (
         <>
           First, setup the head of the organization
-          <SetupEmployee managerEmail={null} />
+          <SetupEmployee isHead={true} />
         </>
       )}
 

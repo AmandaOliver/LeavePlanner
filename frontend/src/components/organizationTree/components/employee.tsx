@@ -1,17 +1,31 @@
 import { useState } from 'react'
-import { EmployeeType } from '../../../models/Employee'
+import { EmployeeType, useEmployeeModel } from '../../../models/Employee'
 import { SetupEmployee } from './setupEmployee'
 
 export const Employee = ({ employee }: { employee: EmployeeType }) => {
   const [isAddSubordinateOpen, setIsAddSubordinateOpen] = useState(false)
   const [isEditEmployeeOpen, setIsEditEmployeeOpen] = useState(false)
-
+  const { deleteEmployee } = useEmployeeModel()
+  const isHead = !employee.managedBy
+  const isManager = employee.subordinates && employee.subordinates.length > 0
+  console.log(employee.email, isHead, isManager)
+  const canBeDeleted = !isHead || (isHead && !isManager)
   return (
     <>
       <summary>{employee.email}</summary>
       <p>{employee.paidTimeOff} days</p>
       <p>{employee.country}</p>
-
+      {canBeDeleted && (
+        <button
+          onClick={async () =>
+            await deleteEmployee({
+              email: employee.email,
+            })
+          }
+        >
+          Delete employee
+        </button>
+      )}
       {isAddSubordinateOpen ? (
         <>
           <SetupEmployee managerEmail={employee.email} />

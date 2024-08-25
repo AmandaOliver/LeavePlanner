@@ -11,7 +11,5 @@ public partial class Organization
 
     public DateTime? CreatedAt { get; set; }
 
-    public DateTime? UpdatedAt { get; set; }
-
     public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
 }

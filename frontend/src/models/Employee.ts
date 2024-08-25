@@ -22,8 +22,12 @@ export type CreateEmployeeParamType = {
 }
 
 export type UpdateEmployeeParamType = {
+  email: string
   country: string
   paidTimeOff: number
+}
+export type DeleteEmployeeParamType = {
+  email: string
 }
 export const useEmployeeModel = () => {
   const { user, getAccessTokenSilently } = useAuth0()
@@ -86,9 +90,6 @@ export const useEmployeeModel = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['employee', user?.email],
-      })
-      queryClient.invalidateQueries({
         queryKey: ['organization'],
       })
     },
@@ -97,14 +98,14 @@ export const useEmployeeModel = () => {
     mutationFn: async (updateData: UpdateEmployeeParamType) => {
       const accessToken = await getAccessTokenSilently()
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/employee/${user?.email}`,
+        `${process.env.REACT_APP_API_SERVER_URL}/employee/${updateData.email}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify(updateData),
+          body: JSON.stringify({ ...updateData, email: undefined }),
         }
       )
       if (!response.ok) {
@@ -114,8 +115,29 @@ export const useEmployeeModel = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['employee', user?.email],
+        queryKey: ['organization'],
       })
+    },
+  })
+  const deleteEmployeeMutation = useMutation({
+    mutationFn: async (deleteData: DeleteEmployeeParamType) => {
+      const accessToken = await getAccessTokenSilently()
+      const response = await fetch(
+        `${process.env.REACT_APP_API_SERVER_URL}/employee/${deleteData.email}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+      if (!response.ok) {
+        throw new Error('Failed to delete employee')
+      }
+      return await response.json()
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['organization'],
       })
@@ -126,5 +148,6 @@ export const useEmployeeModel = () => {
     isLoading: employeeQuery.isLoading,
     createEmployee: createEmployeeMutation.mutateAsync,
     updateEmployee: updateEmployeeMutation.mutateAsync,
+    deleteEmployee: deleteEmployeeMutation.mutateAsync,
   }
 }
