@@ -5,9 +5,7 @@ export const HomePage = () => {
 
   return (
     <>
-      {currentEmployee && (
-        <div>Welcome to LeavePlanner {currentEmployee.name}</div>
-      )}
+      <div>Welcome to LeavePlanner {currentEmployee?.name}</div>
     </>
   )
 }

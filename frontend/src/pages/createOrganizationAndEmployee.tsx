@@ -8,10 +8,9 @@ export const CreateOrganizationAndEmployee = () => {
   const navigate = useNavigate()
   const [orgName, setOrgName] = useState('')
 
-  if (isLoading) return <div>Loading</div>
   return (
     <>
-      <h1>You are not registered on any organization.</h1>
+      <h1>You are not registered in any organization.</h1>
       <h2>But you can create your own and get started with LeavePlanner</h2>
       <label>Your Organization Name*</label>
       <input
@@ -26,14 +25,20 @@ export const CreateOrganizationAndEmployee = () => {
       <button
         onClick={async () => {
           setIsLoading(true)
-          const response = await createOrganizationAndEmployee(orgName)
-          setIsLoading(false)
-          if (response) {
-            navigate(`/setup-organization/${response.organizationId}`)
+          try {
+            const response = await createOrganizationAndEmployee(orgName)
+            if (response) {
+              navigate(`/setup-organization/${response.organizationId}`)
+            }
+          } catch (error) {
+            console.error('Failed to create organization and employee:', error)
+          } finally {
+            setIsLoading(false)
           }
         }}
+        disabled={isLoading}
       >
-        Next step
+        {isLoading ? 'Creating...' : 'Next step'}
       </button>
     </>
   )

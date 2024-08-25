@@ -1,6 +1,8 @@
 import { useAuth0 } from '@auth0/auth0-react'
-import { useEffect, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+
 export type EmployeeType = {
   id?: string
   picture?: string
@@ -22,68 +24,78 @@ export type CreateEmployeeParamType = {
   managedBy?: string
   organization: number
 }
+
 export const useEmployeeModel = () => {
   const { user, getAccessTokenSilently } = useAuth0()
-  const [currentEmployee, setCurrentEmployee] = useState<EmployeeType>()
-  const [hasCheckedEmployee, setHasCheckedEmployee] = useState(false)
-  const navigate = useNavigate()
-  const createEmployee = async ({
-    email,
-    country,
-    paidTimeOff,
-    isManager,
-    managedBy,
-    organization,
-  }: CreateEmployeeParamType): Promise<EmployeeType> => {
-    const accessToken = await getAccessTokenSilently()
+  const queryClient = useQueryClient()
 
+  const fetchEmployee = async (): Promise<EmployeeType | null> => {
+    const accessToken = await getAccessTokenSilently()
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/employee`,
+      `${process.env.REACT_APP_API_SERVER_URL}/employee/${user?.email}`,
       {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          email,
-          country,
-          paidTimeOff,
-          isManager,
-          managedBy: managedBy || null,
-          organization: organization,
-        }),
       }
     )
-    return await response.json()
+    if (response.status === 200) {
+      return await response.json()
+    } else if (response.status === 404) {
+      return null
+    } else {
+      throw new Error('error fetching employee')
+    }
   }
-  useEffect(() => {
-    const getEmployee = async () => {
-      const accessToken = await getAccessTokenSilently()
 
+  const employeeQuery = useQuery({
+    queryKey: ['employee', user?.email],
+    queryFn: fetchEmployee,
+    enabled: !!user?.email, // Only run the query if the email is available
+  })
+
+  const createEmployeeMutation = useMutation({
+    mutationFn: async ({
+      email,
+      country,
+      paidTimeOff,
+      isManager,
+      managedBy,
+      organization,
+    }: CreateEmployeeParamType) => {
+      const accessToken = await getAccessTokenSilently()
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/employee/${user?.email}`,
+        `${process.env.REACT_APP_API_SERVER_URL}/employee`,
         {
-          method: 'GET',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
+          body: JSON.stringify({
+            email,
+            country,
+            paidTimeOff,
+            isManager,
+            managedBy: managedBy || null,
+            organization: organization,
+          }),
         }
       )
-      if (response.status === 200) {
-        setCurrentEmployee(await response.json())
-      }
-      setHasCheckedEmployee(true)
-    }
-    if (!hasCheckedEmployee) getEmployee()
-  }, [getAccessTokenSilently, hasCheckedEmployee, user?.email])
+      return await response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['employee', user?.email],
+      })
+    },
+  })
 
-  useEffect(() => {
-    if (hasCheckedEmployee && !currentEmployee) {
-      navigate('create-organization')
-    }
-  }, [hasCheckedEmployee, currentEmployee, navigate])
-
-  return { currentEmployee, createEmployee }
+  return {
+    currentEmployee: employeeQuery.data,
+    isLoading: employeeQuery.isLoading,
+    createEmployee: createEmployeeMutation.mutateAsync,
+  }
 }

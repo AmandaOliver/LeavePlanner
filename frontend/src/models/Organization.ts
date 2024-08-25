@@ -1,6 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react'
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEmployeeModel } from './Employee'
 
 export type createOrganizationAndEmployeeResponseBodyType = {
@@ -14,68 +13,81 @@ export type OrganizationType = {
 }
 
 export const useOrganizationModel = () => {
-  const { id } = useParams()
   const { currentEmployee } = useEmployeeModel()
   const { user, getAccessTokenSilently } = useAuth0()
-  const [isLoadingOrganization, setIsLoadingOrganization] = useState(false)
-  const [currentOrganization, setCurrentOrganization] =
-    useState<OrganizationType>()
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    const organizationId =
-      (id && parseInt(id)) || (currentEmployee && currentEmployee.organization)
-    if (organizationId) {
-      const getOrganization = async (id: number) => {
-        const accessToken = await getAccessTokenSilently()
-        if (!user) return false
-        const response = await fetch(
-          `${process.env.REACT_APP_API_SERVER_URL}/organization/${id}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        )
-        if (response.status === 200) {
-          const organization: OrganizationType = await response.json()
-          setCurrentOrganization(organization)
-          setIsLoadingOrganization(false)
-        }
-      }
-      setIsLoadingOrganization(true)
-      getOrganization(organizationId)
-    }
-  }, [id, user, getAccessTokenSilently, currentEmployee])
-
-  const createOrganizationAndEmployee = async (name: string) => {
+  const fetchOrganization = async (organizationId: number) => {
     const accessToken = await getAccessTokenSilently()
     if (!user) return false
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/create-employee-organization`,
+      `${process.env.REACT_APP_API_SERVER_URL}/organization/${organizationId}`,
       {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          picture: user.picture,
-          email: user.email,
-          name: user.name,
-          organizationName: name,
-        }),
       }
     )
     if (response.status === 200) {
       return response.json()
+    } else {
+      throw new Error('Failed to fetch organization')
     }
   }
 
+  const organizationQuery = useQuery({
+    queryKey: ['organization', currentEmployee?.organization],
+    queryFn: () => {
+      if (currentEmployee?.organization) {
+        return fetchOrganization(currentEmployee.organization)
+      }
+      return Promise.reject('Organization ID is undefined')
+    },
+    enabled: !!currentEmployee?.organization,
+  })
+
+  const createOrganizationAndEmployeeMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const accessToken = await getAccessTokenSilently()
+      if (!user) return false
+      const response = await fetch(
+        `${process.env.REACT_APP_API_SERVER_URL}/create-employee-organization`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            picture: user.picture,
+            email: user.email,
+            name: user.name,
+            organizationName: name,
+          }),
+        }
+      )
+      if (response.status === 200) {
+        return response.json()
+      } else {
+        throw new Error('Failed to create organization and employee')
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ['organization', data.organizationId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['employee', user?.email],
+      })
+    },
+  })
+
   return {
-    createOrganizationAndEmployee,
-    currentOrganization,
-    isLoadingOrganization,
+    createOrganizationAndEmployee:
+      createOrganizationAndEmployeeMutation.mutateAsync,
+    currentOrganization: organizationQuery.data,
+    isLoading: organizationQuery.isLoading,
   }
 }

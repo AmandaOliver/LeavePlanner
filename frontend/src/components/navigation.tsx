@@ -1,12 +1,10 @@
 import { NavLink } from 'react-router-dom'
 import { LogoutButton } from './logoutButton'
 import { useEmployeeModel } from '../models/Employee'
-import { useOrganizationModel } from '../models/Organization'
-import logo from '../../src/android-chrome-192x192.png' // Adjust the path to your logo
+import logo from '../../src/android-chrome-192x192.png'
 
 export const Navigation = () => {
   const { currentEmployee } = useEmployeeModel()
-  const { currentOrganization } = useOrganizationModel()
   return (
     <nav>
       <ul>
@@ -22,9 +20,11 @@ export const Navigation = () => {
         <li>
           <NavLink to="/profile">Profile</NavLink>
         </li>
-        {currentEmployee?.isOrgOwner && currentOrganization?.id && (
+        {currentEmployee?.isOrgOwner && (
           <li>
-            <NavLink to={`/setup-organization/${currentOrganization?.id}`}>
+            <NavLink
+              to={`/setup-organization/${currentEmployee?.organization}`}
+            >
               Setup your organization
             </NavLink>
           </li>
