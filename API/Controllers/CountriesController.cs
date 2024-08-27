@@ -5,20 +5,21 @@ using LeavePlanner.Data;
 
 public static class CountriesController
 {
-    public static void MapCountriesEndpoints(this IEndpointRouteBuilder endpoints)
-    {
-        endpoints.MapGet("/countries", GetCountries).RequireAuthorization();
-    }
+	public static void MapCountriesEndpoints(this IEndpointRouteBuilder endpoints)
+	{
+		endpoints.MapGet("/countries", GetCountries).RequireAuthorization();
+	}
 
-    public static async Task<IResult> GetCountries(LeavePlannerContext context)
-    {
+	public static async Task<IResult> GetCountries(LeavePlannerContext context)
+	{
 		try
-    	{
-        	return Results.Ok(await context.Countries.ToListAsync());
+		{
+			return Results.Ok(await context.Countries.ToListAsync());
 		}
 		catch (Exception ex)
 		{
-			return Results.Problem(ex.Message);  
+			return Results.Problem(ex.Message);
 		}
-    }
+	}
+
 }

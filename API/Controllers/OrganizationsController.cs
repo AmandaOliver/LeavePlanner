@@ -45,6 +45,7 @@ public static class OrganizationsController
                 Country = manager.Country,
                 PaidTimeOff = manager.PaidTimeOff,
                 ManagedBy = manager.ManagedBy,
+                Title = manager.Title,
                 Subordinates = BuildEmployeeHierarchy(subordinates, allEmployees)
             };
             result.Add(employeeDto);

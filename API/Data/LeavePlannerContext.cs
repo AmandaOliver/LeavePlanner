@@ -59,10 +59,6 @@ public partial class LeavePlannerContext : DbContext
             entity.Property(e => e.Country)
                 .HasMaxLength(50)
                 .HasColumnName("country");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp")
-                .HasColumnName("created_at");
             entity.Property(e => e.IsOrgOwner)
                 .HasDefaultValueSql("'0'")
                 .HasColumnName("isOrgOwner");
@@ -74,9 +70,6 @@ public partial class LeavePlannerContext : DbContext
             entity.Property(e => e.PaidTimeOff)
                 .HasDefaultValueSql("'0'")
                 .HasColumnName("paidTimeOff");
-            entity.Property(e => e.Picture)
-                .HasMaxLength(100)
-                .HasColumnName("picture");
             entity.HasOne(d => d.ManagedByNavigation).WithMany(p => p.InverseManagedByNavigation)
                 .HasForeignKey(d => d.ManagedBy)
                 .HasConstraintName("fk_employee_managedBy");
@@ -98,10 +91,6 @@ public partial class LeavePlannerContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.ApprovedBy).HasColumnName("approvedBy");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp")
-                .HasColumnName("created_at");
             entity.Property(e => e.DateEnd)
                 .HasColumnType("datetime")
                 .HasColumnName("dateEnd");
@@ -161,10 +150,7 @@ public partial class LeavePlannerContext : DbContext
             entity.ToTable("Organizations", "LeavePlanner");
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp")
-                .HasColumnName("created_at");
+
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .HasColumnName("name");

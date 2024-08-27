@@ -62,9 +62,7 @@ export const useOrganizationModel = () => {
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            picture: user.picture,
             email: user.email,
-            name: user.name,
             organizationName: name,
           }),
         }

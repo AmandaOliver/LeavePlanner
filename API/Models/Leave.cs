@@ -17,8 +17,6 @@ public partial class Leave
 
     public string? ApprovedBy { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
-
     public virtual Employee? ApprovedByNavigation { get; set; }
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();

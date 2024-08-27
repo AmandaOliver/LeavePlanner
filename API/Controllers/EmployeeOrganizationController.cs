@@ -11,7 +11,7 @@ public static class EmployeeOrganizationController
 
     public static async Task<IResult> CreateEmployeeAndOrganization(EmployeeOrganizationCreateModel model, LeavePlannerContext context)
     {
-        if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Name) || string.IsNullOrEmpty(model.OrganizationName))
+        if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.OrganizationName))
         {
             return Results.BadRequest("Invalid data.");
         }
@@ -20,7 +20,6 @@ public static class EmployeeOrganizationController
         var organization = new Organization
         {
             Name = model.OrganizationName,
-            CreatedAt = DateTime.UtcNow,
         };
         context.Organizations.Add(organization);
         await context.SaveChangesAsync();
@@ -28,13 +27,9 @@ public static class EmployeeOrganizationController
         // Create new employee and set the IsOrgOwner property to true
         var employee = new Employee
         {
-            Picture = model.Picture,
             Email = model.Email,
-            Name = model.Name,
-            Country = model.Country,
             IsOrgOwner = true,
             Organization = organization.Id,
-            CreatedAt = DateTime.UtcNow,
         };
         context.Employees.Add(employee);
         await context.SaveChangesAsync();

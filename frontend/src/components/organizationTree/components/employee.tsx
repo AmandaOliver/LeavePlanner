@@ -12,8 +12,10 @@ export const Employee = ({ employee }: { employee: EmployeeType }) => {
   return (
     <>
       <summary>{employee.email}</summary>
-      <p>{employee.paidTimeOff} days</p>
-      <p>{employee.country}</p>
+      <p>Name: {employee.name}</p>
+      <p>Days of paid time off: {employee.paidTimeOff}</p>
+      <p>Country: {employee.country}</p>
+      <p>Title: {employee.title}</p>
       {canBeDeleted && (
         <button
           onClick={async () =>
@@ -49,6 +51,7 @@ export const Employee = ({ employee }: { employee: EmployeeType }) => {
           Update employee
         </button>
       )}
+      <hr />
     </>
   )
 }

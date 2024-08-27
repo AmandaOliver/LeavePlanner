@@ -2,29 +2,33 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 export type EmployeeType = {
-  picture?: string
   email: string
-  name?: string
+  name: string
   organization: number
   managedBy?: string
   country: string
   isOrgOwner: boolean
   paidTimeOff: number
+  title: string
   subordinates?: Array<EmployeeType>
 }
 
 export type CreateEmployeeParamType = {
   email: string
+  name: string
   country: string
   paidTimeOff: number
   managedBy: string | null // null if it's the head
   organization: number
+  title: string
 }
 
 export type UpdateEmployeeParamType = {
   email: string
+  name: string
   country: string
   paidTimeOff: number
+  title: string
 }
 export type DeleteEmployeeParamType = {
   email: string
@@ -67,6 +71,8 @@ export const useEmployeeModel = () => {
       paidTimeOff,
       managedBy,
       organization,
+      title,
+      name,
     }: CreateEmployeeParamType) => {
       const accessToken = await getAccessTokenSilently()
       const response = await fetch(
@@ -81,6 +87,8 @@ export const useEmployeeModel = () => {
             email,
             country,
             paidTimeOff,
+            title,
+            name,
             managedBy: managedBy || null,
             organization: organization,
           }),

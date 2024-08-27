@@ -15,30 +15,32 @@ export const EmployeeRoutes = () => {
   if (isLoading) {
     return <LoadingPage />
   }
-  return currentEmployee ? (
+  return (
     <>
       <Navigation />
+      {currentEmployee ? (
+        <Routes>
+          <Route
+            path="/"
+            element={<AuthenticationGuard component={HomePage} />}
+          />
 
-      <Routes>
-        <Route
-          path="/"
-          element={<AuthenticationGuard component={HomePage} />}
-        />
-        <Route
-          path="/profile"
-          element={<AuthenticationGuard component={ProfilePage} />}
-        />
-        {currentEmployee?.isOrgOwner && (
+          <Route
+            path="/profile"
+            element={<AuthenticationGuard component={ProfilePage} />}
+          />
+
           <Route
             path="/setup-organization/:id"
             element={<AuthenticationGuard component={SetupOrganization} />}
           />
-        )}
-        <Route path="/callback" element={<CallbackPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+
+          <Route path="/callback" element={<CallbackPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      ) : (
+        <CreateOrganizationAndEmployee />
+      )}
     </>
-  ) : (
-    <CreateOrganizationAndEmployee />
   )
 }

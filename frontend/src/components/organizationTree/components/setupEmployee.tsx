@@ -18,37 +18,63 @@ export const SetupEmployee = ({
     useOrganizationModel()
   const { createEmployee, updateEmployee } = useEmployeeModel()
   const [employeeEmail, setEmployeeEmail] = useState(employee?.email || '')
+  const [employeeTitle, setEmployeeTitle] = useState(employee?.title || '')
+  const [employeeName, setEmployeeName] = useState(employee?.name || '')
   const [selectedCountry, setSelectedCountry] = useState(
     employee?.country || ''
   )
   const [ptoDays, setPtoDays] = useState(employee?.paidTimeOff || 0)
   const [emailError, setEmailError] = useState<string | null>(null)
+  const [nameError, setNameError] = useState<string | null>(null)
   const [ptoError, setPtoError] = useState<string | null>(null)
   const [countryError, setCountryError] = useState<string | null>(null)
+  const [titleError, setTitleError] = useState<string | null>(null)
+
   const emailRef = useRef<HTMLInputElement>(null)
   const ptoRef = useRef<HTMLInputElement>(null)
   const countryRef = useRef<HTMLInputElement>(null)
+  const titleRef = useRef<HTMLInputElement>(null)
+  const nameRef = useRef<HTMLInputElement>(null)
 
   if (isLoadingCountries || isLoadingOrganization) return <LoadingPage />
   const handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
     setEmployeeEmail(event.target.value)
     setEmailError(null)
   }
-
+  const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setEmployeeName(event.target.value)
+    setNameError(null)
+  }
+  const handleTitleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setEmployeeTitle(event.target.value)
+    setTitleError(null)
+  }
   const handlePtoChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPtoDays(parseInt(event.target.value))
     setPtoError(null)
   }
   const handleEmailBlur = () => {
-    // Check validity on blur
     if (emailRef.current && !emailRef.current.checkValidity()) {
       setEmailError('Please enter a valid email address.')
     } else {
       setEmailError(null)
     }
   }
+  const handleTitleBlur = () => {
+    if (titleRef.current && !titleRef.current.value) {
+      setTitleError('Please enter a job title.')
+    } else {
+      setTitleError(null)
+    }
+  }
+  const handleNameBlur = () => {
+    if (nameRef.current && !nameRef.current.value) {
+      setTitleError('Please enter an employee name.')
+    } else {
+      setTitleError(null)
+    }
+  }
   const handlePtoBlur = () => {
-    // Check validity on blur
     if (ptoRef.current && !ptoRef.current.checkValidity()) {
       setPtoError('Please enter number of days of paid time off')
     } else {
@@ -76,29 +102,35 @@ export const SetupEmployee = ({
     if (managerEmail) {
       // we are creating an employee
       await createEmployee({
+        name: employeeName,
         email: employeeEmail,
         country: selectedCountry,
         paidTimeOff: ptoDays,
         managedBy: managerEmail,
         organization: currentOrganization.id,
+        title: employeeTitle,
       })
     }
     if (employee) {
       // we are updating an employee
       await updateEmployee({
+        name: employeeName,
         email: employeeEmail,
         country: selectedCountry,
         paidTimeOff: ptoDays,
+        title: employeeTitle,
       })
     }
     if (isHead) {
       // we are creating the head of the organization
       await createEmployee({
+        name: employeeName,
         email: employeeEmail,
         country: selectedCountry,
         paidTimeOff: ptoDays,
         managedBy: null,
         organization: currentOrganization.id,
+        title: employeeTitle,
       })
     }
   }
@@ -110,8 +142,8 @@ export const SetupEmployee = ({
           <label>Enter the email *</label>
           <input
             type="email"
-            name="headEmail"
-            id="headEmail"
+            name="email"
+            id="email"
             value={employeeEmail}
             onChange={handleEmailChange}
             onBlur={handleEmailBlur}
@@ -122,6 +154,36 @@ export const SetupEmployee = ({
           {emailError && <p style={{ color: 'red' }}>{emailError}</p>}
         </div>
       )}
+      <div>
+        <label>Enter the job title *</label>
+        <input
+          type="text"
+          name="title"
+          id="title"
+          value={employeeTitle}
+          onChange={handleTitleChange}
+          onBlur={handleTitleBlur}
+          placeholder="developer"
+          required
+          ref={titleRef}
+        />
+        {titleError && <p style={{ color: 'red' }}>{titleError}</p>}
+      </div>
+      <div>
+        <label>Enter the name *</label>
+        <input
+          type="text"
+          name="name"
+          id="name"
+          value={employeeName}
+          onChange={handleNameChange}
+          onBlur={handleNameBlur}
+          placeholder="Enter the employee name"
+          required
+          ref={nameRef}
+        />
+        {nameError && <p style={{ color: 'red' }}>{nameError}</p>}
+      </div>
       <div>
         <label>Enter the country *</label>
         <input
@@ -154,7 +216,7 @@ export const SetupEmployee = ({
           onChange={handlePtoChange}
           onBlur={handlePtoBlur}
           ref={ptoRef}
-          placeholder="26"
+          placeholder="Enter a number"
           required
           min="0"
         />
@@ -163,7 +225,13 @@ export const SetupEmployee = ({
 
       <button
         type="submit"
-        disabled={!!emailError || !!ptoError || !!countryError}
+        disabled={
+          !!emailError ||
+          !!ptoError ||
+          !!countryError ||
+          !!titleError ||
+          !!nameError
+        }
       >
         {employee ? 'Update' : 'Create'} Employee
       </button>

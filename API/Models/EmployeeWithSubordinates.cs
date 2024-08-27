@@ -9,8 +9,7 @@ namespace LeavePlanner.Models
 		public string? ManagedBy { get; set; }
 		public bool IsOrgOwner { get; set; } = false;
 		public int? PaidTimeOff { get; set; }
-		public string? Picture { get; set; }
-		public DateTime? CreatedAt { get; set; }
+		public string? Title { get; set; }
 		public List<EmployeeWithSubordinates> Subordinates { get; set; } = new List<EmployeeWithSubordinates>();
 	}
 }

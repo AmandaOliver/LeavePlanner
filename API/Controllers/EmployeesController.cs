@@ -10,9 +10,6 @@ public static class EmployeesController
         endpoints.MapPost("/employee", CreateEmployee).RequireAuthorization();
         endpoints.MapPut("/employee/{email}", UpdateEmployee).RequireAuthorization();
         endpoints.MapDelete("/employee/{email}", DeleteEmployee).RequireAuthorization();
-
-
-
     }
     public static async Task<IResult> CreateEmployee(EmployeeCreateModel model, LeavePlannerContext context)
     {
@@ -34,6 +31,8 @@ public static class EmployeesController
                 existingEmployee.Organization = model.Organization;
                 existingEmployee.ManagedBy = model.ManagedBy;
                 existingEmployee.PaidTimeOff = model.PaidTimeOff;
+                existingEmployee.Title = model.Title;
+                existingEmployee.Name = model.Name;
 
                 context.Employees.Update(existingEmployee);
                 employee = existingEmployee;
@@ -48,7 +47,8 @@ public static class EmployeesController
                     ManagedBy = model.ManagedBy,
                     IsOrgOwner = false,
                     PaidTimeOff = model.PaidTimeOff,
-                    CreatedAt = DateTime.UtcNow,
+                    Title = model.Title,
+                    Name = model.Name,
                 };
 
                 // Add employee to context
@@ -95,8 +95,7 @@ public static class EmployeesController
                                         ManagedBy = e.ManagedBy,
                                         IsOrgOwner = e.IsOrgOwner,
                                         PaidTimeOff = e.PaidTimeOff,
-                                        CreatedAt = e.CreatedAt,
-                                        Picture = e.Picture,
+                                        Title = e.Title,
                                         Subordinates = new List<EmployeeWithSubordinates>()
                                     })
                                     .FirstOrDefaultAsync();
@@ -132,6 +131,8 @@ public static class EmployeesController
 
         employee.Country = model.Country ?? employee.Country;
         employee.PaidTimeOff = model.PaidTimeOff != 0 ? model.PaidTimeOff : employee.PaidTimeOff;
+        employee.Title = model.Title ?? employee.Title;
+        employee.Name = model.Name ?? employee.Name;
 
         try
         {
@@ -189,6 +190,7 @@ public static class EmployeesController
                 employee.Country = null;
                 employee.ManagedBy = null;
                 employee.PaidTimeOff = null;
+                employee.Title = null;
 
                 context.Employees.Update(employee);
 
@@ -209,6 +211,48 @@ public static class EmployeesController
             await transaction.RollbackAsync();
             // Log the exception (ex) as needed
             return Results.Problem("An error occurred while deleting the employee.");
+        }
+    }
+    private static async Task FetchAndStoreHolidays(string countryCode, string employeeEmail, LeavePlannerContext context)
+    {
+        if (string.IsNullOrEmpty(countryCode))
+        {
+            return;
+        }
+
+        // Build the Google Calendar API URL using the country code
+        string apiUrl = $"https://www.googleapis.com/calendar/v3/calendars/{countryCode.ToLower()}%23holiday%40group.v.calendar.google.com/events?key=YOUR_API_KEY";
+
+        // Fetch the holiday data from Google Calendar API
+        var response = await _httpClient.GetAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var calendarResponse = JsonDocument.Parse(jsonResponse);
+
+            var events = calendarResponse.RootElement.GetProperty("items");
+
+            foreach (var holiday in events.EnumerateArray())
+            {
+                var title = holiday.GetProperty("summary").GetString();
+                var startDate = holiday.GetProperty("start").GetProperty("date").GetDateTime();
+                var endDate = holiday.GetProperty("end").GetProperty("date").GetDateTime();
+
+                // Create a new leave entry for each holiday
+                var leave = new Leave
+                {
+                    Type = "bankHoliday",
+                    DateStart = startDate,
+                    DateEnd = endDate,
+                    Owner = employeeEmail,
+                    ApprovedBy = null // Holidays don't need approval
+                };
+
+                context.Leaves.Add(leave);
+            }
+
+            await context.SaveChangesAsync();
         }
     }
 }

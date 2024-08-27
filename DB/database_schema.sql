@@ -16,14 +16,14 @@ CREATE TABLE Organizations (
 
 -- Create the Employees table without foreign keys
 CREATE TABLE Employees (
-    picture VARCHAR(100),
     email VARCHAR(255) NOT NULL PRIMARY KEY,
     name VARCHAR(255) DEFAULT NULL,
     organization INT,
     managedBy VARCHAR(255),
     country VARCHAR(50),
     isOrgOwner BOOLEAN DEFAULT FALSE,
-    paidTimeOff INT DEFAULT 0
+    paidTimeOff INT DEFAULT 0,
+    title VARCHAR(255) DEFAULT NULL,
 );
 
 -- Create the Leaves table without foreign keys
@@ -63,19 +63,6 @@ ALTER TABLE Notifications
 -- Add indexes to commonly queried fields
 CREATE INDEX idx_organization ON Employees(organization);
 CREATE INDEX idx_owner ON Leaves(owner);
-
--- Add audit columns
-ALTER TABLE Organizations
-    ADD created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ADD updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
-
-ALTER TABLE Employees
-    ADD created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ADD updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
-
-ALTER TABLE Leaves
-    ADD created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ADD updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
 
 -- Populate the Countries table with Google Calendar codes as the code and English names as the name
 INSERT INTO Countries (code, name) VALUES
