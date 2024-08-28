@@ -33,7 +33,8 @@ CREATE TABLE Leaves (
     dateStart DATETIME NOT NULL,
     dateEnd DATETIME NOT NULL,
     owner VARCHAR(255),
-    approvedBy VARCHAR(255) -- NULL if not approved, employee ID if approved
+    description VARCHAR(255),
+    approvedBy VARCHAR(255) -- NULL if not approved or bank holiday, employee ID if approved
 );
 
 -- Create the Notifications table without foreign keys

@@ -12,10 +12,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", builder =>
     {
-        builder.WithOrigins("https://localhost:3000") 
+        builder.WithOrigins("https://localhost:3000")
                .AllowAnyHeader()
                .AllowAnyMethod()
-               .AllowCredentials(); 
+               .AllowCredentials();
     });
 });
 builder.Services.AddControllers();
@@ -23,7 +23,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
-    
+
     // Define the security scheme for JWT
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -63,7 +63,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = $"https://dev-pcb54t1svzog7cdm.us.auth0.com/";
-        options.Audience = "https://leaveplanner.com";;
+        options.Audience = "https://leaveplanner.com"; ;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = true,
@@ -78,7 +78,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "Your API V1");
-        options.RoutePrefix = string.Empty; 
+        options.RoutePrefix = string.Empty;
     });
 }
 app.UseCors("AllowSpecificOrigin");
@@ -88,6 +88,7 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapOrganizationsEndpoints();
 app.MapEmployeesEndpoints();
+app.MapHolidaysEndpoints();
 app.MapEmployeeOrganizationEndpoints();
 app.MapCountriesEndpoints();
 app.Run();

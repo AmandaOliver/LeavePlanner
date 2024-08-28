@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
+using Newtonsoft.Json;
+
 public static class EmployeesController
 {
     public static void MapEmployeesEndpoints(this IEndpointRouteBuilder endpoints)
@@ -213,47 +215,4 @@ public static class EmployeesController
             return Results.Problem("An error occurred while deleting the employee.");
         }
     }
-    private static async Task FetchAndStoreHolidays(string countryCode, string employeeEmail, LeavePlannerContext context)
-    {
-        if (string.IsNullOrEmpty(countryCode))
-        {
-            return;
-        }
-
-        // Build the Google Calendar API URL using the country code
-        string apiUrl = $"https://www.googleapis.com/calendar/v3/calendars/{countryCode.ToLower()}%23holiday%40group.v.calendar.google.com/events?key=YOUR_API_KEY";
-
-        // Fetch the holiday data from Google Calendar API
-        var response = await _httpClient.GetAsync(apiUrl);
-
-        if (response.IsSuccessStatusCode)
-        {
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            var calendarResponse = JsonDocument.Parse(jsonResponse);
-
-            var events = calendarResponse.RootElement.GetProperty("items");
-
-            foreach (var holiday in events.EnumerateArray())
-            {
-                var title = holiday.GetProperty("summary").GetString();
-                var startDate = holiday.GetProperty("start").GetProperty("date").GetDateTime();
-                var endDate = holiday.GetProperty("end").GetProperty("date").GetDateTime();
-
-                // Create a new leave entry for each holiday
-                var leave = new Leave
-                {
-                    Type = "bankHoliday",
-                    DateStart = startDate,
-                    DateEnd = endDate,
-                    Owner = employeeEmail,
-                    ApprovedBy = null // Holidays don't need approval
-                };
-
-                context.Leaves.Add(leave);
-            }
-
-            await context.SaveChangesAsync();
-        }
-    }
 }
-
