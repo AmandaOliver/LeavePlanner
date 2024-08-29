@@ -26,18 +26,22 @@ public static class HolidaysController
 					{
 						foreach (var item in json.Items)
 						{
-							if (item.Start != null && item.Start.Date != null && item.End != null && item.End.Date != null)
+							if (item.Start != null && item.Start.Date != null
+							&& item.End != null && item.End.Date != null)
 							{
-								holidays.Add(new HolidayModel
+								if (DateTime.Parse(item.Start.Date) > DateTime.UtcNow)
 								{
-									StartDate = DateTime.Parse(item.Start.Date),
-									EndDate = DateTime.Parse(item.End.Date),
-									Summary = item.Summary
-								});
+									holidays.Add(new HolidayModel
+									{
+										StartDate = DateTime.Parse(item.Start.Date),
+										EndDate = DateTime.Parse(item.End.Date),
+										Summary = item.Summary
+									});
+								}
 							}
 							else
 							{
-								throw new Exception("holiday missing date");
+								throw new Exception("holiday returned by google is missing date");
 							}
 						}
 					}
