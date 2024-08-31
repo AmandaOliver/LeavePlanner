@@ -2,30 +2,46 @@
 using Microsoft.EntityFrameworkCore;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
-using Newtonsoft.Json;
-
-public static class EmployeesController
+public static class EmployeesEndpointsExtensions
 {
     public static void MapEmployeesEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/employee/{email}", GetEmployee).RequireAuthorization();
-        endpoints.MapPost("/employee", CreateEmployee).RequireAuthorization();
-        endpoints.MapPut("/employee/{email}", UpdateEmployee).RequireAuthorization();
-        endpoints.MapDelete("/employee/{email}", DeleteEmployee).RequireAuthorization();
+        endpoints.MapGet("/employee/{email}", async (EmployeesController controller, string email) => await controller.GetEmployee(email))
+                 .RequireAuthorization();
+        endpoints.MapPost("/employee", async (EmployeesController controller, EmployeeCreateModel model) => await controller.CreateEmployee(model))
+                 .RequireAuthorization();
+        endpoints.MapPut("/employee/{email}", async (EmployeesController controller, string email, EmployeeUpdateModel model) => await controller.UpdateEmployee(email, model))
+                 .RequireAuthorization();
+        endpoints.MapDelete("/employee/{email}", async (EmployeesController controller, string email) => await controller.DeleteEmployee(email))
+                 .RequireAuthorization();
     }
-    public static async Task<IResult> CreateEmployee(EmployeeCreateModel model, LeavePlannerContext context)
+}
+public class EmployeesController
+{
+    private readonly LeavePlannerContext _context;
+    private readonly BankHolidayService _bankholidayService;
+
+
+    public EmployeesController(LeavePlannerContext context, BankHolidayService bankHolidayService)
     {
+        _context = context;
+        _bankholidayService = bankHolidayService;
+
+    }
+    public async Task<IResult> CreateEmployee(EmployeeCreateModel model)
+    {
+
         // Check for invalid data
         if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Country) || model.Organization == 0 || model.PaidTimeOff == 0)
         {
             return Results.BadRequest("Invalid data.");
         }
 
-        using var transaction = await context.Database.BeginTransactionAsync();
+        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             Employee employee;
-            var existingEmployee = await context.Employees
+            var existingEmployee = await _context.Employees
                                            .FirstOrDefaultAsync(e => e.Email == model.Email);
             if (existingEmployee != null)
             {
@@ -36,7 +52,7 @@ public static class EmployeesController
                 existingEmployee.Title = model.Title;
                 existingEmployee.Name = model.Name;
 
-                context.Employees.Update(existingEmployee);
+                _context.Employees.Update(existingEmployee);
                 employee = existingEmployee;
             }
             else
@@ -54,9 +70,10 @@ public static class EmployeesController
                 };
 
                 // Add employee to context
-                context.Employees.Add(employee);
+                _context.Employees.Add(employee);
             }
-            await context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
+            await _bankholidayService.GenerateEmployeeBankHolidays(employee);
             await transaction.CommitAsync();
 
             return Results.Ok(employee);
@@ -68,9 +85,9 @@ public static class EmployeesController
         }
     }
 
-    public static async Task<IResult> GetEmployee(string email, LeavePlannerContext context)
+    public async Task<IResult> GetEmployee(string email)
     {
-        var employee = await context.Employees
+        var employee = await _context.Employees
                                     .FirstOrDefaultAsync(e => e.Email == email);
 
         if (employee == null)
@@ -79,14 +96,14 @@ public static class EmployeesController
         }
 
         // Fetch subordinates recursively
-        var employeeWithSubordinates = await GetEmployeeWithSubordinates(employee.Email, context);
+        var employeeWithSubordinates = await GetEmployeeWithSubordinates(employee.Email);
 
         return Results.Ok(employeeWithSubordinates);
     }
 
-    private static async Task<EmployeeWithSubordinates> GetEmployeeWithSubordinates(string employeeEmail, LeavePlannerContext context)
+    private async Task<EmployeeWithSubordinates> GetEmployeeWithSubordinates(string employeeEmail)
     {
-        var employee = await context.Employees
+        var employee = await _context.Employees
                                     .Where(e => e.Email == employeeEmail)
                                     .Select(e => new EmployeeWithSubordinates
                                     {
@@ -107,13 +124,13 @@ public static class EmployeesController
             throw new Exception("Employee not found.");
         }
 
-        var subordinates = await context.Employees
+        var subordinates = await _context.Employees
                                         .Where(e => e.ManagedBy == employeeEmail)
                                         .ToListAsync();
 
         foreach (var subordinate in subordinates)
         {
-            var subordinateWithSubordinates = await GetEmployeeWithSubordinates(subordinate.Email, context);
+            var subordinateWithSubordinates = await GetEmployeeWithSubordinates(subordinate.Email);
             employee.Subordinates.Add(subordinateWithSubordinates);
         }
 
@@ -121,10 +138,9 @@ public static class EmployeesController
 
     }
 
-
-    public static async Task<IResult> UpdateEmployee(string email, EmployeeUpdateModel model, LeavePlannerContext context)
+    public async Task<IResult> UpdateEmployee(string email, EmployeeUpdateModel model)
     {
-        var employee = await context.Employees.FirstOrDefaultAsync(e => e.Email == email);
+        var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == email);
 
         if (employee == null)
         {
@@ -138,7 +154,7 @@ public static class EmployeesController
 
         try
         {
-            await context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
             return Results.Ok(employee);
         }
         catch (Exception ex)
@@ -146,12 +162,12 @@ public static class EmployeesController
             return Results.Problem("An error occurred while updating the employee.");
         }
     }
-    public static async Task<IResult> DeleteEmployee(string email, LeavePlannerContext context)
+    public async Task<IResult> DeleteEmployee(string email)
     {
-        using var transaction = await context.Database.BeginTransactionAsync();
+        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var employee = await context.Employees.FirstOrDefaultAsync(e => e.Email == email);
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == email);
 
             if (employee == null)
             {
@@ -162,7 +178,7 @@ public static class EmployeesController
             if (employee.ManagedBy == null)
             {
                 // Check if the head manages any subordinates
-                var subordinates = await context.Employees
+                var subordinates = await _context.Employees
                                                 .Where(e => e.ManagedBy == employee.Email)
                                                 .ToListAsync();
 
@@ -175,7 +191,7 @@ public static class EmployeesController
             {
 
                 // Reassign subordinates to the manager above
-                var subordinates = await context.Employees
+                var subordinates = await _context.Employees
                                                 .Where(e => e.ManagedBy == employee.Email)
                                                 .ToListAsync();
 
@@ -184,7 +200,7 @@ public static class EmployeesController
                     subordinate.ManagedBy = employee.ManagedBy; // Reassign to the manager above
                 }
 
-                context.Employees.UpdateRange(subordinates);
+                _context.Employees.UpdateRange(subordinates);
             }
             // if employee is org owner, can't be deleted completely
             if (employee.IsOrgOwner == true)
@@ -194,16 +210,16 @@ public static class EmployeesController
                 employee.PaidTimeOff = null;
                 employee.Title = null;
 
-                context.Employees.Update(employee);
+                _context.Employees.Update(employee);
 
 
             }
             else
             {
                 // Remove the employee from the context
-                context.Employees.Remove(employee);
+                _context.Employees.Remove(employee);
             }
-            await context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
             return Results.Ok("Employee deleted successfully.");

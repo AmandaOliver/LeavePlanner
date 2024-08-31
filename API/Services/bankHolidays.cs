@@ -1,15 +1,21 @@
-using Microsoft.EntityFrameworkCore;
-using LeavePlanner.Data;
 using LeavePlanner.Models;
+using LeavePlanner.Data;
 using Newtonsoft.Json;
 
-public static class HolidaysController
+public interface IBankHolidayService
 {
-	public static void MapHolidaysEndpoints(this IEndpointRouteBuilder endpoints)
+	Task<List<HolidayModel>> FetchBankHolidays(string countryCode);
+	Task GenerateEmployeeBankHolidays(Employee employee);
+}
+
+public class BankHolidayService : IBankHolidayService
+{
+	private readonly LeavePlannerContext _context;
+	public BankHolidayService(LeavePlannerContext context)
 	{
-		endpoints.MapGet("/holidays/{countryCode}", FetchPublicHolidays);
+		_context = context;
 	}
-	private static async Task<IResult> FetchPublicHolidays(string countryCode)
+	public async Task<List<HolidayModel>> FetchBankHolidays(string countryCode)
 	{
 		var holidays = new List<HolidayModel>();
 		try
@@ -56,7 +62,32 @@ public static class HolidaysController
 		{
 			throw new Exception("Error when fetching holidays", ex);
 		}
-		return Results.Ok(holidays);
+		return holidays;
 	}
+	public async Task GenerateEmployeeBankHolidays(Employee employee)
+	{
+		if (employee.Country != null)
+		{
+			var holidaysForEmployeeCountry = await FetchBankHolidays(employee.Country);
+			foreach (var holiday in holidaysForEmployeeCountry)
+			{
+				var leave = new Leave
+				{
+					Type = "bankHoliday",
+					DateStart = holiday.StartDate,
+					DateEnd = holiday.EndDate,
+					Owner = employee.Email,
+					Description = holiday.Summary,
+					ApprovedBy = null // Bank holiday doesn't need approval
+				};
+				_context.Leaves.Add(leave);
+			}
 
+			await _context.SaveChangesAsync();
+		}
+		else
+		{
+			throw new Exception("Employee has no country set");
+		}
+	}
 }

@@ -17,7 +17,7 @@ public static class OrganizationsController
 
         if (organization != null)
         {
-            var employeeTree = BuildEmployeeHierarchy(organization.Employees.Where(e => e.ManagedBy == null && e.IsOrgOwner != true).ToList(), organization.Employees.ToList());
+            var employeeTree = BuildEmployeeHierarchy(organization.Employees.Where(e => e.ManagedBy == null && e.Country != null).ToList(), organization.Employees.ToList());
             var result = new
             {
                 organization.Id,

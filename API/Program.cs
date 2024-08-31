@@ -19,6 +19,8 @@ builder.Services.AddCors(options =>
     });
 });
 builder.Services.AddControllers();
+builder.Services.AddScoped<BankHolidayService>();
+builder.Services.AddScoped<EmployeesController>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -88,7 +90,6 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapOrganizationsEndpoints();
 app.MapEmployeesEndpoints();
-app.MapHolidaysEndpoints();
 app.MapEmployeeOrganizationEndpoints();
 app.MapCountriesEndpoints();
 app.Run();
