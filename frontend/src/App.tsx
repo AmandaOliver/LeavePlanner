@@ -5,7 +5,7 @@ import LoadingPage from './pages/loading'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { EmployeeRoutes } from './components/employeeRoutes'
+import { EmployeeRoutes } from './employeeRoutes'
 import { AuthenticationGuard } from './authentication-guard'
 
 const queryClient = new QueryClient()

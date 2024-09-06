@@ -21,9 +21,14 @@ export const Navigation = () => {
           </NavLink>
         </li>
         {currentEmployee && (
-          <li>
-            <NavLink to="/profile">Profile</NavLink>
-          </li>
+          <>
+            <li>
+              <NavLink to="/profile">Profile</NavLink>
+            </li>
+            <li>
+              <NavLink to="/leaves">My Leaves</NavLink>
+            </li>
+          </>
         )}
         {currentEmployee?.isOrgOwner && (
           <li>

@@ -155,7 +155,6 @@ public class EmployeesController
                 var leaves = await _context.Leaves.Where(l => l.Owner == employee.Email).ToListAsync();
                 _context.Leaves.RemoveRange(leaves);
                 employee.Country = model.Country;
-                await _context.SaveChangesAsync();
                 await _bankholidayService.GenerateEmployeeBankHolidays(employee);
             }
             employee.PaidTimeOff = model.PaidTimeOff != 0 ? model.PaidTimeOff : employee.PaidTimeOff;
