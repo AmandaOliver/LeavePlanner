@@ -146,19 +146,29 @@ public class EmployeesController
         {
             return Results.NotFound("Employee not found.");
         }
-
-        employee.Country = model.Country ?? employee.Country;
-        employee.PaidTimeOff = model.PaidTimeOff != 0 ? model.PaidTimeOff : employee.PaidTimeOff;
-        employee.Title = model.Title ?? employee.Title;
-        employee.Name = model.Name ?? employee.Name;
-
+        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
+            // if country changes we need to update the leaves
+            if (employee.Country != model.Country)
+            {
+                var leaves = await _context.Leaves.Where(l => l.Owner == employee.Email).ToListAsync();
+                _context.Leaves.RemoveRange(leaves);
+                employee.Country = model.Country;
+                await _context.SaveChangesAsync();
+                await _bankholidayService.GenerateEmployeeBankHolidays(employee);
+            }
+            employee.PaidTimeOff = model.PaidTimeOff != 0 ? model.PaidTimeOff : employee.PaidTimeOff;
+            employee.Title = model.Title ?? employee.Title;
+            employee.Name = model.Name ?? employee.Name;
+
+            await transaction.CommitAsync();
             await _context.SaveChangesAsync();
             return Results.Ok(employee);
         }
         catch (Exception ex)
         {
+            await transaction.RollbackAsync();
             return Results.Problem("An error occurred while updating the employee.");
         }
     }
@@ -202,6 +212,10 @@ public class EmployeesController
 
                 _context.Employees.UpdateRange(subordinates);
             }
+            // Remove leaves associated with the employee
+            var leaves = await _context.Leaves.Where(l => l.Owner == employee.Email).ToListAsync();
+            _context.Leaves.RemoveRange(leaves);
+
             // if employee is org owner, can't be deleted completely
             if (employee.IsOrgOwner == true)
             {

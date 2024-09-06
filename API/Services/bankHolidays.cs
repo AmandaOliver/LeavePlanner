@@ -1,6 +1,7 @@
 using LeavePlanner.Models;
 using LeavePlanner.Data;
 using Newtonsoft.Json;
+using Microsoft.EntityFrameworkCore;
 
 public interface IBankHolidayService
 {
@@ -68,22 +69,33 @@ public class BankHolidayService : IBankHolidayService
 	{
 		if (employee.Country != null)
 		{
-			var holidaysForEmployeeCountry = await FetchBankHolidays(employee.Country);
-			foreach (var holiday in holidaysForEmployeeCountry)
-			{
-				var leave = new Leave
-				{
-					Type = "bankHoliday",
-					DateStart = holiday.StartDate,
-					DateEnd = holiday.EndDate,
-					Owner = employee.Email,
-					Description = holiday.Summary,
-					ApprovedBy = null // Bank holiday doesn't need approval
-				};
-				_context.Leaves.Add(leave);
-			}
+			var country = await _context.Countries
+				.FirstOrDefaultAsync(country => country.Name == employee.Country);
 
-			await _context.SaveChangesAsync();
+			var countryCode = country?.Code;
+			if (countryCode != null)
+			{
+				var holidaysForEmployeeCountry = await FetchBankHolidays(countryCode);
+				foreach (var holiday in holidaysForEmployeeCountry)
+				{
+					var leave = new Leave
+					{
+						Type = "bankHoliday",
+						DateStart = holiday.StartDate,
+						DateEnd = holiday.EndDate,
+						Owner = employee.Email,
+						Description = holiday.Summary,
+						ApprovedBy = null // Bank holiday doesn't need approval
+					};
+					_context.Leaves.Add(leave);
+				}
+
+				await _context.SaveChangesAsync();
+			}
+			else
+			{
+				throw new Exception("Employee country doesnt exists in the DB");
+			}
 		}
 		else
 		{
