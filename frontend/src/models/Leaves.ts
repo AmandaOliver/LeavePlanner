@@ -130,7 +130,7 @@ export const useLeavesModel = (employeeEmail: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['organization'],
+        queryKey: ['leaves', employeeEmail],
       })
     },
   })

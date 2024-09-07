@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
-
-// https://www.googleapis.com/calendar/v3/calendars/en.italian%23holiday%40group.v.calendar.google.com/events?key=AIzaSyD8hdrcLyIKD6lXD-0nGAPWJerZz1c3n5c
+using MySqlX.XDevAPI.Common;
 
 
 public static class LeavesEndpointsExtensions
@@ -12,6 +11,7 @@ public static class LeavesEndpointsExtensions
 
 		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email) => await controller.GetLeaves(email)).RequireAuthorization();
 		endpoints.MapPost("/leaves", async (LeavesController controller, LeaveCreateModel model) => await controller.CreateLeave(model)).RequireAuthorization();
+		endpoints.MapDelete("/leaves/{leaveId}", async (LeavesController controller, int leaveId) => await controller.DeleteLeave(leaveId)).RequireAuthorization();
 	}
 }
 public class LeavesController
@@ -65,5 +65,28 @@ public class LeavesController
 			return Results.Problem(ex.ToString());
 		}
 	}
+	public async Task<IResult> DeleteLeave(int leaveId)
+	{
+		using var transaction = await _context.Database.BeginTransactionAsync();
+		try
+		{
+			var leave = await _context.Leaves.FindAsync(leaveId);
+			if (leave == null)
+			{
+				return Results.NotFound("Leave not found with that id");
+			}
 
+			_context.Leaves.Remove(leave);
+			await _context.SaveChangesAsync();
+			await transaction.CommitAsync();
+			return Results.Ok(leave);
+		}
+		catch (Exception ex)
+		{
+			await transaction.RollbackAsync();
+			return Results.Problem("An error occurred while deleting the leave.");
+
+		}
+
+	}
 }

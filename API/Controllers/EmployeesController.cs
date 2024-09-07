@@ -41,8 +41,7 @@ public class EmployeesController
         try
         {
             Employee employee;
-            var existingEmployee = await _context.Employees
-                                           .FirstOrDefaultAsync(e => e.Email == model.Email);
+            var existingEmployee = await _context.Employees.FindAsync(model.Email);
             if (existingEmployee != null)
             {
                 existingEmployee.Country = model.Country;
@@ -88,7 +87,7 @@ public class EmployeesController
     public async Task<IResult> GetEmployee(string email)
     {
         var employee = await _context.Employees
-                                    .FirstOrDefaultAsync(e => e.Email == email);
+                                    .FindAsync(email);
 
         if (employee == null)
         {
@@ -140,7 +139,7 @@ public class EmployeesController
 
     public async Task<IResult> UpdateEmployee(string email, EmployeeUpdateModel model)
     {
-        var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == email);
+        var employee = await _context.Employees.FindAsync(email);
 
         if (employee == null)
         {
@@ -176,7 +175,7 @@ public class EmployeesController
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == email);
+            var employee = await _context.Employees.FindAsync(email);
 
             if (employee == null)
             {
@@ -235,7 +234,7 @@ public class EmployeesController
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return Results.Ok("Employee deleted successfully.");
+            return Results.Ok(employee);
         }
         catch (Exception ex)
         {
