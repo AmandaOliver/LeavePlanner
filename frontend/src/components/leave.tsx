@@ -15,7 +15,7 @@ export const Leave = ({
     <li key={leave.id}>
       <details key={leave.id}>
         <summary>
-          {leave.type} {leave.dateStart}-{leave.dateEnd}: {leave.description}
+          {leave.type} {leave.dateStart} - {leave.dateEnd}: {leave.description}
         </summary>
         <button onClick={() => setIsUpdateLeaveFormOpen(true)}>
           Update Leave

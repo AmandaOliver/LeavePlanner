@@ -49,16 +49,49 @@ export const useLeavesModel = (employeeEmail: string) => {
       }
     )
 
-    if (response.status === 200) {
-      return response.json()
+    if (response.ok) {
+      const responseJson = await response.json()
+      return responseJson.map((leave: LeaveType) => ({
+        ...leave,
+        dateStart: leave.dateStart.split('T')[0],
+        dateEnd: leave.dateEnd.split('T')[0],
+      }))
     } else {
       throw new Error('Error fetching leaves')
     }
   }
+  const fetchLeavesAwaitingApproval = async (): Promise<LeaveType[]> => {
+    const accessToken = await getAccessTokenSilently()
 
+    const response = await fetch(
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/pending/${employeeEmail}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    if (response.ok) {
+      const responseJson = await response.json()
+      return responseJson.map((leave: LeaveType) => ({
+        ...leave,
+        dateStart: leave.dateStart.split('T')[0],
+        dateEnd: leave.dateEnd.split('T')[0],
+      }))
+    } else {
+      throw new Error('Error fetching leave requests')
+    }
+  }
   const leavesQuery = useQuery({
     queryKey: ['leaves', employeeEmail],
     queryFn: fetchLeaves,
+  })
+  const leavesAwaitingApprovalQuery = useQuery({
+    queryKey: ['leavesAwaitingApproval', employeeEmail],
+    queryFn: fetchLeavesAwaitingApproval,
   })
   const createLeaveMutation = useMutation({
     mutationFn: async (createData: CreateLeaveParamType) => {
@@ -81,7 +114,7 @@ export const useLeavesModel = (employeeEmail: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['leaves', employeeEmail],
+        queryKey: ['leavesAwaitingApproval', employeeEmail],
       })
     },
   })
@@ -136,11 +169,12 @@ export const useLeavesModel = (employeeEmail: string) => {
   })
   return {
     leaves: leavesQuery.data ?? [],
+    leavesAwaitingApproval: leavesAwaitingApprovalQuery.data ?? [],
     createLeave: createLeaveMutation.mutateAsync,
     updateLeave: updateLeaveMutation.mutateAsync,
     deleteLeave: deleteLeaveMutation.mutateAsync,
-    isLoading: leavesQuery.isLoading,
-    isError: leavesQuery.isError,
-    error: leavesQuery.error,
+    isLoading: leavesQuery.isLoading || leavesAwaitingApprovalQuery.isLoading,
+    isError: leavesQuery.isError || leavesAwaitingApprovalQuery.isError,
+    error: leavesQuery.error || leavesAwaitingApprovalQuery.isError,
   }
 }

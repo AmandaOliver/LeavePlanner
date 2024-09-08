@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { useLeavesModel } from '../models/Leaves'
 import { RequestLeave } from '../components/requestLeave'
 import { Leave } from '../components/leave'
-
+type TabsType = 'leaves' | 'leavesAwaitingApproval'
 export const Leaves = ({ employeeEmail }: { employeeEmail: string }) => {
-  const { leaves } = useLeavesModel(employeeEmail)
+  const { leaves, leavesAwaitingApproval } = useLeavesModel(employeeEmail)
   const [isRequestLeaveFormOpen, setIsRequestLeaveFormOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<TabsType>('leaves')
+  const leavesToDisplay =
+    activeTab === 'leaves' ? leaves : leavesAwaitingApproval
   return (
     <>
       <button onClick={() => setIsRequestLeaveFormOpen(true)}>
@@ -19,9 +22,23 @@ export const Leaves = ({ employeeEmail }: { employeeEmail: string }) => {
           </button>
         </>
       )}
+      <div id="leaves-tabs">
+        <button
+          onClick={() => setActiveTab('leaves')}
+          disabled={activeTab === 'leaves'}
+        >
+          Leaves
+        </button>
+        <button
+          disabled={activeTab === 'leavesAwaitingApproval'}
+          onClick={() => setActiveTab('leavesAwaitingApproval')}
+        >
+          Leaves Awaiting Approval
+        </button>
+      </div>
       <ul>
-        {leaves.map((leave) => (
-          <Leave leave={leave} employeeEmail={employeeEmail} />
+        {leavesToDisplay.map((leave) => (
+          <Leave key={leave.id} leave={leave} employeeEmail={employeeEmail} />
         ))}
       </ul>
     </>

@@ -67,7 +67,7 @@ export const RequestLeave = ({
   return (
     <form onSubmit={handleSubmit}>
       <div>
-        <label>Enter the start date *</label>
+        <label>Enter the start date {dateStart}*</label>
         <input
           type="date"
           name="dateStart"

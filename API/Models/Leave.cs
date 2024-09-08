@@ -17,11 +17,13 @@ public partial class Leave
     public string? Description { get; set; }
 
     public string? ApprovedBy { get; set; }
+    public string? RejectedBy { get; set; }
 
 
     [JsonIgnore]
     public virtual Employee? ApprovedByNavigation { get; set; }
-
+    [JsonIgnore]
+    public virtual Employee? RejectedByNavigation { get; set; }
     [JsonIgnore]
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 

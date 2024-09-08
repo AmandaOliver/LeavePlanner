@@ -86,11 +86,15 @@ public partial class LeavePlannerContext : DbContext
             entity.ToTable("Leaves", "LeavePlanner");
 
             entity.HasIndex(e => e.ApprovedBy, "fk_leave_approvedBy");
+            entity.HasIndex(e => e.RejectedBy, "fk_leave_rejectedBy");
+
 
             entity.HasIndex(e => e.Owner, "idx_owner");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.ApprovedBy).HasColumnName("approvedBy");
+            entity.Property(e => e.RejectedBy).HasColumnName("rejectedBy");
+
             entity.Property(e => e.DateEnd)
                 .HasColumnType("datetime")
                 .HasColumnName("dateEnd");
@@ -106,7 +110,9 @@ public partial class LeavePlannerContext : DbContext
             entity.HasOne(d => d.ApprovedByNavigation).WithMany(p => p.LeaveApprovedByNavigations)
                 .HasForeignKey(d => d.ApprovedBy)
                 .HasConstraintName("fk_leave_approvedBy");
-
+            entity.HasOne(d => d.RejectedByNavigation).WithMany(p => p.LeaveRejectedByNavigations)
+                           .HasForeignKey(d => d.RejectedBy)
+                           .HasConstraintName("fk_leave_rejectedBy");
             entity.HasOne(d => d.OwnerNavigation).WithMany(p => p.LeaveOwnerNavigations)
                 .HasForeignKey(d => d.Owner)
                 .HasConstraintName("fk_leave_owner");

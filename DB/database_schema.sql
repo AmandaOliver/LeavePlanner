@@ -35,6 +35,8 @@ CREATE TABLE Leaves (
     owner VARCHAR(255),
     description VARCHAR(255),
     approvedBy VARCHAR(255) -- NULL if not approved or bank holiday, employee ID if approved
+    rejectedBy VARCHAR(255) -- NULL if not approved or bank holiday, employee ID if approved
+
 );
 
 -- Create the Notifications table without foreign keys
@@ -54,6 +56,8 @@ ALTER TABLE Employees
 ALTER TABLE Leaves
     ADD CONSTRAINT fk_leave_owner FOREIGN KEY (owner) REFERENCES Employees(email),
     ADD CONSTRAINT fk_leave_approvedBy FOREIGN KEY (approvedBy) REFERENCES Employees(email);
+    ADD CONSTRAINT fk_leave_rejectedBy FOREIGN KEY (rejectedBy) REFERENCES Employees(email);
+
 
 -- Add foreign key constraints to Notifications
 ALTER TABLE Notifications

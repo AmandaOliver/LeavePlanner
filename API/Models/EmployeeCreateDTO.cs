@@ -1,6 +1,6 @@
 namespace LeavePlanner.Models
 {
-	public class EmployeeCreateModel
+	public class EmployeeCreateDTO
 	{
 		public string Email { get; set; } = null!;
 		public int Organization { get; set; } = 0;

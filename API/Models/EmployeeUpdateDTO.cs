@@ -1,6 +1,6 @@
 namespace LeavePlanner.Models
 {
-	public class EmployeeUpdateModel
+	public class EmployeeUpdateDTO
 	{
 		public string? Country { get; set; }
 		public int PaidTimeOff { get; set; }

@@ -19,6 +19,8 @@ public partial class Employee
     [JsonIgnore]
     public virtual ICollection<Leave> LeaveApprovedByNavigations { get; set; } = new List<Leave>();
     [JsonIgnore]
+    public virtual ICollection<Leave> LeaveRejectedByNavigations { get; set; } = new List<Leave>();
+    [JsonIgnore]
     public virtual ICollection<Leave> LeaveOwnerNavigations { get; set; } = new List<Leave>();
     [JsonIgnore]
     public virtual Employee? ManagedByNavigation { get; set; }

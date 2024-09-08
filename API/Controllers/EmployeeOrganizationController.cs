@@ -9,7 +9,7 @@ public static class EmployeeOrganizationController
         endpoints.MapPost("/create-employee-organization", CreateEmployeeAndOrganization);
     }
 
-    public static async Task<IResult> CreateEmployeeAndOrganization(EmployeeOrganizationCreateModel model, LeavePlannerContext context)
+    public static async Task<IResult> CreateEmployeeAndOrganization(EmployeeOrganizationCreateDTO model, LeavePlannerContext context)
     {
         if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.OrganizationName))
         {

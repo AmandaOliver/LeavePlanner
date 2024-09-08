@@ -8,9 +8,9 @@ public static class EmployeesEndpointsExtensions
     {
         endpoints.MapGet("/employee/{email}", async (EmployeesController controller, string email) => await controller.GetEmployee(email))
                  .RequireAuthorization();
-        endpoints.MapPost("/employee", async (EmployeesController controller, EmployeeCreateModel model) => await controller.CreateEmployee(model))
+        endpoints.MapPost("/employee", async (EmployeesController controller, EmployeeCreateDTO model) => await controller.CreateEmployee(model))
                  .RequireAuthorization();
-        endpoints.MapPut("/employee/{email}", async (EmployeesController controller, string email, EmployeeUpdateModel model) => await controller.UpdateEmployee(email, model))
+        endpoints.MapPut("/employee/{email}", async (EmployeesController controller, string email, EmployeeUpdateDTO model) => await controller.UpdateEmployee(email, model))
                  .RequireAuthorization();
         endpoints.MapDelete("/employee/{email}", async (EmployeesController controller, string email) => await controller.DeleteEmployee(email))
                  .RequireAuthorization();
@@ -28,7 +28,7 @@ public class EmployeesController
         _bankholidayService = bankHolidayService;
 
     }
-    public async Task<IResult> CreateEmployee(EmployeeCreateModel model)
+    public async Task<IResult> CreateEmployee(EmployeeCreateDTO model)
     {
 
         // Check for invalid data
@@ -80,7 +80,7 @@ public class EmployeesController
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            return Results.Problem(ex.ToString());
+            return Results.Problem(ex.Message);
         }
     }
 
@@ -137,7 +137,7 @@ public class EmployeesController
 
     }
 
-    public async Task<IResult> UpdateEmployee(string email, EmployeeUpdateModel model)
+    public async Task<IResult> UpdateEmployee(string email, EmployeeUpdateDTO model)
     {
         var employee = await _context.Employees.FindAsync(email);
 
@@ -167,7 +167,7 @@ public class EmployeesController
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            return Results.Problem("An error occurred while updating the employee.");
+            return Results.Problem(ex.Message);
         }
     }
     public async Task<IResult> DeleteEmployee(string email)
@@ -239,8 +239,7 @@ public class EmployeesController
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            // Log the exception (ex) as needed
-            return Results.Problem("An error occurred while deleting the employee.");
+            return Results.Problem(ex.Message);
         }
     }
 }
