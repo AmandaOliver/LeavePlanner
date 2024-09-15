@@ -131,6 +131,11 @@ public class LeavesController
 	}
 	public async Task<IResult> UpdateLeave(int leaveId, LeaveUpdateDTO leaveUpdate)
 	{
+		var validationResult = await ValidateLeave(leaveUpdate.DateStart, leaveUpdate.DateEnd, leaveUpdate.Owner, leaveUpdate.Id);
+		if (!validationResult.Equals(Results.Ok()))
+		{
+			return validationResult;
+		}
 		using var transaction = await _context.Database.BeginTransactionAsync();
 		var leave = await _context.Leaves.FindAsync(leaveId);
 		if (leave == null)

@@ -129,7 +129,10 @@ export const useLeavesModel = (employeeEmail: string) => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({ ...updateData }),
+          body: JSON.stringify({
+            ...updateData,
+            owner: currentEmployee?.email,
+          }),
         }
       )
       if (!response.ok) {
