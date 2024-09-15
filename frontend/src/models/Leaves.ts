@@ -147,6 +147,9 @@ export const useLeavesModel = (employeeEmail: string) => {
       queryClient.invalidateQueries({
         queryKey: ['leavesAwaitingApproval', employeeEmail],
       })
+      queryClient.invalidateQueries({
+        queryKey: ['leaves', employeeEmail],
+      })
     },
   })
   const updateLeaveMutation = useMutation({
