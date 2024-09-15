@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 public interface IPaidTimeOffLeft
 {
-	Task<int> GetPaidTimeOffLeft(string employeeEmail, int year);
+	Task<int> GetPaidTimeOffLeft(string employeeEmail, int year, int? leaveId);
 }
 
 public class PaidTimeOffLeft : IPaidTimeOffLeft
@@ -14,7 +14,7 @@ public class PaidTimeOffLeft : IPaidTimeOffLeft
 	{
 		_context = context;
 	}
-	public async Task<int> GetPaidTimeOffLeft(string employeeEmail, int year)
+	public async Task<int> GetPaidTimeOffLeft(string employeeEmail, int year, int? leaveId)
 	{
 		var employee = await _context.Employees
 								  .FindAsync(employeeEmail);
@@ -23,7 +23,7 @@ public class PaidTimeOffLeft : IPaidTimeOffLeft
 			throw new Exception("Employee not found.");
 		}
 		var leavesThisYear = await _context.Leaves
-			.Where(l => l.Owner == employeeEmail && l.Type == "paidTimeOff" && l.ApprovedBy != null && l.DateStart.Year == year)
+			.Where(l => l.Owner == employeeEmail && l.Id != leaveId && l.Type == "paidTimeOff" && l.ApprovedBy != null && l.DateStart.Year == year)
 			.ToListAsync();
 
 		int totalDaysTaken = leavesThisYear.Sum(leave => (leave.DateEnd - leave.DateStart).Days + 1);

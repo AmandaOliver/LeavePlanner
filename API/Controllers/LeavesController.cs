@@ -56,49 +56,53 @@ public class LeavesController
 		// Return the leaves
 		return Results.Ok(leaves);
 	}
-	public async Task<IResult> CreateLeave(LeaveCreateDTO model)
+	private async Task<IResult> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId)
 	{
-		// Check if the requested dates are in the past
-		if (model.DateStart < DateTime.UtcNow || model.DateEnd < DateTime.UtcNow)
+		if (dateStart < DateTime.UtcNow || dateEnd < DateTime.UtcNow)
 		{
 			return Results.BadRequest("You cannot request leave for dates in the past.");
 		}
 
-		// Check if the end date is before the start date
-		if (model.DateEnd < model.DateStart)
+		if (dateEnd < dateStart)
 		{
 			return Results.BadRequest("The end date cannot be before the start date.");
 		}
-
 		var employee = await _context.Employees
 									 .Include(e => e.LeaveOwnerNavigations)
-									 .FirstOrDefaultAsync(e => e.Email == model.Owner);
+									 .FirstOrDefaultAsync(e => e.Email == owner);
 
 		if (employee == null)
 		{
 			return Results.NotFound("Employee not found.");
 		}
+		var paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, DateTime.UtcNow.Year, leaveId);
+		var totalDaysRequested = (dateEnd - dateStart).TotalDays;
 
-		var paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, DateTime.UtcNow.Year);
-		var totalDaysRequested = (model.DateEnd - model.DateStart).TotalDays + 1;
-
-		if (totalDaysRequested > employee.PaidTimeOff - paidTimeOffLeft)
+		if (totalDaysRequested > paidTimeOffLeft)
 		{
 			return Results.BadRequest("You cannot request more days than you have left.");
 		}
 
-		// Check if the employee already has a leave on the requested days
 		var conflictingLeaves = await _context.Leaves
-											  .Where(leave => leave.Owner == model.Owner &&
-															  ((model.DateStart >= leave.DateStart && model.DateStart <= leave.DateEnd) ||
-															   (model.DateEnd >= leave.DateStart && model.DateEnd <= leave.DateEnd)))
-											  .ToListAsync();
+		.Where(leave => leave.Owner == owner && leave.Id != leaveId &&
+						((dateStart >= leave.DateStart && dateStart < leave.DateEnd.AddDays(-1)) ||
+						 (dateEnd >= leave.DateStart && dateEnd < leave.DateEnd.AddDays(-1))))
+		.ToListAsync();
 
 		if (conflictingLeaves.Any())
 		{
-			return Results.BadRequest("You cannot request leave for the same day(s) you already have.");
+			return Results.BadRequest("You cannot request leave for the same day(s) you already have requested.");
 		}
+		return Results.Ok();
+	}
 
+	public async Task<IResult> CreateLeave(LeaveCreateDTO model)
+	{
+		var validationResult = await ValidateLeave(model.DateStart, model.DateEnd, model.Owner, null);
+		if (!validationResult.Equals(Results.Ok()))
+		{
+			return validationResult;
+		}
 		using var transaction = await _context.Database.BeginTransactionAsync();
 		try
 		{

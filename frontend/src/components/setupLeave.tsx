@@ -40,10 +40,16 @@ export const SetupLeave = ({
         'You cannot request leave for a start date in the past.'
       )
     } else if (
-      totalLeaves.find(
-        (leave) =>
-          start >= new Date(leave.dateStart) && start <= new Date(leave.dateEnd)
-      )
+      totalLeaves.find((l) => {
+        const isCurrentLeave = l.id === leave?.id
+        const leaveEndDate = new Date(l.dateEnd)
+        leaveEndDate.setDate(leaveEndDate.getDate() - 1)
+        return (
+          !isCurrentLeave &&
+          start >= new Date(l.dateStart) &&
+          start <= leaveEndDate
+        )
+      })
     ) {
       setdateStartError(
         'The requested leave start date conflicts with another leave'
@@ -63,10 +69,14 @@ export const SetupLeave = ({
     if (end < start) {
       setdateEndError('The end date cannot be before the start date.')
     } else if (
-      totalLeaves.find(
-        (leave) =>
-          end >= new Date(leave.dateStart) && end <= new Date(leave.dateEnd)
-      )
+      totalLeaves.find((l) => {
+        const isCurrentLeave = l.id === leave?.id
+        return (
+          !isCurrentLeave &&
+          end > new Date(l.dateStart) &&
+          end <= new Date(l.dateEnd)
+        )
+      })
     ) {
       setdateEndError(
         'The requested leave end date conflicts with another leave'
@@ -103,7 +113,7 @@ export const SetupLeave = ({
   return (
     <form onSubmit={handleSubmit}>
       <div>
-        <label>Enter the start date {dateStart}*</label>
+        <label>Enter the start date*</label>
         <input
           type="date"
           name="dateStart"

@@ -57,7 +57,7 @@ export const useLeavesModel = (employeeEmail: string) => {
         dateEnd: leave.dateEnd.split('T')[0],
       }))
     } else {
-      throw new Error('Error fetching leaves')
+      return []
     }
   }
   const fetchLeavesAwaitingApproval = async (): Promise<LeaveType[]> => {
@@ -82,7 +82,7 @@ export const useLeavesModel = (employeeEmail: string) => {
         dateEnd: leave.dateEnd.split('T')[0],
       }))
     } else {
-      throw new Error('Error fetching leave requests')
+      return []
     }
   }
   const leavesQuery = useQuery({
@@ -141,6 +141,9 @@ export const useLeavesModel = (employeeEmail: string) => {
       queryClient.invalidateQueries({
         queryKey: ['leaves', employeeEmail],
       })
+      queryClient.invalidateQueries({
+        queryKey: ['leavesAwaitingApproval', employeeEmail],
+      })
     },
   })
   const deleteLeaveMutation = useMutation({
@@ -164,6 +167,9 @@ export const useLeavesModel = (employeeEmail: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['leaves', employeeEmail],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['leavesAwaitingApproval', employeeEmail],
       })
     },
   })
