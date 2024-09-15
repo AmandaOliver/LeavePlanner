@@ -3,13 +3,20 @@ import { useLeavesModel } from '../models/Leaves'
 import { SetupLeave } from '../components/setupLeave'
 import { Leave } from '../components/leave'
 import { EmployeeType } from '../models/Employee'
-type TabsType = 'leaves' | 'leavesAwaitingApproval'
+type TabsType = 'leaves' | 'leavesAwaitingApproval' | 'leavesRejected'
+
 export const Leaves = ({ employee }: { employee: EmployeeType }) => {
-  const { leaves, leavesAwaitingApproval } = useLeavesModel(employee.email)
+  const { leaves, leavesAwaitingApproval, leavesRejected } = useLeavesModel(
+    employee.email
+  )
   const [isRequestLeaveFormOpen, setIsRequestLeaveFormOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TabsType>('leaves')
   const leavesToDisplay =
-    activeTab === 'leaves' ? leaves : leavesAwaitingApproval
+    activeTab === 'leaves'
+      ? leaves
+      : activeTab === 'leavesAwaitingApproval'
+        ? leavesAwaitingApproval
+        : leavesRejected
   return (
     <>
       <button onClick={() => setIsRequestLeaveFormOpen(true)}>
@@ -35,6 +42,12 @@ export const Leaves = ({ employee }: { employee: EmployeeType }) => {
           onClick={() => setActiveTab('leavesAwaitingApproval')}
         >
           Leaves Awaiting Approval
+        </button>
+        <button
+          disabled={activeTab === 'leavesRejected'}
+          onClick={() => setActiveTab('leavesRejected')}
+        >
+          Leaves Rejected
         </button>
       </div>
       <ul>

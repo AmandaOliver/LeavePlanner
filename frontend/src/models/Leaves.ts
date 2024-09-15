@@ -15,6 +15,7 @@ export type LeaveType = {
   type: LeaveTypes
   owner: string
   approvedBy: string
+  rejectedBy: string
 }
 export type CreateLeaveParamType = {
   description: string
@@ -86,6 +87,31 @@ export const useLeavesModel = (employeeEmail: string) => {
       return []
     }
   }
+  const fetchLeavesRejected = async (): Promise<LeaveType[]> => {
+    const accessToken = await getAccessTokenSilently()
+
+    const response = await fetch(
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/rejected/${employeeEmail}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    if (response.ok) {
+      const responseJson = await response.json()
+      return responseJson.map((leave: LeaveType) => ({
+        ...leave,
+        dateStart: leave.dateStart.split('T')[0],
+        dateEnd: leave.dateEnd.split('T')[0],
+      }))
+    } else {
+      return []
+    }
+  }
   const leavesQuery = useQuery({
     queryKey: ['leaves', employeeEmail],
     queryFn: fetchLeaves,
@@ -93,6 +119,10 @@ export const useLeavesModel = (employeeEmail: string) => {
   const leavesAwaitingApprovalQuery = useQuery({
     queryKey: ['leavesAwaitingApproval', employeeEmail],
     queryFn: fetchLeavesAwaitingApproval,
+  })
+  const leavesRejectedQuery = useQuery({
+    queryKey: ['leavesRejected', employeeEmail],
+    queryFn: fetchLeavesRejected,
   })
   const createLeaveMutation = useMutation({
     mutationFn: async (createData: CreateLeaveParamType) => {
@@ -175,16 +205,29 @@ export const useLeavesModel = (employeeEmail: string) => {
       queryClient.invalidateQueries({
         queryKey: ['leavesAwaitingApproval', employeeEmail],
       })
+      queryClient.invalidateQueries({
+        queryKey: ['leavesRejected', employeeEmail],
+      })
     },
   })
   return {
     leaves: leavesQuery.data ?? [],
     leavesAwaitingApproval: leavesAwaitingApprovalQuery.data ?? [],
+    leavesRejected: leavesRejectedQuery.data ?? [],
     createLeave: createLeaveMutation.mutateAsync,
     updateLeave: updateLeaveMutation.mutateAsync,
     deleteLeave: deleteLeaveMutation.mutateAsync,
-    isLoading: leavesQuery.isLoading || leavesAwaitingApprovalQuery.isLoading,
-    isError: leavesQuery.isError || leavesAwaitingApprovalQuery.isError,
-    error: leavesQuery.error || leavesAwaitingApprovalQuery.isError,
+    isLoading:
+      leavesQuery.isLoading ||
+      leavesAwaitingApprovalQuery.isLoading ||
+      leavesRejectedQuery.isLoading,
+    isError:
+      leavesQuery.isError ||
+      leavesAwaitingApprovalQuery.isError ||
+      leavesRejectedQuery.isError,
+    error:
+      leavesQuery.error ||
+      leavesAwaitingApprovalQuery.error ||
+      leavesRejectedQuery.error,
   }
 }

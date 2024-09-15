@@ -12,6 +12,7 @@ public static class LeavesEndpointsExtensions
 
 		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email) => await controller.GetLeaves(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/pending/{email}", async (LeavesController controller, string email) => await controller.GetLeavesAwaitingApproval(email)).RequireAuthorization();
+		endpoints.MapGet("/leaves/rejected/{email}", async (LeavesController controller, string email) => await controller.GetLeavesRejected(email)).RequireAuthorization();
 		endpoints.MapPost("/leaves", async (LeavesController controller, LeaveCreateDTO model) => await controller.CreateLeave(model)).RequireAuthorization();
 		endpoints.MapPut("/leaves/{leaveId}", async (LeavesController controller, int leaveId, LeaveUpdateDTO leaveUpdate) => await controller.UpdateLeave(leaveId, leaveUpdate)).RequireAuthorization();
 		endpoints.MapDelete("/leaves/{leaveId}", async (LeavesController controller, int leaveId) => await controller.DeleteLeave(leaveId)).RequireAuthorization();
@@ -39,7 +40,20 @@ public class LeavesController
 			return Results.NotFound("No leaves found for this employee.");
 		}
 
-		// Return the leaves
+		return Results.Ok(leaves);
+	}
+	public async Task<IResult> GetLeavesRejected(string email)
+	{
+		var leaves = await _context.Leaves
+						   .Where(leave => leave.Owner == email &&
+										   leave.RejectedBy != null && leave.Type != "bankHoliday")
+						   .ToListAsync();
+
+		if (leaves == null || leaves.Count == 0)
+		{
+			return Results.NotFound("No leaves found for this employee.");
+		}
+
 		return Results.Ok(leaves);
 	}
 	public async Task<IResult> GetLeavesAwaitingApproval(string email)
@@ -71,6 +85,10 @@ public class LeavesController
 			{
 				return Results.BadRequest("You cannot update bank holidays.");
 			}
+			if (leave.RejectedBy != null)
+			{
+				return Results.BadRequest("You cannot update a rejected leave.");
+			}
 
 		}
 		if (dateStart < DateTime.UtcNow || dateEnd < DateTime.UtcNow)
@@ -82,9 +100,7 @@ public class LeavesController
 		{
 			return Results.BadRequest("The end date cannot be before the start date.");
 		}
-		var employee = await _context.Employees
-									 .Include(e => e.LeaveOwnerNavigations)
-									 .FirstOrDefaultAsync(e => e.Email == owner);
+		var employee = await _context.Employees.FindAsync(owner);
 
 		if (employee == null)
 		{
@@ -129,8 +145,12 @@ public class LeavesController
 				Type = model.Type,
 				Owner = model.Owner
 			};
+			var employee = await _context.Employees.FindAsync(model.Owner);
 
-			// Add employee to context
+			if (employee != null && employee.ManagedBy == null)
+			{
+				leave.ApprovedBy = model.Owner;
+			}
 			_context.Leaves.Add(leave);
 
 			await _context.SaveChangesAsync();

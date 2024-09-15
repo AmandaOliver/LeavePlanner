@@ -23,9 +23,11 @@ export const Leave = ({
             (new Date(leave.dateStart) > new Date() &&
               new Date(leave.dateEnd) > new Date())) && (
             <>
-              <button onClick={() => setIsUpdateLeaveFormOpen(true)}>
-                Update Leave
-              </button>
+              {leave.rejectedBy == null && (
+                <button onClick={() => setIsUpdateLeaveFormOpen(true)}>
+                  Update Leave
+                </button>
+              )}
               <button onClick={() => deleteLeave({ id: leave.id })}>
                 Delete Leave
               </button>
