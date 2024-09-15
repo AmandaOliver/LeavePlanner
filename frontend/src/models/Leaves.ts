@@ -14,6 +14,7 @@ export type LeaveType = {
   description: string
   type: LeaveTypes
   owner: string
+  approvedBy: string
 }
 export type CreateLeaveParamType = {
   description: string

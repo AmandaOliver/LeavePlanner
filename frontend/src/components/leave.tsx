@@ -18,9 +18,19 @@ export const Leave = ({
         <summary>
           {leave.type} {leave.dateStart} - {leave.dateEnd}: {leave.description}
         </summary>
-        <button onClick={() => setIsUpdateLeaveFormOpen(true)}>
-          Update Leave
-        </button>
+        {leave.type !== 'bankHoliday' &&
+          (leave.approvedBy == null ||
+            (new Date(leave.dateStart) > new Date() &&
+              new Date(leave.dateEnd) > new Date())) && (
+            <>
+              <button onClick={() => setIsUpdateLeaveFormOpen(true)}>
+                Update Leave
+              </button>
+              <button onClick={() => deleteLeave({ id: leave.id })}>
+                Delete Leave
+              </button>
+            </>
+          )}
         {isUpdateLeaveFormOpen && (
           <>
             <SetupLeave leave={leave} employee={employee} />
@@ -29,10 +39,6 @@ export const Leave = ({
             </button>
           </>
         )}
-
-        <button onClick={() => deleteLeave({ id: leave.id })}>
-          Delete Leave
-        </button>
       </details>
     </li>
   )

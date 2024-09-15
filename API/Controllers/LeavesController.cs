@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
+using System.Linq.Expressions;
 
 
 
@@ -58,6 +59,20 @@ public class LeavesController
 	}
 	private async Task<IResult> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId)
 	{
+		if (leaveId != null)
+		{
+
+			var leave = await _context.Leaves.FindAsync(leaveId);
+			if (leave == null)
+			{
+				return Results.NotFound("Leave not found");
+			}
+			if (leave.Type == "bankHoliday")
+			{
+				return Results.BadRequest("You cannot update bank holidays.");
+			}
+
+		}
 		if (dateStart < DateTime.UtcNow || dateEnd < DateTime.UtcNow)
 		{
 			return Results.BadRequest("You cannot request leave for dates in the past.");
@@ -166,15 +181,22 @@ public class LeavesController
 	}
 	public async Task<IResult> DeleteLeave(int leaveId)
 	{
+		var leave = await _context.Leaves.FindAsync(leaveId);
+		if (leave == null)
+		{
+			return Results.NotFound("Leave not found");
+		}
+		if (leave.Type == "bankHoliday")
+		{
+			return Results.BadRequest("You cannot delete bank holidays.");
+		}
+		if (leave.ApprovedBy != null && (leave.DateStart < DateTime.UtcNow || leave.DateEnd < DateTime.UtcNow))
+		{
+			return Results.BadRequest("You cannot delete leaves in the past.");
+		}
 		using var transaction = await _context.Database.BeginTransactionAsync();
 		try
 		{
-			var leave = await _context.Leaves.FindAsync(leaveId);
-			if (leave == null)
-			{
-				return Results.NotFound("Leave not found with that id");
-			}
-
 			_context.Leaves.Remove(leave);
 			await _context.SaveChangesAsync();
 			await transaction.CommitAsync();
