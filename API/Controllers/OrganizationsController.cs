@@ -31,14 +31,14 @@ public static class OrganizationsController
             return Results.NotFound("Organization does not exists.");
         }
     }
-    private static List<EmployeeWithSubordinates> BuildEmployeeHierarchy(List<Employee> managers, List<Employee> allEmployees)
+    private static List<EmployeeWithSubordinatesDTO> BuildEmployeeHierarchy(List<Employee> managers, List<Employee> allEmployees)
     {
-        var result = new List<EmployeeWithSubordinates>();
+        var result = new List<EmployeeWithSubordinatesDTO>();
 
         foreach (var manager in managers)
         {
             var subordinates = allEmployees.Where(e => e.ManagedBy == manager.Email).ToList();
-            var employeeDto = new EmployeeWithSubordinates
+            var employeeDto = new EmployeeWithSubordinatesDTO
             {
                 Name = manager.Name,
                 Email = manager.Email,

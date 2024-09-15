@@ -1,19 +1,21 @@
 import { ChangeEvent, FormEvent, useRef, useState } from 'react'
 import { LeaveType, LeaveTypes, useLeavesModel } from '../models/Leaves'
+import { EmployeeType } from '../models/Employee'
 
-export const RequestLeave = ({
+export const SetupLeave = ({
   leave,
-  employeeEmail,
+  employee,
 }: {
   leave?: LeaveType
-  employeeEmail: string
+  employee: EmployeeType
 }) => {
-  const { createLeave, updateLeave } = useLeavesModel(employeeEmail)
+  const { createLeave, updateLeave, leaves, leavesAwaitingApproval } =
+    useLeavesModel(employee.email)
   const [description, setDescription] = useState(leave?.description || '')
   const [dateStart, setDateStart] = useState(leave?.dateStart || '')
   const [dateEnd, setDateEnd] = useState(leave?.dateEnd || '')
   const [type, setType] = useState<LeaveTypes>(leave?.type || 'paidTimeOff')
-
+  const totalLeaves = [...leaves, ...leavesAwaitingApproval]
   const [dateStartError, setdateStartError] = useState<string | null>(null)
   const [dateEndError, setdateEndError] = useState<string | null>(null)
 
@@ -30,14 +32,48 @@ export const RequestLeave = ({
   }
 
   const handleDateStartBlur = () => {
-    if (dateStartRef.current && !dateStartRef.current.checkValidity()) {
+    const start = new Date(dateStart)
+    const now = new Date()
+
+    if (start < now) {
+      setdateStartError(
+        'You cannot request leave for a start date in the past.'
+      )
+    } else if (
+      totalLeaves.find(
+        (leave) =>
+          start >= new Date(leave.dateStart) && start <= new Date(leave.dateEnd)
+      )
+    ) {
+      setdateStartError(
+        'The requested leave start date conflicts with another leave'
+      )
+    } else if (dateStartRef.current && !dateStartRef.current.checkValidity()) {
       setdateStartError('Please enter a valid start date.')
     } else {
       setdateStartError(null)
     }
   }
   const handleDateEndBlur = () => {
-    if (dateEndRef.current && !dateEndRef.current.value) {
+    const start = new Date(dateStart)
+    const end = new Date(dateEnd)
+    // Calculate the difference in days between start and end
+    const differenceInTime = end.getTime() - start.getTime()
+    const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24))
+    if (end < start) {
+      setdateEndError('The end date cannot be before the start date.')
+    } else if (
+      totalLeaves.find(
+        (leave) =>
+          end >= new Date(leave.dateStart) && end <= new Date(leave.dateEnd)
+      )
+    ) {
+      setdateEndError(
+        'The requested leave end date conflicts with another leave'
+      )
+    } else if (employee.paidTimeOffLeft < differenceInDays) {
+      setdateEndError('You cannot request more days than you have left.')
+    } else if (dateEndRef.current && !dateEndRef.current.value) {
       setdateEndError('Please enter a valid end date.')
     } else {
       setdateEndError(null)
@@ -81,7 +117,7 @@ export const RequestLeave = ({
         {dateStartError && <p style={{ color: 'red' }}>{dateStartError}</p>}
       </div>
       <div>
-        <label>Enter the end date *</label>
+        <label>Enter the end date (you will work this day)*</label>
         <input
           type="date"
           name="dateEnd"

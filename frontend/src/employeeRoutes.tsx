@@ -32,7 +32,11 @@ export const EmployeeRoutes = () => {
           />
           <Route
             path="/leaves"
-            element={<AuthenticationGuard component={() => <Leaves employeeEmail={currentEmployee.email} />}/>}
+            element={
+              <AuthenticationGuard
+                component={() => <Leaves employee={currentEmployee} />}
+              />
+            }
           />
           <Route
             path="/setup-organization/:id"

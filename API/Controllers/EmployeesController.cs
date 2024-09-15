@@ -20,12 +20,14 @@ public class EmployeesController
 {
     private readonly LeavePlannerContext _context;
     private readonly BankHolidayService _bankholidayService;
+    private readonly PaidTimeOffLeft _paidTimeOffLeft;
 
 
-    public EmployeesController(LeavePlannerContext context, BankHolidayService bankHolidayService)
+    public EmployeesController(LeavePlannerContext context, BankHolidayService bankHolidayService, PaidTimeOffLeft paidTimeOffLeft)
     {
         _context = context;
         _bankholidayService = bankHolidayService;
+        _paidTimeOffLeft = paidTimeOffLeft;
 
     }
     public async Task<IResult> CreateEmployee(EmployeeCreateDTO model)
@@ -100,11 +102,11 @@ public class EmployeesController
         return Results.Ok(employeeWithSubordinates);
     }
 
-    private async Task<EmployeeWithSubordinates> GetEmployeeWithSubordinates(string employeeEmail)
+    private async Task<EmployeeWithSubordinatesDTO> GetEmployeeWithSubordinates(string employeeEmail)
     {
-        var employee = await _context.Employees
+        var employeeWithSubordinates = await _context.Employees
                                     .Where(e => e.Email == employeeEmail)
-                                    .Select(e => new EmployeeWithSubordinates
+                                    .Select(e => new EmployeeWithSubordinatesDTO
                                     {
                                         Email = e.Email,
                                         Name = e.Name,
@@ -114,14 +116,16 @@ public class EmployeesController
                                         IsOrgOwner = e.IsOrgOwner,
                                         PaidTimeOff = e.PaidTimeOff,
                                         Title = e.Title,
-                                        Subordinates = new List<EmployeeWithSubordinates>()
+                                        Subordinates = new List<EmployeeWithSubordinatesDTO>()
                                     })
                                     .FirstOrDefaultAsync();
 
-        if (employee == null)
+        if (employeeWithSubordinates == null)
         {
             throw new Exception("Employee not found.");
         }
+
+        employeeWithSubordinates.PaidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employeeWithSubordinates.Email, DateTime.UtcNow.Year);
 
         var subordinates = await _context.Employees
                                         .Where(e => e.ManagedBy == employeeEmail)
@@ -130,10 +134,10 @@ public class EmployeesController
         foreach (var subordinate in subordinates)
         {
             var subordinateWithSubordinates = await GetEmployeeWithSubordinates(subordinate.Email);
-            employee.Subordinates.Add(subordinateWithSubordinates);
+            employeeWithSubordinates.Subordinates.Add(subordinateWithSubordinates);
         }
 
-        return employee;
+        return employeeWithSubordinates;
 
     }
 
@@ -219,7 +223,7 @@ public class EmployeesController
             {
                 employee.Country = null;
                 employee.ManagedBy = null;
-                employee.PaidTimeOff = null;
+                employee.PaidTimeOff = 0;
                 employee.Title = null;
 
                 _context.Employees.Update(employee);

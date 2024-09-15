@@ -11,6 +11,7 @@ export type EmployeeType = {
   paidTimeOff: number
   title: string
   subordinates?: Array<EmployeeType>
+  paidTimeOffLeft: number
 }
 
 export type CreateEmployeeParamType = {

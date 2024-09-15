@@ -1,9 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
-using MySqlX.XDevAPI.Common;
-using System.Linq.Expressions;
-using System.Transactions;
+
 
 
 public static class LeavesEndpointsExtensions
@@ -21,11 +19,12 @@ public static class LeavesEndpointsExtensions
 public class LeavesController
 {
 	private readonly LeavePlannerContext _context;
+	private readonly PaidTimeOffLeft _paidTimeOffLeft;
 
-
-	public LeavesController(LeavePlannerContext context)
+	public LeavesController(LeavePlannerContext context, PaidTimeOffLeft paidTimeOffLeft)
 	{
 		_context = context;
+		_paidTimeOffLeft = paidTimeOffLeft;
 	}
 	public async Task<IResult> GetLeaves(string email)
 	{
@@ -59,6 +58,47 @@ public class LeavesController
 	}
 	public async Task<IResult> CreateLeave(LeaveCreateDTO model)
 	{
+		// Check if the requested dates are in the past
+		if (model.DateStart < DateTime.UtcNow || model.DateEnd < DateTime.UtcNow)
+		{
+			return Results.BadRequest("You cannot request leave for dates in the past.");
+		}
+
+		// Check if the end date is before the start date
+		if (model.DateEnd < model.DateStart)
+		{
+			return Results.BadRequest("The end date cannot be before the start date.");
+		}
+
+		var employee = await _context.Employees
+									 .Include(e => e.LeaveOwnerNavigations)
+									 .FirstOrDefaultAsync(e => e.Email == model.Owner);
+
+		if (employee == null)
+		{
+			return Results.NotFound("Employee not found.");
+		}
+
+		var paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, DateTime.UtcNow.Year);
+		var totalDaysRequested = (model.DateEnd - model.DateStart).TotalDays + 1;
+
+		if (totalDaysRequested > employee.PaidTimeOff - paidTimeOffLeft)
+		{
+			return Results.BadRequest("You cannot request more days than you have left.");
+		}
+
+		// Check if the employee already has a leave on the requested days
+		var conflictingLeaves = await _context.Leaves
+											  .Where(leave => leave.Owner == model.Owner &&
+															  ((model.DateStart >= leave.DateStart && model.DateStart <= leave.DateEnd) ||
+															   (model.DateEnd >= leave.DateStart && model.DateEnd <= leave.DateEnd)))
+											  .ToListAsync();
+
+		if (conflictingLeaves.Any())
+		{
+			return Results.BadRequest("You cannot request leave for the same day(s) you already have.");
+		}
+
 		using var transaction = await _context.Database.BeginTransactionAsync();
 		try
 		{

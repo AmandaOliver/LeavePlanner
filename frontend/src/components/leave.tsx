@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { LeaveType, useLeavesModel } from '../models/Leaves'
-import { RequestLeave } from './requestLeave'
+import { SetupLeave } from './setupLeave'
+import { EmployeeType } from '../models/Employee'
 
 export const Leave = ({
   leave,
-  employeeEmail,
+  employee,
 }: {
   leave: LeaveType
-  employeeEmail: string
+  employee: EmployeeType
 }) => {
   const [isUpdateLeaveFormOpen, setIsUpdateLeaveFormOpen] = useState(false)
-  const { deleteLeave } = useLeavesModel(employeeEmail)
+  const { deleteLeave } = useLeavesModel(employee.email)
   return (
     <li key={leave.id}>
       <details key={leave.id}>
@@ -22,7 +23,7 @@ export const Leave = ({
         </button>
         {isUpdateLeaveFormOpen && (
           <>
-            <RequestLeave leave={leave} employeeEmail={employeeEmail} />
+            <SetupLeave leave={leave} employee={employee} />
             <button onClick={() => setIsUpdateLeaveFormOpen(false)}>
               Close update form
             </button>

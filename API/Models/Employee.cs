@@ -12,7 +12,7 @@ public partial class Employee
     public string? ManagedBy { get; set; }
     public string? Country { get; set; }
     public bool IsOrgOwner { get; set; } = false;
-    public int? PaidTimeOff { get; set; }
+    public int PaidTimeOff { get; set; }
     public string? Title { get; set; }
     [JsonIgnore]
     public virtual ICollection<Employee> InverseManagedByNavigation { get; set; } = new List<Employee>();
