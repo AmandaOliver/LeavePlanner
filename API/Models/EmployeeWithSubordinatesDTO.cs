@@ -10,6 +10,7 @@ namespace LeavePlanner.Models
 		public bool IsOrgOwner { get; set; } = false;
 		public int PaidTimeOff { get; set; }
 		public int PaidTimeOffLeft { get; set; }
+		public int PaidTimeOffLeftNextYear { get; set; }
 		public string? Title { get; set; }
 		public List<EmployeeWithSubordinatesDTO> Subordinates { get; set; } = new List<EmployeeWithSubordinatesDTO>();
 	}

@@ -15,6 +15,10 @@ export const ProfilePage = () => {
             {currentEmployee?.paidTimeOffLeft} days of paid time off left this
             year
           </p>
+          <p>
+            {currentEmployee?.paidTimeOffLeftNextYear} days of paid time off
+            left next year
+          </p>
           <p>Resides in {currentEmployee?.country}</p>
           <p>Manager's email: {currentEmployee?.managedBy}</p>
           {currentEmployee?.subordinates?.length ? (

@@ -126,6 +126,7 @@ public class EmployeesController
         }
 
         employeeWithSubordinates.PaidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employeeWithSubordinates.Email, DateTime.UtcNow.Year, null);
+        employeeWithSubordinates.PaidTimeOffLeftNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employeeWithSubordinates.Email, DateTime.UtcNow.Year + 1, null);
 
         var subordinates = await _context.Employees
                                         .Where(e => e.ManagedBy == employeeEmail)

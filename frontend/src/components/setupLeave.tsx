@@ -1,4 +1,11 @@
-import { ChangeEvent, FormEvent, useRef, useState } from 'react'
+import {
+  ChangeEvent,
+  FormEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { LeaveType, LeaveTypes, useLeavesModel } from '../models/Leaves'
 import { EmployeeType } from '../models/Employee'
 
@@ -24,21 +31,17 @@ export const SetupLeave = ({
 
   const handleDateStartChange = (event: ChangeEvent<HTMLInputElement>) => {
     setDateStart(event.target.value)
-    setdateStartError(null)
   }
   const handleDateEndChange = (event: ChangeEvent<HTMLInputElement>) => {
     setDateEnd(event.target.value)
-    setdateEndError(null)
   }
 
-  const handleDateStartBlur = () => {
+  const validateDateStart = useCallback(() => {
     const start = new Date(dateStart)
-    const now = new Date()
 
-    if (start < now) {
-      setdateStartError(
-        'You cannot request leave for a start date in the past.'
-      )
+    if (dateStartRef.current && !dateStartRef.current.checkValidity()) {
+      setdateStartError('Please enter a valid start date.')
+      return false
     } else if (
       totalLeaves.find((l) => {
         const isCurrentLeave = l.id === leave?.id
@@ -54,20 +57,41 @@ export const SetupLeave = ({
       setdateStartError(
         'The requested leave start date conflicts with another leave'
       )
-    } else if (dateStartRef.current && !dateStartRef.current.checkValidity()) {
-      setdateStartError('Please enter a valid start date.')
-    } else {
-      setdateStartError(null)
+      return false
     }
-  }
-  const handleDateEndBlur = () => {
+    setdateStartError(null)
+    return true
+  }, [dateStart, leave, totalLeaves])
+
+  const validateDateEnd = useCallback(() => {
     const start = new Date(dateStart)
     const end = new Date(dateEnd)
-    // Calculate the difference in days between start and end
-    const differenceInTime = end.getTime() - start.getTime()
-    const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24))
-    if (end < start) {
+    const startYear = start.getFullYear()
+    const endYear = end.getFullYear()
+
+    // Helper function to calculate weekdays between two dates
+    const getWeekdaysBetween = (start: Date, end: Date) => {
+      let totalDays = 0
+      let currentDate = new Date(start)
+
+      while (currentDate <= end) {
+        const dayOfWeek = currentDate.getDay()
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          // 0 = Sunday, 6 = Saturday
+          totalDays++
+        }
+        currentDate.setDate(currentDate.getDate() + 1)
+      }
+
+      return totalDays
+    }
+
+    if (dateEndRef.current && !dateEndRef.current.value) {
+      setdateEndError('Please enter a valid end date.')
+      return false
+    } else if (end < start) {
       setdateEndError('The end date cannot be before the start date.')
+      return false
     } else if (
       totalLeaves.find((l) => {
         const isCurrentLeave = l.id === leave?.id
@@ -81,15 +105,62 @@ export const SetupLeave = ({
       setdateEndError(
         'The requested leave end date conflicts with another leave'
       )
-    } else if (employee.paidTimeOffLeft < differenceInDays) {
-      setdateEndError('You cannot request more days than you have left.')
-    } else if (dateEndRef.current && !dateEndRef.current.value) {
-      setdateEndError('Please enter a valid end date.')
-    } else {
-      setdateEndError(null)
-    }
-  }
+      return false
+    } else if (startYear !== endYear) {
+      // Leave spans multiple years, split the calculation
 
+      // Calculate weekdays for current year
+      const endOfYear = new Date(startYear, 11, 31) // December 31 of the start year
+      const daysInCurrentYear = getWeekdaysBetween(start, endOfYear)
+
+      // Calculate weekdays for next year
+      const startOfNextYear = new Date(endYear, 0, 1) // January 1 of the end year
+      const daysInNextYear = getWeekdaysBetween(startOfNextYear, end)
+
+      // Check if employee has enough paid time off for both years
+      if (daysInCurrentYear > employee.paidTimeOffLeft) {
+        setdateEndError(
+          `You cannot request more days than you have left for the year ${startYear}.`
+        )
+        return false
+      } else if (daysInNextYear > employee.paidTimeOffLeftNextYear) {
+        setdateEndError(
+          `You cannot request more days than you have left for the year ${endYear}.`
+        )
+        return false
+      }
+    } else if (startYear === endYear) {
+      // Same year calculation
+      const totalWeekdays = getWeekdaysBetween(start, end)
+
+      if (startYear === new Date().getFullYear()) {
+        if (employee.paidTimeOffLeft < totalWeekdays) {
+          setdateEndError('You cannot request more days than you have left.')
+          return false
+        }
+      } else {
+        if (employee.paidTimeOffLeftNextYear < totalWeekdays) {
+          setdateEndError('You cannot request more days than you have left.')
+          return false
+        }
+      }
+    }
+
+    // If no errors, clear the error message
+    setdateEndError(null)
+    return true
+  }, [dateEnd, dateStart, employee, leave, totalLeaves])
+
+  useEffect(() => {
+    if (dateEnd) {
+      validateDateEnd()
+    }
+  }, [dateEnd, validateDateEnd])
+  useEffect(() => {
+    if (dateStart) {
+      validateDateStart()
+    }
+  }, [dateStart, validateDateStart])
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
@@ -120,9 +191,19 @@ export const SetupLeave = ({
           id="dateStart"
           value={dateStart}
           onChange={handleDateStartChange}
-          onBlur={handleDateStartBlur}
+          onBlur={validateDateStart}
           required
           ref={dateStartRef}
+          min={
+            new Date(new Date().setDate(new Date().getDate() + 1))
+              .toISOString()
+              .split('T')[0]
+          } // Tomorrow's date
+          max={
+            new Date(new Date().getFullYear() + 2, 0, 1)
+              .toISOString()
+              .split('T')[0]
+          }
         />
         {dateStartError && <p style={{ color: 'red' }}>{dateStartError}</p>}
       </div>
@@ -134,9 +215,15 @@ export const SetupLeave = ({
           id="dateEnd"
           value={dateEnd}
           onChange={handleDateEndChange}
-          onBlur={handleDateEndBlur}
+          onBlur={validateDateEnd}
           required
           ref={dateEndRef}
+          min={dateStart}
+          max={
+            new Date(new Date().getFullYear() + 2, 0, 2)
+              .toISOString()
+              .split('T')[0]
+          }
         />
         {dateEndError && <p style={{ color: 'red' }}>{dateEndError}</p>}
       </div>

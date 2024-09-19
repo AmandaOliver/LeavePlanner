@@ -73,13 +73,13 @@ public class LeavesController
 	}
 	private async Task<IResult> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId)
 	{
+		// Leave validation checks
 		if (leaveId != null)
 		{
-
 			var leave = await _context.Leaves.FindAsync(leaveId);
 			if (leave == null)
 			{
-				return Results.NotFound("Leave not found");
+				return Results.NotFound("Leave not found.");
 			}
 			if (leave.Type == "bankHoliday")
 			{
@@ -89,9 +89,10 @@ public class LeavesController
 			{
 				return Results.BadRequest("You cannot update a rejected leave.");
 			}
-
 		}
-		if (dateStart < DateTime.UtcNow || dateEnd < DateTime.UtcNow)
+
+		// Date validation checks
+		if (dateStart < DateTime.UtcNow.Date || dateEnd < DateTime.UtcNow.Date)
 		{
 			return Results.BadRequest("You cannot request leave for dates in the past.");
 		}
@@ -100,32 +101,64 @@ public class LeavesController
 		{
 			return Results.BadRequest("The end date cannot be before the start date.");
 		}
-		var employee = await _context.Employees.FindAsync(owner);
 
+		var employee = await _context.Employees.FindAsync(owner);
 		if (employee == null)
 		{
 			return Results.NotFound("Employee not found.");
 		}
-		var paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, DateTime.UtcNow.Year, leaveId);
-		var totalDaysRequested = (dateEnd - dateStart).TotalDays;
 
-		if (totalDaysRequested > paidTimeOffLeft)
+		// Exclude weekends when calculating days off
+		int totalWeekdaysRequested = _paidTimeOffLeft.GetWeekdaysBetween(dateStart, dateEnd.AddDays(-1));  // Adjusted to exclude dateEnd
+
+		// If leave crosses over into the next year
+		if (dateStart.Year != dateEnd.Year)
 		{
-			return Results.BadRequest("You cannot request more days than you have left.");
+			var endOfYear = new DateTime(dateStart.Year, 12, 31);
+			var daysInCurrentYear = _paidTimeOffLeft.GetWeekdaysBetween(dateStart, endOfYear);
+			var startOfNextYear = new DateTime(dateEnd.Year, 1, 1);
+			var daysInNextYear = _paidTimeOffLeft.GetWeekdaysBetween(startOfNextYear, dateEnd.AddDays(-1));
+
+			// Check for enough paid time off in current year
+			var paidTimeOffLeftForCurrentYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateStart.Year, leaveId);
+			if (daysInCurrentYear > paidTimeOffLeftForCurrentYear)
+			{
+				return Results.BadRequest($"You cannot request more days than you have left for the year {dateStart.Year}.");
+			}
+
+			// Check for enough paid time off in next year
+			var paidTimeOffLeftForNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateEnd.Year, leaveId);
+			if (daysInNextYear > paidTimeOffLeftForNextYear)
+			{
+				return Results.BadRequest($"You cannot request more days than you have left for the year {dateEnd.Year}.");
+			}
+		}
+		else
+		{
+			var paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateStart.Year, leaveId);
+
+			if (totalWeekdaysRequested > paidTimeOffLeft)
+			{
+				return Results.BadRequest("You cannot request more days than you have left.");
+			}
 		}
 
+		// Check for conflicting leaves
 		var conflictingLeaves = await _context.Leaves
-		.Where(leave => leave.Owner == owner && leave.Id != leaveId &&
-						((dateStart >= leave.DateStart && dateStart < leave.DateEnd.AddDays(-1)) ||
-						 (dateEnd >= leave.DateStart && dateEnd < leave.DateEnd.AddDays(-1))))
-		.ToListAsync();
+			.Where(leave => leave.Owner == owner && leave.Id != leaveId &&
+							((dateStart >= leave.DateStart && dateStart < leave.DateEnd.AddDays(-1)) ||
+							 (dateEnd >= leave.DateStart && dateEnd < leave.DateEnd.AddDays(-1))))
+			.ToListAsync();
 
 		if (conflictingLeaves.Any())
 		{
 			return Results.BadRequest("You cannot request leave for the same day(s) you already have requested.");
 		}
+
 		return Results.Ok();
 	}
+
+
 
 	public async Task<IResult> CreateLeave(LeaveCreateDTO model)
 	{
