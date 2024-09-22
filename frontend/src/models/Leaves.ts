@@ -1,6 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEmployeeModel } from './Employee'
+
 export type LeaveTypes =
   | 'sickLeave'
   | 'paidTimeOff'
@@ -33,7 +34,8 @@ export type UpdateLeaveParamType = {
 export type DeleteLeaveParamType = {
   id: string
 }
-export const useLeavesModel = (employeeEmail: string) => {
+
+export const useLeavesModel = () => {
   const { getAccessTokenSilently } = useAuth0()
   const queryClient = useQueryClient()
   const { currentEmployee } = useEmployeeModel()
@@ -41,7 +43,7 @@ export const useLeavesModel = (employeeEmail: string) => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves/${employeeEmail}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/${currentEmployee?.email}`,
       {
         method: 'GET',
         headers: {
@@ -66,7 +68,7 @@ export const useLeavesModel = (employeeEmail: string) => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves/pending/${employeeEmail}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/pending/${currentEmployee?.email}`,
       {
         method: 'GET',
         headers: {
@@ -91,7 +93,7 @@ export const useLeavesModel = (employeeEmail: string) => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves/rejected/${employeeEmail}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/rejected/${currentEmployee?.email}`,
       {
         method: 'GET',
         headers: {
@@ -113,15 +115,15 @@ export const useLeavesModel = (employeeEmail: string) => {
     }
   }
   const leavesQuery = useQuery({
-    queryKey: ['leaves', employeeEmail],
+    queryKey: ['leaves', currentEmployee?.email],
     queryFn: fetchLeaves,
   })
   const leavesAwaitingApprovalQuery = useQuery({
-    queryKey: ['leavesAwaitingApproval', employeeEmail],
+    queryKey: ['leavesAwaitingApproval', currentEmployee?.email],
     queryFn: fetchLeavesAwaitingApproval,
   })
   const leavesRejectedQuery = useQuery({
-    queryKey: ['leavesRejected', employeeEmail],
+    queryKey: ['leavesRejected', currentEmployee?.email],
     queryFn: fetchLeavesRejected,
   })
   const createLeaveMutation = useMutation({
@@ -145,10 +147,10 @@ export const useLeavesModel = (employeeEmail: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['leavesAwaitingApproval', employeeEmail],
+        queryKey: ['leavesAwaitingApproval', currentEmployee?.email],
       })
       queryClient.invalidateQueries({
-        queryKey: ['leaves', employeeEmail],
+        queryKey: ['leaves', currentEmployee?.email],
       })
     },
   })
@@ -176,10 +178,10 @@ export const useLeavesModel = (employeeEmail: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['leaves', employeeEmail],
+        queryKey: ['leaves', currentEmployee?.email],
       })
       queryClient.invalidateQueries({
-        queryKey: ['leavesAwaitingApproval', employeeEmail],
+        queryKey: ['leavesAwaitingApproval', currentEmployee?.email],
       })
     },
   })
@@ -203,13 +205,13 @@ export const useLeavesModel = (employeeEmail: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['leaves', employeeEmail],
+        queryKey: ['leaves', currentEmployee?.email],
       })
       queryClient.invalidateQueries({
-        queryKey: ['leavesAwaitingApproval', employeeEmail],
+        queryKey: ['leavesAwaitingApproval', currentEmployee?.email],
       })
       queryClient.invalidateQueries({
-        queryKey: ['leavesRejected', employeeEmail],
+        queryKey: ['leavesRejected', currentEmployee?.email],
       })
     },
   })
@@ -224,13 +226,5 @@ export const useLeavesModel = (employeeEmail: string) => {
       leavesQuery.isLoading ||
       leavesAwaitingApprovalQuery.isLoading ||
       leavesRejectedQuery.isLoading,
-    isError:
-      leavesQuery.isError ||
-      leavesAwaitingApprovalQuery.isError ||
-      leavesRejectedQuery.isError,
-    error:
-      leavesQuery.error ||
-      leavesAwaitingApprovalQuery.error ||
-      leavesRejectedQuery.error,
   }
 }

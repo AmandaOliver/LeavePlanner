@@ -28,17 +28,25 @@ export const Navigation = () => {
             <li>
               <NavLink to="/leaves">My Leaves</NavLink>
             </li>
+            {!!currentEmployee.subordinates?.length && (
+              <li>
+                <NavLink to={`/requests/${currentEmployee.email}`}>
+                  Leave requests
+                </NavLink>
+              </li>
+            )}
+            {currentEmployee.isOrgOwner && (
+              <li>
+                <NavLink
+                  to={`/setup-organization/${currentEmployee.organization}`}
+                >
+                  Setup your organization
+                </NavLink>
+              </li>
+            )}
           </>
         )}
-        {currentEmployee?.isOrgOwner && (
-          <li>
-            <NavLink
-              to={`/setup-organization/${currentEmployee?.organization}`}
-            >
-              Setup your organization
-            </NavLink>
-          </li>
-        )}
+
         <li>
           <LogoutButton />
         </li>

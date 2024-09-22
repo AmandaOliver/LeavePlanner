@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
-using System.Linq.Expressions;
 
 
 
@@ -58,18 +57,21 @@ public class LeavesController
 	}
 	public async Task<IResult> GetLeavesAwaitingApproval(string email)
 	{
-		var leaves = await _context.Leaves
-						   .Where(leave => leave.Owner == email &&
-										   leave.ApprovedBy == null && leave.RejectedBy == null && leave.Type != "bankHoliday")
-						   .ToListAsync();
+		var leaves = await GetLeaveRequests(email);
 
 		if (leaves == null || leaves.Count == 0)
 		{
 			return Results.NotFound("No leaves found for this employee.");
 		}
 
-		// Return the leaves
 		return Results.Ok(leaves);
+	}
+	public async Task<List<Leave>> GetLeaveRequests(string email)
+	{
+		return await _context.Leaves
+						   .Where(leave => leave.Owner == email &&
+										   leave.ApprovedBy == null && leave.RejectedBy == null && leave.Type != "bankHoliday")
+						   .ToListAsync();
 	}
 	private async Task<IResult> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId)
 	{
@@ -170,17 +172,23 @@ public class LeavesController
 		using var transaction = await _context.Database.BeginTransactionAsync();
 		try
 		{
+			var employee = await _context.Employees.FindAsync(model.Owner);
+
+			if (employee == null)
+			{
+				return Results.NotFound("Employee not found.");
+			}
 			Leave leave = new Leave
 			{
 				Description = model.Description,
 				DateStart = model.DateStart,
 				DateEnd = model.DateEnd,
 				Type = model.Type,
-				Owner = model.Owner
+				Owner = model.Owner,
+				OwnerNavigation = employee
 			};
-			var employee = await _context.Employees.FindAsync(model.Owner);
 
-			if (employee != null && employee.ManagedBy == null)
+			if (employee.ManagedBy == null)
 			{
 				leave.ApprovedBy = model.Owner;
 			}

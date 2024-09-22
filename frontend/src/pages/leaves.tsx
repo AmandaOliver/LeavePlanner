@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { useLeavesModel } from '../models/Leaves'
 import { SetupLeave } from '../components/setupLeave'
 import { Leave } from '../components/leave'
-import { EmployeeType } from '../models/Employee'
+import LoadingPage from './loading'
 type TabsType = 'leaves' | 'leavesAwaitingApproval' | 'leavesRejected'
 
-export const Leaves = ({ employee }: { employee: EmployeeType }) => {
-  const { leaves, leavesAwaitingApproval, leavesRejected } = useLeavesModel(
-    employee.email
-  )
+export const Leaves = () => {
+  const { leaves, leavesAwaitingApproval, leavesRejected, isLoading } =
+    useLeavesModel()
   const [isRequestLeaveFormOpen, setIsRequestLeaveFormOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TabsType>('leaves')
   const leavesToDisplay =
@@ -17,6 +16,7 @@ export const Leaves = ({ employee }: { employee: EmployeeType }) => {
       : activeTab === 'leavesAwaitingApproval'
         ? leavesAwaitingApproval
         : leavesRejected
+  if (isLoading) return <LoadingPage />
   return (
     <>
       <button onClick={() => setIsRequestLeaveFormOpen(true)}>
@@ -24,7 +24,7 @@ export const Leaves = ({ employee }: { employee: EmployeeType }) => {
       </button>
       {isRequestLeaveFormOpen && (
         <>
-          <SetupLeave employee={employee} />
+          <SetupLeave />
           <button onClick={() => setIsRequestLeaveFormOpen(false)}>
             Close request form
           </button>
@@ -52,7 +52,7 @@ export const Leaves = ({ employee }: { employee: EmployeeType }) => {
       </div>
       <ul>
         {leavesToDisplay.map((leave) => (
-          <Leave key={leave.id} leave={leave} employee={employee} />
+          <Leave key={leave.id} leave={leave} />
         ))}
       </ul>
     </>

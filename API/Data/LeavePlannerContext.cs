@@ -22,8 +22,6 @@ public partial class LeavePlannerContext : DbContext
 
     public virtual DbSet<Leave> Leaves { get; set; }
 
-    public virtual DbSet<Notification> Notifications { get; set; }
-
     public virtual DbSet<Organization> Organizations { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -116,38 +114,6 @@ public partial class LeavePlannerContext : DbContext
             entity.HasOne(d => d.OwnerNavigation).WithMany(p => p.LeaveOwnerNavigations)
                 .HasForeignKey(d => d.Owner)
                 .HasConstraintName("fk_leave_owner");
-        });
-
-        modelBuilder.Entity<Notification>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PRIMARY");
-
-            entity.ToTable("Notifications", "LeavePlanner");
-
-            entity.HasIndex(e => e.Creator, "fk_notification_creator");
-
-            entity.HasIndex(e => e.LeaveId, "fk_notification_leave");
-
-            entity.HasIndex(e => e.Recipient, "fk_notification_recipient");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Creator).HasColumnName("creator");
-            entity.Property(e => e.LeaveId).HasColumnName("leaveId");
-            entity.Property(e => e.Recipient).HasColumnName("recipient");
-
-            entity.HasOne(d => d.CreatorNavigation).WithMany(p => p.NotificationCreatorNavigations)
-                .HasForeignKey(d => d.Creator)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_notification_creator");
-
-            entity.HasOne(d => d.Leave).WithMany(p => p.Notifications)
-                .HasForeignKey(d => d.LeaveId)
-                .HasConstraintName("fk_notification_leave");
-
-            entity.HasOne(d => d.RecipientNavigation).WithMany(p => p.NotificationRecipientNavigations)
-                .HasForeignKey(d => d.Recipient)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_notification_recipient");
         });
 
         modelBuilder.Entity<Organization>(entity =>

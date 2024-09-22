@@ -24,9 +24,5 @@ public partial class Leave
     public virtual Employee? ApprovedByNavigation { get; set; }
     [JsonIgnore]
     public virtual Employee? RejectedByNavigation { get; set; }
-    [JsonIgnore]
-    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
-
-    [JsonIgnore]
-    public virtual Employee? OwnerNavigation { get; set; }
+    public required virtual Employee OwnerNavigation { get; set; }
 }

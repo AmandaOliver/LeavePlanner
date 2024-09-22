@@ -25,9 +25,5 @@ public partial class Employee
     [JsonIgnore]
     public virtual Employee? ManagedByNavigation { get; set; }
     [JsonIgnore]
-    public virtual ICollection<Notification> NotificationCreatorNavigations { get; set; } = new List<Notification>();
-    [JsonIgnore]
-    public virtual ICollection<Notification> NotificationRecipientNavigations { get; set; } = new List<Notification>();
-    [JsonIgnore]
     public virtual Organization? OrganizationNavigation { get; set; }
 }

@@ -10,6 +10,7 @@ import { Navigation } from './components/navigation'
 import LoadingPage from './pages/loading'
 import { SetupOrganization } from './pages/setupOrganization'
 import { Leaves } from './pages/leaves'
+import { Requests } from './pages/requests'
 
 export const EmployeeRoutes = () => {
   const { currentEmployee, isLoading } = useEmployeeModel()
@@ -32,11 +33,11 @@ export const EmployeeRoutes = () => {
           />
           <Route
             path="/leaves"
-            element={
-              <AuthenticationGuard
-                component={() => <Leaves employee={currentEmployee} />}
-              />
-            }
+            element={<AuthenticationGuard component={Leaves} />}
+          />
+          <Route
+            path="/requests/:id"
+            element={<AuthenticationGuard component={Requests} />}
           />
           <Route
             path="/setup-organization/:id"

@@ -86,7 +86,8 @@ public class BankHolidayService : IBankHolidayService
 						Owner = employee.Email,
 						Description = holiday.Summary,
 						ApprovedBy = null, // Bank holiday doesn't need approval
-						RejectedBy = null
+						RejectedBy = null,
+						OwnerNavigation = employee
 					};
 					_context.Leaves.Add(leave);
 				}

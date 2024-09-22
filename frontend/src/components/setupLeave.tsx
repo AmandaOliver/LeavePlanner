@@ -3,26 +3,26 @@ import {
   FormEvent,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react'
 import { LeaveType, LeaveTypes, useLeavesModel } from '../models/Leaves'
-import { EmployeeType } from '../models/Employee'
+import { useEmployeeModel } from '../models/Employee'
+import LoadingPage from '../pages/loading'
 
-export const SetupLeave = ({
-  leave,
-  employee,
-}: {
-  leave?: LeaveType
-  employee: EmployeeType
-}) => {
+export const SetupLeave = ({ leave }: { leave?: LeaveType }) => {
   const { createLeave, updateLeave, leaves, leavesAwaitingApproval } =
-    useLeavesModel(employee.email)
+    useLeavesModel()
+  const { currentEmployee } = useEmployeeModel()
   const [description, setDescription] = useState(leave?.description || '')
   const [dateStart, setDateStart] = useState(leave?.dateStart || '')
   const [dateEnd, setDateEnd] = useState(leave?.dateEnd || '')
   const [type, setType] = useState<LeaveTypes>(leave?.type || 'paidTimeOff')
-  const totalLeaves = [...leaves, ...leavesAwaitingApproval]
+  const totalLeaves = useMemo(
+    () => [...leaves, ...leavesAwaitingApproval],
+    [leaves, leavesAwaitingApproval]
+  )
   const [dateStartError, setdateStartError] = useState<string | null>(null)
   const [dateEndError, setdateEndError] = useState<string | null>(null)
 
@@ -32,6 +32,7 @@ export const SetupLeave = ({
   const handleDateStartChange = (event: ChangeEvent<HTMLInputElement>) => {
     setDateStart(event.target.value)
   }
+
   const handleDateEndChange = (event: ChangeEvent<HTMLInputElement>) => {
     setDateEnd(event.target.value)
   }
@@ -68,7 +69,7 @@ export const SetupLeave = ({
     const end = new Date(dateEnd)
     const startYear = start.getFullYear()
     const endYear = end.getFullYear()
-
+    if (!currentEmployee) return
     // Helper function to calculate weekdays between two dates
     const getWeekdaysBetween = (start: Date, end: Date) => {
       let totalDays = 0
@@ -118,12 +119,12 @@ export const SetupLeave = ({
       const daysInNextYear = getWeekdaysBetween(startOfNextYear, end)
 
       // Check if employee has enough paid time off for both years
-      if (daysInCurrentYear > employee.paidTimeOffLeft) {
+      if (daysInCurrentYear > currentEmployee.paidTimeOffLeft) {
         setdateEndError(
           `You cannot request more days than you have left for the year ${startYear}.`
         )
         return false
-      } else if (daysInNextYear > employee.paidTimeOffLeftNextYear) {
+      } else if (daysInNextYear > currentEmployee.paidTimeOffLeftNextYear) {
         setdateEndError(
           `You cannot request more days than you have left for the year ${endYear}.`
         )
@@ -134,12 +135,12 @@ export const SetupLeave = ({
       const totalWeekdays = getWeekdaysBetween(start, end)
 
       if (startYear === new Date().getFullYear()) {
-        if (employee.paidTimeOffLeft < totalWeekdays) {
+        if (currentEmployee.paidTimeOffLeft < totalWeekdays) {
           setdateEndError('You cannot request more days than you have left.')
           return false
         }
       } else {
-        if (employee.paidTimeOffLeftNextYear < totalWeekdays) {
+        if (currentEmployee.paidTimeOffLeftNextYear < totalWeekdays) {
           setdateEndError('You cannot request more days than you have left.')
           return false
         }
@@ -149,18 +150,8 @@ export const SetupLeave = ({
     // If no errors, clear the error message
     setdateEndError(null)
     return true
-  }, [dateEnd, dateStart, employee, leave, totalLeaves])
+  }, [dateEnd, dateStart, leave, totalLeaves, currentEmployee])
 
-  useEffect(() => {
-    if (dateEnd) {
-      validateDateEnd()
-    }
-  }, [dateEnd, validateDateEnd])
-  useEffect(() => {
-    if (dateStart) {
-      validateDateStart()
-    }
-  }, [dateStart, validateDateStart])
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
@@ -181,6 +172,21 @@ export const SetupLeave = ({
       })
     }
   }
+
+  useEffect(() => {
+    if (dateEnd) {
+      validateDateEnd()
+    }
+  }, [dateEnd, validateDateEnd])
+
+  useEffect(() => {
+    if (dateStart) {
+      validateDateStart()
+    }
+  }, [dateStart, validateDateStart])
+
+  if (!currentEmployee) return <LoadingPage />
+
   return (
     <form onSubmit={handleSubmit}>
       <div>

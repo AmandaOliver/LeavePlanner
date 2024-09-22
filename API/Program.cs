@@ -23,6 +23,7 @@ builder.Services.AddScoped<BankHolidayService>();
 builder.Services.AddScoped<PaidTimeOffLeft>();
 builder.Services.AddScoped<EmployeesController>();
 builder.Services.AddScoped<LeavesController>();
+builder.Services.AddScoped<RequestsController>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -94,6 +95,7 @@ app.MapControllers();
 app.MapOrganizationsEndpoints();
 app.MapEmployeesEndpoints();
 app.MapLeavesEndpoints();
+app.MapRequestsEndpoints();
 app.MapEmployeeOrganizationEndpoints();
 app.MapCountriesEndpoints();
 app.Run();

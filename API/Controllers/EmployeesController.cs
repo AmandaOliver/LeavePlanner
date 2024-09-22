@@ -102,7 +102,7 @@ public class EmployeesController
         return Results.Ok(employeeWithSubordinates);
     }
 
-    private async Task<EmployeeWithSubordinatesDTO> GetEmployeeWithSubordinates(string employeeEmail)
+    public async Task<EmployeeWithSubordinatesDTO> GetEmployeeWithSubordinates(string employeeEmail)
     {
         var employeeWithSubordinates = await _context.Employees
                                     .Where(e => e.Email == employeeEmail)
