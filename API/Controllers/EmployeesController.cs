@@ -144,15 +144,16 @@ public class EmployeesController
 
     public async Task<IResult> UpdateEmployee(string email, EmployeeUpdateDTO model)
     {
-        var employee = await _context.Employees.FindAsync(email);
-
-        if (employee == null)
-        {
-            return Results.NotFound("Employee not found.");
-        }
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
+            var employee = await _context.Employees.FindAsync(email);
+
+            if (employee == null)
+            {
+                return Results.NotFound("Employee not found.");
+            }
+
             // if country changes we need to update the leaves
             if (employee.Country != model.Country)
             {

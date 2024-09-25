@@ -1,6 +1,7 @@
-import { RequestType } from '../models/Requests'
+import { RequestType, useRequestsModel } from '../models/Requests'
 
 export const Request = ({ request }: { request: RequestType }) => {
+  const { approveRequest, rejectRequest } = useRequestsModel()
   return (
     <li key={request.id}>
       <details key={request.id}>
@@ -8,10 +9,10 @@ export const Request = ({ request }: { request: RequestType }) => {
           {request.ownerName} {request.dateStart} - {request.dateEnd}:{' '}
           {request.description}
         </summary>
-        <button onClick={() => console.log('approve leave')}>
+        <button onClick={() => approveRequest({ requestId: request.id })}>
           Approve Leave
         </button>
-        <button onClick={() => console.log('Reject leave')}>
+        <button onClick={() => rejectRequest({ requestId: request.id })}>
           Reject Leave
         </button>
       </details>

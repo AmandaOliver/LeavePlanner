@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
 using Microsoft.IdentityModel.Tokens;
+using System.Runtime.CompilerServices;
+using MySqlX.XDevAPI.Common;
 
 
 
@@ -11,6 +13,8 @@ public static class RequestsEndpointsExtensions
 	{
 
 		endpoints.MapGet("/requests/{email}", async (RequestsController controller, string email) => await controller.GetRequests(email)).RequireAuthorization();
+		endpoints.MapPost("/requests/{email}/approve/{id}", async (RequestsController controller, string email, string id) => await controller.ApproveRequest(id, email)).RequireAuthorization();
+		endpoints.MapPost("/requests/{email}/reject/{id}", async (RequestsController controller, string email, string id) => await controller.RejectRequest(id, email)).RequireAuthorization();
 
 	}
 }
@@ -53,5 +57,57 @@ public class RequestsController
 
 		}
 		return Results.Ok(requests);
+	}
+	public async Task<IResult> ApproveRequest(string id, string email)
+	{
+		if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(email))
+		{
+			return Results.BadRequest("email and request id can't be empty");
+		}
+		using var transaction = await _context.Database.BeginTransactionAsync();
+		try
+		{
+			var request = await _context.Leaves.FindAsync(int.Parse(id));
+			if (request == null)
+			{
+				return Results.NotFound("request not found");
+
+			}
+			request.ApprovedBy = email;
+			await _context.SaveChangesAsync();
+			await transaction.CommitAsync();
+			return Results.Ok(request);
+		}
+		catch (Exception ex)
+		{
+			await transaction.RollbackAsync();
+			return Results.Problem(ex.Message);
+		}
+	}
+	public async Task<IResult> RejectRequest(string id, string email)
+	{
+		if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(email))
+		{
+			return Results.BadRequest("email and request id can't be empty");
+		}
+		using var transaction = await _context.Database.BeginTransactionAsync();
+		try
+		{
+			var request = await _context.Leaves.FindAsync(int.Parse(id));
+			if (request == null)
+			{
+				return Results.NotFound("request not found");
+
+			}
+			request.RejectedBy = email;
+			await _context.SaveChangesAsync();
+			await transaction.CommitAsync();
+			return Results.Ok(request);
+		}
+		catch (Exception ex)
+		{
+			await transaction.RollbackAsync();
+			return Results.Problem(ex.Message);
+		}
 	}
 }
