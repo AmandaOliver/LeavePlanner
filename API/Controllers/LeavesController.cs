@@ -36,10 +36,10 @@ public class LeavesController
 
 		if (leaves == null || leaves.Count == 0)
 		{
-			return Results.NotFound("No leaves found for this employee.");
+			return Results.Ok(new List<Leave>());
 		}
-
-		return Results.Ok(leaves);
+		var leavesWithDaysRequested = await GetLeavesWithDaysRequested(leaves, email);
+		return Results.Ok(leavesWithDaysRequested);
 	}
 	public async Task<IResult> GetLeavesRejected(string email)
 	{
@@ -50,10 +50,11 @@ public class LeavesController
 
 		if (leaves == null || leaves.Count == 0)
 		{
-			return Results.NotFound("No leaves found for this employee.");
+			return Results.Ok(new List<Leave>());
 		}
+		var leavesWithDaysRequested = await GetLeavesWithDaysRequested(leaves, email);
 
-		return Results.Ok(leaves);
+		return Results.Ok(leavesWithDaysRequested);
 	}
 	public async Task<IResult> GetLeavesAwaitingApproval(string email)
 	{
@@ -61,10 +62,11 @@ public class LeavesController
 
 		if (leaves == null || leaves.Count == 0)
 		{
-			return Results.NotFound("No leaves found for this employee.");
+			return Results.Ok(new List<Leave>());
 		}
+		var leavesWithDaysRequested = await GetLeavesWithDaysRequested(leaves, email);
 
-		return Results.Ok(leaves);
+		return Results.Ok(leavesWithDaysRequested);
 	}
 	public async Task<List<Leave>> GetLeaveRequests(string email)
 	{
@@ -73,91 +75,79 @@ public class LeavesController
 										   leave.ApprovedBy == null && leave.RejectedBy == null && leave.Type != "bankHoliday")
 						   .ToListAsync();
 	}
-	private async Task<IResult> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId)
+	private async Task<string> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId)
 	{
-		// Leave validation checks
+		// Leave update validation checks
 		if (leaveId != null)
 		{
 			var leave = await _context.Leaves.FindAsync(leaveId);
 			if (leave == null)
 			{
-				return Results.NotFound("Leave not found.");
+				return "Leave not found.";
 			}
 			if (leave.Type == "bankHoliday")
 			{
-				return Results.BadRequest("You cannot update bank holidays.");
+				return "You cannot update bank holidays.";
 			}
 			if (leave.RejectedBy != null)
 			{
-				return Results.BadRequest("You cannot update a rejected leave.");
+				return "You cannot update a rejected leave.";
 			}
 		}
 
 		// Date validation checks
 		if (dateStart < DateTime.UtcNow.Date || dateEnd < DateTime.UtcNow.Date)
 		{
-			return Results.BadRequest("You cannot request leave for dates in the past.");
+			return "You cannot request leave for dates in the past.";
 		}
 
 		if (dateEnd < dateStart)
 		{
-			return Results.BadRequest("The end date cannot be before the start date.");
+			return "The end date cannot be before the start date.";
 		}
 
 		var employee = await _context.Employees.FindAsync(owner);
 		if (employee == null)
 		{
-			return Results.NotFound("Employee not found.");
+			return "Employee not found.";
 		}
 
-		// Exclude weekends when calculating days off
-		int totalWeekdaysRequested = _paidTimeOffLeft.GetWeekdaysBetween(dateStart, dateEnd.AddDays(-1));  // Adjusted to exclude dateEnd
+
 
 		// If leave crosses over into the next year
 		if (dateStart.Year != dateEnd.Year)
 		{
-			var endOfYear = new DateTime(dateStart.Year, 12, 31);
-			var daysInCurrentYear = _paidTimeOffLeft.GetWeekdaysBetween(dateStart, endOfYear);
+			var endOfYear = new DateTime(dateStart.Year + 1, 1, 1);
+			var daysInCurrentYear = await _paidTimeOffLeft.GetDaysRequested(dateStart, endOfYear, owner, dateStart.Year, leaveId);
 			var startOfNextYear = new DateTime(dateEnd.Year, 1, 1);
-			var daysInNextYear = _paidTimeOffLeft.GetWeekdaysBetween(startOfNextYear, dateEnd.AddDays(-1));
+			var daysInNextYear = await _paidTimeOffLeft.GetDaysRequested(startOfNextYear, dateEnd, owner, dateEnd.Year, leaveId);
 
 			// Check for enough paid time off in current year
 			var paidTimeOffLeftForCurrentYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateStart.Year, leaveId);
 			if (daysInCurrentYear > paidTimeOffLeftForCurrentYear)
 			{
-				return Results.BadRequest($"You cannot request more days than you have left for the year {dateStart.Year}.");
+				return $"You cannot request more days than you have left for the year {dateStart.Year}.";
 			}
 
 			// Check for enough paid time off in next year
 			var paidTimeOffLeftForNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateEnd.Year, leaveId);
 			if (daysInNextYear > paidTimeOffLeftForNextYear)
 			{
-				return Results.BadRequest($"You cannot request more days than you have left for the year {dateEnd.Year}.");
+				return $"You cannot request more days than you have left for the year {dateEnd.Year}.";
 			}
 		}
 		else
 		{
+			int totalWeekdaysRequested = await _paidTimeOffLeft.GetDaysRequested(dateStart, dateEnd, owner, dateStart.Year, leaveId);
 			var paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateStart.Year, leaveId);
 
 			if (totalWeekdaysRequested > paidTimeOffLeft)
 			{
-				return Results.BadRequest("You cannot request more days than you have left.");
+				return "You cannot request more days than you have left.";
 			}
 		}
 
-		// Check for conflicting leaves
-		var conflictingLeaves = await _context.Leaves
-			.Where(leave => leave.Owner == owner && leave.Id != leaveId &&
-							((dateStart >= leave.DateStart && dateStart < leave.DateEnd.AddDays(-1)) ||
-							 (dateEnd >= leave.DateStart && dateEnd < leave.DateEnd.AddDays(-1))))
-			.ToListAsync();
-
-		if (conflictingLeaves.Any())
-		{
-			return Results.BadRequest("You cannot request leave for the same day(s) you already have requested.");
-		}
-
-		return Results.Ok();
+		return "success";
 	}
 
 
@@ -165,9 +155,9 @@ public class LeavesController
 	public async Task<IResult> CreateLeave(LeaveCreateDTO model)
 	{
 		var validationResult = await ValidateLeave(model.DateStart, model.DateEnd, model.Owner, null);
-		if (!validationResult.Equals(Results.Ok()))
+		if (validationResult != "success")
 		{
-			return validationResult;
+			return Results.BadRequest(validationResult);
 		}
 		using var transaction = await _context.Database.BeginTransactionAsync();
 		try
@@ -185,7 +175,9 @@ public class LeavesController
 				DateEnd = model.DateEnd,
 				Type = model.Type,
 				Owner = model.Owner,
-				OwnerNavigation = employee
+				OwnerNavigation = employee,
+				CreatedAt = DateTime.UtcNow
+
 			};
 
 			if (employee.ManagedBy == null)
@@ -208,9 +200,9 @@ public class LeavesController
 	public async Task<IResult> UpdateLeave(int leaveId, LeaveUpdateDTO leaveUpdate)
 	{
 		var validationResult = await ValidateLeave(leaveUpdate.DateStart, leaveUpdate.DateEnd, leaveUpdate.Owner, leaveUpdate.Id);
-		if (!validationResult.Equals(Results.Ok()))
+		if (validationResult != "success")
 		{
-			return validationResult;
+			return Results.BadRequest(validationResult);
 		}
 		using var transaction = await _context.Database.BeginTransactionAsync();
 		var leave = await _context.Leaves.FindAsync(leaveId);
@@ -226,6 +218,8 @@ public class LeavesController
 			leave.DateStart = leaveUpdate.DateStart;
 			leave.DateEnd = leaveUpdate.DateEnd;
 			leave.Type = leaveUpdate.Type;
+			leave.CreatedAt = DateTime.UtcNow;
+
 			_context.Leaves.Update(leave);
 			await _context.SaveChangesAsync();
 			await transaction.CommitAsync();
@@ -270,5 +264,29 @@ public class LeavesController
 
 		}
 
+	}
+	private async Task<List<LeaveWithDaysDTO>> GetLeavesWithDaysRequested(List<Leave> leaves, string email)
+	{
+		// Dynamically calculate requested days
+		var leavesWithDays = new List<LeaveWithDaysDTO>();
+		foreach (var leave in leaves)
+		{
+			int requestedDaysThisYear = await _paidTimeOffLeft.GetDaysRequested(leave.DateStart, leave.DateEnd, email, DateTime.UtcNow.Year, leave.Id);
+			int requestedDaysNextYear = await _paidTimeOffLeft.GetDaysRequested(leave.DateStart, leave.DateEnd, email, DateTime.UtcNow.Year + 1, leave.Id);
+
+			leavesWithDays.Add(new LeaveWithDaysDTO
+			{
+				Id = leave.Id,
+				Type = leave.Type,
+				DateStart = leave.DateStart,
+				DateEnd = leave.DateEnd,
+				Description = leave.Description,
+				ApprovedBy = leave.ApprovedBy,
+				RejectedBy = leave.RejectedBy,
+				DaysRequested = requestedDaysThisYear + requestedDaysNextYear,
+			});
+		}
+
+		return leavesWithDays;
 	}
 }

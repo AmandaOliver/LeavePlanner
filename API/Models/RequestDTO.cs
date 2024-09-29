@@ -8,4 +8,6 @@ public partial class RequestDTO
 	public DateTime DateEnd { get; set; }
 	public string? Description { get; set; }
 	public string? OwnerName { get; set; }
+
+	public int DaysRequested { get; set; }
 }

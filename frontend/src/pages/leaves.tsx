@@ -3,11 +3,13 @@ import { useLeavesModel } from '../models/Leaves'
 import { SetupLeave } from '../components/setupLeave'
 import { Leave } from '../components/leave'
 import LoadingPage from './loading'
+import { useEmployeeModel } from '../models/Employee'
 type TabsType = 'leaves' | 'leavesAwaitingApproval' | 'leavesRejected'
 
 export const Leaves = () => {
   const { leaves, leavesAwaitingApproval, leavesRejected, isLoading } =
     useLeavesModel()
+  const { currentEmployee } = useEmployeeModel()
   const [isRequestLeaveFormOpen, setIsRequestLeaveFormOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TabsType>('leaves')
   const leavesToDisplay =
@@ -19,6 +21,11 @@ export const Leaves = () => {
   if (isLoading) return <LoadingPage />
   return (
     <>
+      <h3>Paid Time off left this year: {currentEmployee?.paidTimeOffLeft}</h3>
+      <h3>
+        Paid Time off left next year: {currentEmployee?.paidTimeOffLeftNextYear}
+      </h3>
+
       <button onClick={() => setIsRequestLeaveFormOpen(true)}>
         Request Leave
       </button>
@@ -51,7 +58,7 @@ export const Leaves = () => {
         </button>
       </div>
       <ul>
-        {leavesToDisplay.map((leave) => (
+        {leavesToDisplay?.map((leave) => (
           <Leave key={leave.id} leave={leave} />
         ))}
       </ul>

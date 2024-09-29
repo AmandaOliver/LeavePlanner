@@ -17,6 +17,7 @@ export type LeaveType = {
   owner: string
   approvedBy: string
   rejectedBy: string
+  daysRequested: number
 }
 export type CreateLeaveParamType = {
   description: string
@@ -55,13 +56,13 @@ export const useLeavesModel = () => {
 
     if (response.ok) {
       const responseJson = await response.json()
-      return responseJson.map((leave: LeaveType) => ({
+      return responseJson?.map((leave: LeaveType) => ({
         ...leave,
         dateStart: leave.dateStart.split('T')[0],
         dateEnd: leave.dateEnd.split('T')[0],
       }))
     } else {
-      return []
+      throw new Error('Failed to fetch approved leaves')
     }
   }
   const fetchLeavesAwaitingApproval = async (): Promise<LeaveType[]> => {
@@ -80,13 +81,13 @@ export const useLeavesModel = () => {
 
     if (response.ok) {
       const responseJson = await response.json()
-      return responseJson.map((leave: LeaveType) => ({
+      return responseJson?.map((leave: LeaveType) => ({
         ...leave,
         dateStart: leave.dateStart.split('T')[0],
         dateEnd: leave.dateEnd.split('T')[0],
       }))
     } else {
-      return []
+      throw new Error('Failed to fetch pending leaves')
     }
   }
   const fetchLeavesRejected = async (): Promise<LeaveType[]> => {
@@ -105,13 +106,13 @@ export const useLeavesModel = () => {
 
     if (response.ok) {
       const responseJson = await response.json()
-      return responseJson.map((leave: LeaveType) => ({
+      return responseJson?.map((leave: LeaveType) => ({
         ...leave,
         dateStart: leave.dateStart.split('T')[0],
         dateEnd: leave.dateEnd.split('T')[0],
       }))
     } else {
-      return []
+      throw new Error('Failed to fetch rejected leaves')
     }
   }
   const leavesQuery = useQuery({
@@ -143,6 +144,9 @@ export const useLeavesModel = () => {
           }),
         }
       )
+      if (!response.ok) {
+        throw new Error('Failed to create leave')
+      }
       return await response.json()
     },
     onSuccess: () => {

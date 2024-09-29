@@ -92,7 +92,7 @@ public partial class LeavePlannerContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.ApprovedBy).HasColumnName("approvedBy");
             entity.Property(e => e.RejectedBy).HasColumnName("rejectedBy");
-
+            entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
             entity.Property(e => e.DateEnd)
                 .HasColumnType("datetime")
                 .HasColumnName("dateEnd");

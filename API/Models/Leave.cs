@@ -18,6 +18,7 @@ public partial class Leave
 
     public string? ApprovedBy { get; set; }
     public string? RejectedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
 
     [JsonIgnore]

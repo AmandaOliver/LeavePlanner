@@ -3,7 +3,6 @@ import {
   FormEvent,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -12,17 +11,13 @@ import { useEmployeeModel } from '../models/Employee'
 import LoadingPage from '../pages/loading'
 
 export const SetupLeave = ({ leave }: { leave?: LeaveType }) => {
-  const { createLeave, updateLeave, leaves, leavesAwaitingApproval } =
-    useLeavesModel()
+  const { createLeave, updateLeave } = useLeavesModel()
   const { currentEmployee } = useEmployeeModel()
   const [description, setDescription] = useState(leave?.description || '')
   const [dateStart, setDateStart] = useState(leave?.dateStart || '')
   const [dateEnd, setDateEnd] = useState(leave?.dateEnd || '')
   const [type, setType] = useState<LeaveTypes>(leave?.type || 'paidTimeOff')
-  const totalLeaves = useMemo(
-    () => [...leaves, ...leavesAwaitingApproval],
-    [leaves, leavesAwaitingApproval]
-  )
+
   const [dateStartError, setdateStartError] = useState<string | null>(null)
   const [dateEndError, setdateEndError] = useState<string | null>(null)
 
@@ -38,54 +33,19 @@ export const SetupLeave = ({ leave }: { leave?: LeaveType }) => {
   }
 
   const validateDateStart = useCallback(() => {
-    const start = new Date(dateStart)
-
     if (dateStartRef.current && !dateStartRef.current.checkValidity()) {
       setdateStartError('Please enter a valid start date.')
-      return false
-    } else if (
-      totalLeaves.find((l) => {
-        const isCurrentLeave = l.id === leave?.id
-        const leaveEndDate = new Date(l.dateEnd)
-        leaveEndDate.setDate(leaveEndDate.getDate() - 1)
-        return (
-          !isCurrentLeave &&
-          start >= new Date(l.dateStart) &&
-          start <= leaveEndDate
-        )
-      })
-    ) {
-      setdateStartError(
-        'The requested leave start date conflicts with another leave'
-      )
       return false
     }
     setdateStartError(null)
     return true
-  }, [dateStart, leave, totalLeaves])
+  }, [])
 
   const validateDateEnd = useCallback(() => {
     const start = new Date(dateStart)
     const end = new Date(dateEnd)
-    const startYear = start.getFullYear()
-    const endYear = end.getFullYear()
+
     if (!currentEmployee) return
-    // Helper function to calculate weekdays between two dates
-    const getWeekdaysBetween = (start: Date, end: Date) => {
-      let totalDays = 0
-      let currentDate = new Date(start)
-
-      while (currentDate <= end) {
-        const dayOfWeek = currentDate.getDay()
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-          // 0 = Sunday, 6 = Saturday
-          totalDays++
-        }
-        currentDate.setDate(currentDate.getDate() + 1)
-      }
-
-      return totalDays
-    }
 
     if (dateEndRef.current && !dateEndRef.current.value) {
       setdateEndError('Please enter a valid end date.')
@@ -93,64 +53,11 @@ export const SetupLeave = ({ leave }: { leave?: LeaveType }) => {
     } else if (end < start) {
       setdateEndError('The end date cannot be before the start date.')
       return false
-    } else if (
-      totalLeaves.find((l) => {
-        const isCurrentLeave = l.id === leave?.id
-        return (
-          !isCurrentLeave &&
-          end > new Date(l.dateStart) &&
-          end <= new Date(l.dateEnd)
-        )
-      })
-    ) {
-      setdateEndError(
-        'The requested leave end date conflicts with another leave'
-      )
-      return false
-    } else if (startYear !== endYear) {
-      // Leave spans multiple years, split the calculation
-
-      // Calculate weekdays for current year
-      const endOfYear = new Date(startYear, 11, 31) // December 31 of the start year
-      const daysInCurrentYear = getWeekdaysBetween(start, endOfYear)
-
-      // Calculate weekdays for next year
-      const startOfNextYear = new Date(endYear, 0, 1) // January 1 of the end year
-      const daysInNextYear = getWeekdaysBetween(startOfNextYear, end)
-
-      // Check if employee has enough paid time off for both years
-      if (daysInCurrentYear > currentEmployee.paidTimeOffLeft) {
-        setdateEndError(
-          `You cannot request more days than you have left for the year ${startYear}.`
-        )
-        return false
-      } else if (daysInNextYear > currentEmployee.paidTimeOffLeftNextYear) {
-        setdateEndError(
-          `You cannot request more days than you have left for the year ${endYear}.`
-        )
-        return false
-      }
-    } else if (startYear === endYear) {
-      // Same year calculation
-      const totalWeekdays = getWeekdaysBetween(start, end)
-
-      if (startYear === new Date().getFullYear()) {
-        if (currentEmployee.paidTimeOffLeft < totalWeekdays) {
-          setdateEndError('You cannot request more days than you have left.')
-          return false
-        }
-      } else {
-        if (currentEmployee.paidTimeOffLeftNextYear < totalWeekdays) {
-          setdateEndError('You cannot request more days than you have left.')
-          return false
-        }
-      }
     }
-
     // If no errors, clear the error message
     setdateEndError(null)
     return true
-  }, [dateEnd, dateStart, leave, totalLeaves, currentEmployee])
+  }, [dateEnd, dateStart, currentEmployee])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

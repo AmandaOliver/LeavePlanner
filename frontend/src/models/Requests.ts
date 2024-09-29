@@ -11,6 +11,7 @@ export type RequestType = {
   dateEnd: string
   description: string
   ownerName: string
+  daysRequested: number
 }
 type ApproveRequestParams = {
   requestId: number

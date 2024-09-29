@@ -9,7 +9,8 @@ export const Leave = ({ leave }: { leave: LeaveType }) => {
     <li key={leave.id}>
       <details key={leave.id}>
         <summary>
-          {leave.type} {leave.dateStart} - {leave.dateEnd}: {leave.description}
+          {leave.type} {leave.daysRequested} days from {leave.dateStart} to{' '}
+          {leave.dateEnd}: {leave.description}
         </summary>
         {leave.type !== 'bankHoliday' &&
           (leave.approvedBy == null ||

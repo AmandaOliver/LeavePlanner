@@ -23,12 +23,15 @@ public class RequestsController
 	private readonly LeavePlannerContext _context;
 	private readonly EmployeesController _employeesController;
 	private readonly LeavesController _leavesController;
+	private readonly PaidTimeOffLeft _paidTimeOffLeft;
 
-	public RequestsController(LeavePlannerContext context, EmployeesController employeesController, LeavesController leavesController)
+
+	public RequestsController(LeavePlannerContext context, EmployeesController employeesController, LeavesController leavesController, PaidTimeOffLeft paidTimeOffLeft)
 	{
 		_context = context;
 		_employeesController = employeesController;
 		_leavesController = leavesController;
+		_paidTimeOffLeft = paidTimeOffLeft;
 	}
 	public async Task<IResult> GetRequests(string email)
 	{
@@ -43,6 +46,9 @@ public class RequestsController
 			var subordinateRequests = await _leavesController.GetLeaveRequests(subordinate.Email);
 			foreach (var leaveRequest in subordinateRequests)
 			{
+				int requestedDaysThisYear = await _paidTimeOffLeft.GetDaysRequested(leaveRequest.DateStart, leaveRequest.DateEnd, email, DateTime.UtcNow.Year, leaveRequest.Id);
+				int requestedDaysNextYear = await _paidTimeOffLeft.GetDaysRequested(leaveRequest.DateStart, leaveRequest.DateEnd, email, DateTime.UtcNow.Year + 1, leaveRequest.Id);
+
 				var request = new RequestDTO
 				{
 					Id = leaveRequest.Id,
@@ -51,11 +57,13 @@ public class RequestsController
 					DateEnd = leaveRequest.DateEnd,
 					Description = leaveRequest.Description,
 					OwnerName = leaveRequest.OwnerNavigation.Name,
+					DaysRequested = requestedDaysThisYear + requestedDaysNextYear,
 				};
 				requests.Add(request);
 			}
 
 		}
+
 		return Results.Ok(requests);
 	}
 	public async Task<IResult> ApproveRequest(string id, string email)

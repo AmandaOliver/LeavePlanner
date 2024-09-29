@@ -6,8 +6,8 @@ export const Request = ({ request }: { request: RequestType }) => {
     <li key={request.id}>
       <details key={request.id}>
         <summary>
-          {request.ownerName} {request.dateStart} - {request.dateEnd}:{' '}
-          {request.description}
+          {request.ownerName} {request.daysRequested} days from{' '}
+          {request.dateStart} to {request.dateEnd}: {request.description}
         </summary>
         <button onClick={() => approveRequest({ requestId: request.id })}>
           Approve Leave
