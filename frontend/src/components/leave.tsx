@@ -11,38 +11,40 @@ export const Leave = ({
 }) => {
   const [isUpdateLeaveFormOpen, setIsUpdateLeaveFormOpen] = useState(false)
   const { deleteLeave } = useLeavesModel()
+  const summary = (
+    <p>
+      {leave.type} {!isReadOnly && leave.daysRequested + ' days'} from{' '}
+      {leave.dateStart} to {leave.dateEnd}: {leave.description}
+    </p>
+  )
+  if (isReadOnly) return summary
   return (
-    <li key={leave.id}>
-      <details key={leave.id}>
-        <summary>
-          {leave.type} {!isReadOnly && leave.daysRequested + ' days'} from{' '}
-          {leave.dateStart} to {leave.dateEnd}: {leave.description}
-        </summary>
-        {!isReadOnly &&
-          leave.type !== 'bankHoliday' &&
-          (leave.approvedBy == null ||
-            (new Date(leave.dateStart) > new Date() &&
-              new Date(leave.dateEnd) > new Date())) && (
-            <>
-              {leave.rejectedBy == null && (
-                <button onClick={() => setIsUpdateLeaveFormOpen(true)}>
-                  Update Leave
-                </button>
-              )}
-              <button onClick={() => deleteLeave({ id: leave.id })}>
-                Delete Leave
-              </button>
-            </>
-          )}
-        {!isReadOnly && isUpdateLeaveFormOpen && (
+    <details key={leave.id}>
+      <summary>{summary}</summary>
+      {leave.type !== 'bankHoliday' &&
+        (leave.approvedBy == null ||
+          (new Date(leave.dateStart) > new Date() &&
+            new Date(leave.dateEnd) > new Date())) && (
           <>
-            <SetupLeave leave={leave} />
-            <button onClick={() => setIsUpdateLeaveFormOpen(false)}>
-              Close update form
+            {leave.rejectedBy == null && (
+              <button onClick={() => setIsUpdateLeaveFormOpen(true)}>
+                Update Leave
+              </button>
+            )}
+            <button onClick={() => deleteLeave({ id: leave.id })}>
+              Delete Leave
             </button>
           </>
         )}
-      </details>
-    </li>
+      {isUpdateLeaveFormOpen && (
+        <>
+          <SetupLeave leave={leave} />
+          <button onClick={() => setIsUpdateLeaveFormOpen(false)}>
+            Close update form
+          </button>
+        </>
+      )}
+      <hr />
+    </details>
   )
 }
