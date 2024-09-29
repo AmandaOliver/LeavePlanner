@@ -23,7 +23,7 @@ CREATE TABLE Employees (
     country VARCHAR(50),
     isOrgOwner BOOLEAN DEFAULT FALSE,
     paidTimeOff INT DEFAULT 0,
-    title VARCHAR(255) DEFAULT NULL,
+    title VARCHAR(255) DEFAULT NULL
 );
 
 -- Create the Leaves table without foreign keys
@@ -34,7 +34,7 @@ CREATE TABLE Leaves (
     dateEnd DATETIME NOT NULL,
     owner VARCHAR(255),
     description VARCHAR(255),
-    approvedBy VARCHAR(255) -- NULL if not approved or bank holiday, employee ID if approved
+    approvedBy VARCHAR(255), -- NULL if not approved or bank holiday, employee ID if approved
     rejectedBy VARCHAR(255) -- NULL if not approved or bank holiday, employee ID if approved
 
 );
@@ -55,7 +55,7 @@ ALTER TABLE Employees
 -- Add foreign key constraints to Leaves
 ALTER TABLE Leaves
     ADD CONSTRAINT fk_leave_owner FOREIGN KEY (owner) REFERENCES Employees(email),
-    ADD CONSTRAINT fk_leave_approvedBy FOREIGN KEY (approvedBy) REFERENCES Employees(email);
+    ADD CONSTRAINT fk_leave_approvedBy FOREIGN KEY (approvedBy) REFERENCES Employees(email),
     ADD CONSTRAINT fk_leave_rejectedBy FOREIGN KEY (rejectedBy) REFERENCES Employees(email);
 
 
