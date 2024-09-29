@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEmployeeModel } from './Employee'
-import { LeaveTypes } from './Leaves'
+import { LeaveType, LeaveTypes } from './Leaves'
 import { useQueryClient } from '@tanstack/react-query'
 
 export type RequestType = {
@@ -12,6 +12,12 @@ export type RequestType = {
   description: string
   ownerName: string
   daysRequested: number
+  conflicts: ConflictType[]
+}
+type ConflictType = {
+  employeeName: string
+  employeeEmail: string
+  conflictingLeaves: LeaveType[]
 }
 type ApproveRequestParams = {
   requestId: number
@@ -41,6 +47,14 @@ export const useRequestsModel = () => {
         ...request,
         dateStart: request.dateStart.split('T')[0],
         dateEnd: request.dateEnd.split('T')[0],
+        conflicts: request.conflicts?.map((conflict) => ({
+          ...conflict,
+          conflictingLeaves: conflict.conflictingLeaves?.map((leave) => ({
+            ...leave,
+            dateStart: leave.dateStart.split('T')[0],
+            dateEnd: leave.dateEnd.split('T')[0],
+          })),
+        })),
       }))
     } else {
       return []

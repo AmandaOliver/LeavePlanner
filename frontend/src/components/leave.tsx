@@ -2,17 +2,24 @@ import { useState } from 'react'
 import { LeaveType, useLeavesModel } from '../models/Leaves'
 import { SetupLeave } from './setupLeave'
 
-export const Leave = ({ leave }: { leave: LeaveType }) => {
+export const Leave = ({
+  leave,
+  isReadOnly = false,
+}: {
+  leave: LeaveType
+  isReadOnly?: boolean
+}) => {
   const [isUpdateLeaveFormOpen, setIsUpdateLeaveFormOpen] = useState(false)
   const { deleteLeave } = useLeavesModel()
   return (
     <li key={leave.id}>
       <details key={leave.id}>
         <summary>
-          {leave.type} {leave.daysRequested} days from {leave.dateStart} to{' '}
-          {leave.dateEnd}: {leave.description}
+          {leave.type} {!isReadOnly && leave.daysRequested + ' days'} from{' '}
+          {leave.dateStart} to {leave.dateEnd}: {leave.description}
         </summary>
-        {leave.type !== 'bankHoliday' &&
+        {!isReadOnly &&
+          leave.type !== 'bankHoliday' &&
           (leave.approvedBy == null ||
             (new Date(leave.dateStart) > new Date() &&
               new Date(leave.dateEnd) > new Date())) && (
@@ -27,7 +34,7 @@ export const Leave = ({ leave }: { leave: LeaveType }) => {
               </button>
             </>
           )}
-        {isUpdateLeaveFormOpen && (
+        {!isReadOnly && isUpdateLeaveFormOpen && (
           <>
             <SetupLeave leave={leave} />
             <button onClick={() => setIsUpdateLeaveFormOpen(false)}>

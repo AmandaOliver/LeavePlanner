@@ -46,9 +46,9 @@ public class RequestsController
 			var subordinateRequests = await _leavesController.GetLeaveRequests(subordinate.Email);
 			foreach (var leaveRequest in subordinateRequests)
 			{
-				int requestedDaysThisYear = await _paidTimeOffLeft.GetDaysRequested(leaveRequest.DateStart, leaveRequest.DateEnd, email, DateTime.UtcNow.Year, leaveRequest.Id);
-				int requestedDaysNextYear = await _paidTimeOffLeft.GetDaysRequested(leaveRequest.DateStart, leaveRequest.DateEnd, email, DateTime.UtcNow.Year + 1, leaveRequest.Id);
-
+				int requestedDaysThisYear = await _paidTimeOffLeft.GetDaysRequested(leaveRequest.DateStart, leaveRequest.DateEnd, leaveRequest.Owner, DateTime.UtcNow.Year, leaveRequest.Id);
+				int requestedDaysNextYear = await _paidTimeOffLeft.GetDaysRequested(leaveRequest.DateStart, leaveRequest.DateEnd, leaveRequest.Owner, DateTime.UtcNow.Year + 1, leaveRequest.Id);
+				var conflicts = await GetConflicts(leaveRequest, email);
 				var request = new RequestDTO
 				{
 					Id = leaveRequest.Id,
@@ -58,6 +58,7 @@ public class RequestsController
 					Description = leaveRequest.Description,
 					OwnerName = leaveRequest.OwnerNavigation.Name,
 					DaysRequested = requestedDaysThisYear + requestedDaysNextYear,
+					Conflicts = conflicts,
 				};
 				requests.Add(request);
 			}
@@ -117,5 +118,37 @@ public class RequestsController
 			await transaction.RollbackAsync();
 			return Results.Problem(ex.Message);
 		}
+	}
+	private async Task<List<ConflictDTO>> GetConflicts(Leave leaveRequest, string email)
+	{
+		var employeeWithSubordinates = await _employeesController.GetEmployeeWithSubordinates(email);
+		var conflicts = new List<ConflictDTO>();
+		foreach (var subordinate in employeeWithSubordinates.Subordinates)
+		{
+			// do not take in account leaves of the same employee
+			if (subordinate.Email != leaveRequest.Owner)
+			{
+				var conflictingLeaves = await _context.Leaves
+					.Where(leave =>
+						leave.Owner == subordinate.Email && // is a leave of this employee
+						leaveRequest.Id != leave.Id && // do not take in account leaves of the same employee
+						(
+							(leaveRequest.DateStart >= leave.DateStart && leaveRequest.DateStart < leave.DateEnd) ||   // Start date is within an existing leave (excluding an exact match on end date)
+							(leaveRequest.DateEnd > leave.DateStart && leaveRequest.DateEnd <= leave.DateEnd) ||       // End date is within an existing leave (excluding an exact match on start date)
+							(leaveRequest.DateStart < leave.DateStart && leaveRequest.DateEnd > leave.DateEnd)         // The requested leave fully contains an existing leave
+						))
+					.ToListAsync();
+				if (!conflictingLeaves.IsNullOrEmpty())
+				{
+					conflicts.Add(new ConflictDTO
+					{
+						EmployeeEmail = subordinate.Email,
+						EmployeeName = subordinate.Name,
+						ConflictingLeaves = conflictingLeaves
+					});
+				}
+			}
+		}
+		return conflicts;
 	}
 }

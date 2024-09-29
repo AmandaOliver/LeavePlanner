@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http.HttpResults;
+
 namespace LeavePlanner.Models;
 
 public partial class RequestDTO
@@ -10,4 +12,6 @@ public partial class RequestDTO
 	public string? OwnerName { get; set; }
 
 	public int DaysRequested { get; set; }
+
+	public List<ConflictDTO>? Conflicts { get; set; }
 }
