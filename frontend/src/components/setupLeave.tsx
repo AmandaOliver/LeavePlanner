@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react'
-import { LeaveType, LeaveTypes, useLeavesModel } from '../models/Leaves'
+import { LeaveType, useLeavesModel } from '../models/Leaves'
 import { useEmployeeModel } from '../models/Employee'
 import LoadingPage from '../pages/loading'
 
@@ -9,7 +9,6 @@ export const SetupLeave = ({ leave }: { leave?: LeaveType }) => {
   const [description, setDescription] = useState(leave?.description || '')
   const [dateStart, setDateStart] = useState(leave?.dateStart || '')
   const [dateEnd, setDateEnd] = useState(leave?.dateEnd || '')
-  const [type, setType] = useState<LeaveTypes>(leave?.type || 'paidTimeOff')
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -20,14 +19,14 @@ export const SetupLeave = ({ leave }: { leave?: LeaveType }) => {
         description,
         dateStart,
         dateEnd,
-        type,
+        type: 'paidTimeOff',
       })
     } else {
       await createLeave({
         description,
         dateStart,
         dateEnd,
-        type,
+        type: 'paidTimeOff',
       })
     }
   }
@@ -84,18 +83,6 @@ export const SetupLeave = ({ leave }: { leave?: LeaveType }) => {
           placeholder="I am going to have the trip of my life..."
           required
         />
-      </div>
-      <div>
-        <label htmlFor="leaveType">Select Leave Type:</label>
-        <select
-          id="leaveType"
-          name="leaveType"
-          onChange={(event) => setType(event.target.value as LeaveTypes)}
-        >
-          <option value="paidTimeOff">Paid Time Off</option>
-          <option value="unpaidTimeOff">Unpaid Time Off</option>
-          <option value="sickLeave">Sick Leave</option>
-        </select>
       </div>
       <button type="submit">{leave ? 'Update' : 'Request'} Leave</button>
     </form>

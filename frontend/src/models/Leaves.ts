@@ -8,6 +8,11 @@ export type LeaveTypes =
   | 'unpaidTimeOff'
   | 'bankHoliday'
 
+type ConflictType = {
+  employeeName: string
+  employeeEmail: string
+  conflictingLeaves: LeaveType[]
+}
 export type LeaveType = {
   id: string
   dateStart: string
@@ -15,9 +20,11 @@ export type LeaveType = {
   description: string
   type: LeaveTypes
   owner: string
+  ownerName?: string
   approvedBy: string
   rejectedBy: string
   daysRequested: number
+  conflicts?: ConflictType[]
 }
 export type CreateLeaveParamType = {
   description: string
@@ -81,13 +88,21 @@ export const useLeavesModel = () => {
 
     if (response.ok) {
       const responseJson = await response.json()
-      return responseJson?.map((leave: LeaveType) => ({
+      return responseJson.map((leave: LeaveType) => ({
         ...leave,
         dateStart: leave.dateStart.split('T')[0],
         dateEnd: leave.dateEnd.split('T')[0],
+        conflicts: leave.conflicts?.map((conflict) => ({
+          ...conflict,
+          conflictingLeaves: conflict.conflictingLeaves?.map((l) => ({
+            ...l,
+            dateStart: l.dateStart.split('T')[0],
+            dateEnd: l.dateEnd.split('T')[0],
+          })),
+        })),
       }))
     } else {
-      throw new Error('Failed to fetch pending leaves')
+      throw new Error('Failed to fetch pending approval leaves')
     }
   }
   const fetchLeavesRejected = async (): Promise<LeaveType[]> => {

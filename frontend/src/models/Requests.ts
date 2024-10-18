@@ -1,33 +1,18 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEmployeeModel } from './Employee'
-import { LeaveType, LeaveTypes } from './Leaves'
 import { useQueryClient } from '@tanstack/react-query'
+import { LeaveType } from './Leaves'
 
-export type RequestType = {
-  id: number
-  type: LeaveTypes
-  dateStart: string
-  dateEnd: string
-  description: string
-  ownerName: string
-  daysRequested: number
-  conflicts: ConflictType[]
-}
-type ConflictType = {
-  employeeName: string
-  employeeEmail: string
-  conflictingLeaves: LeaveType[]
-}
 type ApproveRequestParams = {
-  requestId: number
+  requestId: string
 }
 export const useRequestsModel = () => {
   const { getAccessTokenSilently } = useAuth0()
   const { currentEmployee } = useEmployeeModel()
   const queryClient = useQueryClient()
 
-  const fetchRequests = async (): Promise<RequestType[]> => {
+  const fetchRequests = async (): Promise<LeaveType[]> => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
@@ -43,7 +28,7 @@ export const useRequestsModel = () => {
 
     if (response.ok) {
       const responseJson = await response.json()
-      return responseJson.map((request: RequestType) => ({
+      return responseJson.map((request: LeaveType) => ({
         ...request,
         dateStart: request.dateStart.split('T')[0],
         dateEnd: request.dateEnd.split('T')[0],
@@ -57,7 +42,7 @@ export const useRequestsModel = () => {
         })),
       }))
     } else {
-      return []
+      throw new Error('Failed to fetch requests')
     }
   }
   const requestsQuery = useQuery({

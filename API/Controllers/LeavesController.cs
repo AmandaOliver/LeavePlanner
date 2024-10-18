@@ -9,7 +9,7 @@ public static class LeavesEndpointsExtensions
 	public static void MapLeavesEndpoints(this IEndpointRouteBuilder endpoints)
 	{
 
-		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email) => await controller.GetLeaves(email)).RequireAuthorization();
+		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email) => await controller.GetLeavesApproved(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/pending/{email}", async (LeavesController controller, string email) => await controller.GetLeavesAwaitingApproval(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/rejected/{email}", async (LeavesController controller, string email) => await controller.GetLeavesRejected(email)).RequireAuthorization();
 		endpoints.MapPost("/leaves", async (LeavesController controller, LeaveCreateDTO model) => await controller.CreateLeave(model)).RequireAuthorization();
@@ -20,14 +20,14 @@ public static class LeavesEndpointsExtensions
 public class LeavesController
 {
 	private readonly LeavePlannerContext _context;
-	private readonly PaidTimeOffLeft _paidTimeOffLeft;
+	private readonly LeavesService _leavesService;
 
-	public LeavesController(LeavePlannerContext context, PaidTimeOffLeft paidTimeOffLeft)
+	public LeavesController(LeavePlannerContext context, PaidTimeOffLeft paidTimeOffLeft, EmployeesController employeesController, LeavesService leavesService)
 	{
 		_context = context;
-		_paidTimeOffLeft = paidTimeOffLeft;
+		_leavesService = leavesService;
 	}
-	public async Task<IResult> GetLeaves(string email)
+	public async Task<IResult> GetLeavesApproved(string email)
 	{
 		var leaves = await _context.Leaves
 						   .Where(leave => leave.Owner == email &&
@@ -38,8 +38,8 @@ public class LeavesController
 		{
 			return Results.Ok(new List<Leave>());
 		}
-		var leavesWithDaysRequested = await GetLeavesWithDaysRequested(leaves, email);
-		return Results.Ok(leavesWithDaysRequested);
+		var leaveRequests = await _leavesService.GetLeavesDynamicInfo(leaves);
+		return Results.Ok(leaveRequests);
 	}
 	public async Task<IResult> GetLeavesRejected(string email)
 	{
@@ -52,109 +52,43 @@ public class LeavesController
 		{
 			return Results.Ok(new List<Leave>());
 		}
-		var leavesWithDaysRequested = await GetLeavesWithDaysRequested(leaves, email);
+		var leaveRequests = await _leavesService.GetLeavesDynamicInfo(leaves);
 
-		return Results.Ok(leavesWithDaysRequested);
+		return Results.Ok(leaveRequests);
 	}
 	public async Task<IResult> GetLeavesAwaitingApproval(string email)
 	{
-		var leaves = await GetLeaveRequests(email);
+		var leaveRequests = await _leavesService.GetLeaveRequests(email);
 
-		if (leaves == null || leaves.Count == 0)
-		{
-			return Results.Ok(new List<Leave>());
-		}
-		var leavesWithDaysRequested = await GetLeavesWithDaysRequested(leaves, email);
-
-		return Results.Ok(leavesWithDaysRequested);
+		return Results.Ok(leaveRequests);
 	}
-	public async Task<List<Leave>> GetLeaveRequests(string email)
+	public async Task<IResult> ValidateLeaveRequest(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId)
 	{
-		return await _context.Leaves
-						   .Where(leave => leave.Owner == email &&
-										   leave.ApprovedBy == null && leave.RejectedBy == null && leave.Type != "bankHoliday")
-						   .ToListAsync();
-	}
-	private async Task<string> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId)
-	{
-		// Leave update validation checks
-		if (leaveId != null)
+		var validationResult = await _leavesService.ValidateLeave(dateStart, dateEnd, owner, leaveId);
+		if (validationResult != "success")
 		{
-			var leave = await _context.Leaves.FindAsync(leaveId);
-			if (leave == null)
-			{
-				return "Leave not found.";
-			}
-			if (leave.Type == "bankHoliday")
-			{
-				return "You cannot update bank holidays.";
-			}
-			if (leave.RejectedBy != null)
-			{
-				return "You cannot update a rejected leave.";
-			}
+			return Results.BadRequest(validationResult);
 		}
-
-		// Date validation checks
-		if (dateStart < DateTime.UtcNow.Date || dateEnd < DateTime.UtcNow.Date)
-		{
-			return "You cannot request leave for dates in the past.";
-		}
-
-		if (dateEnd < dateStart)
-		{
-			return "The end date cannot be before the start date.";
-		}
-
 		var employee = await _context.Employees.FindAsync(owner);
 		if (employee == null)
 		{
-			return "Employee not found.";
+			return Results.NotFound("Employee not found.");
 		}
-
-
-
-		// If leave crosses over into the next year
-		if (dateStart.Year != dateEnd.Year)
+		Leave leaveRequest = new Leave
 		{
-			var endOfYear = new DateTime(dateStart.Year + 1, 1, 1);
-			var daysInCurrentYear = await _paidTimeOffLeft.GetDaysRequested(dateStart, endOfYear, owner, dateStart.Year, leaveId);
-			var startOfNextYear = new DateTime(dateEnd.Year, 1, 1);
-			var daysInNextYear = await _paidTimeOffLeft.GetDaysRequested(startOfNextYear, dateEnd, owner, dateEnd.Year, leaveId);
+			DateStart = dateStart,
+			DateEnd = dateEnd,
+			Type = "paidTimeOff",
+			Owner = owner,
+			OwnerNavigation = employee,
+		};
+		var leave = await _leavesService.GetLeaveDynamicInfo(leaveRequest);
+		return Results.Ok(leave);
 
-			// Check for enough paid time off in current year
-			var paidTimeOffLeftForCurrentYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateStart.Year, leaveId);
-			if (daysInCurrentYear > paidTimeOffLeftForCurrentYear)
-			{
-				return $"You cannot request more days than you have left for the year {dateStart.Year}.";
-			}
-
-			// Check for enough paid time off in next year
-			var paidTimeOffLeftForNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateEnd.Year, leaveId);
-			if (daysInNextYear > paidTimeOffLeftForNextYear)
-			{
-				return $"You cannot request more days than you have left for the year {dateEnd.Year}.";
-			}
-		}
-		else
-		{
-			int totalWeekdaysRequested = await _paidTimeOffLeft.GetDaysRequested(dateStart, dateEnd, owner, dateStart.Year, leaveId);
-			var paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateStart.Year, leaveId);
-
-			if (totalWeekdaysRequested > paidTimeOffLeft)
-			{
-				return "You cannot request more days than you have left.";
-			}
-		}
-
-		return "success";
 	}
-
-
-
 	public async Task<IResult> CreateLeave(LeaveCreateDTO model)
 	{
-		var validationResult = await ValidateLeave(model.DateStart, model.DateEnd, model.Owner, null);
+		var validationResult = await _leavesService.ValidateLeave(model.DateStart, model.DateEnd, model.Owner, null);
 		if (validationResult != "success")
 		{
 			return Results.BadRequest(validationResult);
@@ -199,7 +133,7 @@ public class LeavesController
 	}
 	public async Task<IResult> UpdateLeave(int leaveId, LeaveUpdateDTO leaveUpdate)
 	{
-		var validationResult = await ValidateLeave(leaveUpdate.DateStart, leaveUpdate.DateEnd, leaveUpdate.Owner, leaveUpdate.Id);
+		var validationResult = await _leavesService.ValidateLeave(leaveUpdate.DateStart, leaveUpdate.DateEnd, leaveUpdate.Owner, leaveUpdate.Id);
 		if (validationResult != "success")
 		{
 			return Results.BadRequest(validationResult);
@@ -265,28 +199,5 @@ public class LeavesController
 		}
 
 	}
-	private async Task<List<LeaveWithDaysDTO>> GetLeavesWithDaysRequested(List<Leave> leaves, string email)
-	{
-		// Dynamically calculate requested days
-		var leavesWithDays = new List<LeaveWithDaysDTO>();
-		foreach (var leave in leaves)
-		{
-			int requestedDaysThisYear = await _paidTimeOffLeft.GetDaysRequested(leave.DateStart, leave.DateEnd, email, DateTime.UtcNow.Year, leave.Id);
-			int requestedDaysNextYear = await _paidTimeOffLeft.GetDaysRequested(leave.DateStart, leave.DateEnd, email, DateTime.UtcNow.Year + 1, leave.Id);
 
-			leavesWithDays.Add(new LeaveWithDaysDTO
-			{
-				Id = leave.Id,
-				Type = leave.Type,
-				DateStart = leave.DateStart,
-				DateEnd = leave.DateEnd,
-				Description = leave.Description,
-				ApprovedBy = leave.ApprovedBy,
-				RejectedBy = leave.RejectedBy,
-				DaysRequested = requestedDaysThisYear + requestedDaysNextYear,
-			});
-		}
-
-		return leavesWithDays;
-	}
 }

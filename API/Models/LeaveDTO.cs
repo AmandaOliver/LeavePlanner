@@ -1,8 +1,6 @@
-using Microsoft.AspNetCore.SignalR;
-
 namespace LeavePlanner.Models
 {
-	public class LeaveWithDaysDTO
+	public class LeaveDTO
 	{
 		public int Id { get; set; }
 
@@ -12,12 +10,14 @@ namespace LeavePlanner.Models
 
 		public DateTime DateEnd { get; set; }
 		public string? Owner { get; set; }
+		public string? OwnerName { get; set; }
 		public string? Description { get; set; }
 
 		public string? ApprovedBy { get; set; }
 		public string? RejectedBy { get; set; }
 
 		public int DaysRequested { get; set; }
+		public List<ConflictDTO>? Conflicts { get; set; }
 
 
 	}

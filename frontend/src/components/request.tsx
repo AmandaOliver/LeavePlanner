@@ -1,7 +1,8 @@
-import { RequestType, useRequestsModel } from '../models/Requests'
+import { LeaveType } from '../models/Leaves'
+import { useRequestsModel } from '../models/Requests'
 import { Leave } from './leave'
 
-export const Request = ({ request }: { request: RequestType }) => {
+export const Request = ({ request }: { request: LeaveType }) => {
   const { approveRequest, rejectRequest } = useRequestsModel()
   return (
     <details key={request.id}>

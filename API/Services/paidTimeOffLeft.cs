@@ -1,7 +1,5 @@
-using LeavePlanner.Models;
 using LeavePlanner.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 public interface IPaidTimeOffLeft
 {
 	Task<int> GetPaidTimeOffLeft(string employeeEmail, int year, int? leaveId);

@@ -21,6 +21,16 @@ export const Leave = ({
   return (
     <details key={leave.id}>
       <summary>{summary}</summary>
+      <p>Conflicts:</p>
+
+      {leave.conflicts?.map((conflict) => (
+        <details key={conflict.employeeName}>
+          <summary>{conflict.employeeName}</summary>
+          {conflict.conflictingLeaves?.map((leave) => (
+            <Leave leave={leave} isReadOnly></Leave>
+          ))}
+        </details>
+      ))}
       {leave.type !== 'bankHoliday' &&
         (leave.approvedBy == null ||
           (new Date(leave.dateStart) > new Date() &&
