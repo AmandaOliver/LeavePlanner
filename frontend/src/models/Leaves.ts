@@ -8,7 +8,7 @@ export type LeaveTypes =
   | 'unpaidTimeOff'
   | 'bankHoliday'
 
-type ConflictType = {
+export type ConflictType = {
   employeeName: string
   employeeEmail: string
   conflictingLeaves: LeaveType[]
@@ -38,6 +38,11 @@ export type UpdateLeaveParamType = {
   dateStart: string
   dateEnd: string
   type: LeaveTypes
+}
+export type ValidateLeaveParamType = {
+  dateStart: string
+  dateEnd: string
+  id?: string
 }
 export type DeleteLeaveParamType = {
   id: string
@@ -204,6 +209,43 @@ export const useLeavesModel = () => {
       })
     },
   })
+  const validateLeaveMutation = useMutation({
+    mutationFn: async (validateData: ValidateLeaveParamType) => {
+      const accessToken = await getAccessTokenSilently()
+      const response = await fetch(
+        `${process.env.REACT_APP_API_SERVER_URL}/leaves/validate`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            ...validateData,
+            owner: currentEmployee?.email,
+          }),
+        }
+      )
+      if (response.ok) {
+        const responseJson = await response.json()
+        return {
+          ...responseJson,
+          dateStart: responseJson.dateStart.split('T')[0],
+          dateEnd: responseJson.dateEnd.split('T')[0],
+          conflicts: responseJson.conflicts?.map((conflict: ConflictType) => ({
+            ...conflict,
+            conflictingLeaves: conflict.conflictingLeaves?.map((l) => ({
+              ...l,
+              dateStart: l.dateStart.split('T')[0],
+              dateEnd: l.dateEnd.split('T')[0],
+            })),
+          })),
+        }
+      }
+
+      window.alert(await response.json())
+    },
+  })
   const deleteLeaveMutation = useMutation({
     mutationFn: async (deleteData: DeleteLeaveParamType) => {
       const accessToken = await getAccessTokenSilently()
@@ -241,6 +283,7 @@ export const useLeavesModel = () => {
     createLeave: createLeaveMutation.mutateAsync,
     updateLeave: updateLeaveMutation.mutateAsync,
     deleteLeave: deleteLeaveMutation.mutateAsync,
+    validateLeave: validateLeaveMutation.mutateAsync,
     isLoading:
       leavesQuery.isLoading ||
       leavesAwaitingApprovalQuery.isLoading ||

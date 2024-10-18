@@ -12,6 +12,7 @@ public static class LeavesEndpointsExtensions
 		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email) => await controller.GetLeavesApproved(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/pending/{email}", async (LeavesController controller, string email) => await controller.GetLeavesAwaitingApproval(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/rejected/{email}", async (LeavesController controller, string email) => await controller.GetLeavesRejected(email)).RequireAuthorization();
+		endpoints.MapPost("/leaves/validate", async (LeavesController controller, LeaveValidateDTO model) => await controller.ValidateLeaveRequest(model)).RequireAuthorization();
 		endpoints.MapPost("/leaves", async (LeavesController controller, LeaveCreateDTO model) => await controller.CreateLeave(model)).RequireAuthorization();
 		endpoints.MapPut("/leaves/{leaveId}", async (LeavesController controller, int leaveId, LeaveUpdateDTO leaveUpdate) => await controller.UpdateLeave(leaveId, leaveUpdate)).RequireAuthorization();
 		endpoints.MapDelete("/leaves/{leaveId}", async (LeavesController controller, int leaveId) => await controller.DeleteLeave(leaveId)).RequireAuthorization();
@@ -62,27 +63,27 @@ public class LeavesController
 
 		return Results.Ok(leaveRequests);
 	}
-	public async Task<IResult> ValidateLeaveRequest(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId)
+	public async Task<IResult> ValidateLeaveRequest(LeaveValidateDTO leaveToValidate)
 	{
-		var validationResult = await _leavesService.ValidateLeave(dateStart, dateEnd, owner, leaveId);
+		var validationResult = await _leavesService.ValidateLeave(leaveToValidate.DateStart, leaveToValidate.DateEnd, leaveToValidate.Owner, leaveToValidate.Id);
 		if (validationResult != "success")
 		{
 			return Results.BadRequest(validationResult);
 		}
-		var employee = await _context.Employees.FindAsync(owner);
+		var employee = await _context.Employees.FindAsync(leaveToValidate.Owner);
 		if (employee == null)
 		{
 			return Results.NotFound("Employee not found.");
 		}
 		Leave leaveRequest = new Leave
 		{
-			DateStart = dateStart,
-			DateEnd = dateEnd,
+			DateStart = leaveToValidate.DateStart,
+			DateEnd = leaveToValidate.DateEnd,
 			Type = "paidTimeOff",
-			Owner = owner,
+			Owner = leaveToValidate.Owner,
 			OwnerNavigation = employee,
 		};
-		var leave = await _leavesService.GetLeaveDynamicInfo(leaveRequest);
+		var leave = await _leavesService.GetLeaveDynamicInfo(leaveRequest, true);
 		return Results.Ok(leave);
 
 	}
@@ -111,7 +112,6 @@ public class LeavesController
 				Owner = model.Owner,
 				OwnerNavigation = employee,
 				CreatedAt = DateTime.UtcNow
-
 			};
 
 			if (employee.ManagedBy == null)

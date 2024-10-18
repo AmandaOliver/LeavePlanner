@@ -40,8 +40,8 @@ public class LeavesService : ILeavesService
 	}
 	public async Task<LeaveDTO> GetLeaveDynamicInfo(Leave leave, bool withConflicts = false)
 	{
-		int requestedDaysThisYear = await _paidTimeOffLeft.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year, leave.Id);
-		int requestedDaysNextYear = await _paidTimeOffLeft.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year + 1, leave.Id);
+		int requestedDaysThisYear = await _paidTimeOffLeft.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year, leave.Id != 0 ? leave.Id : null);
+		int requestedDaysNextYear = await _paidTimeOffLeft.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year + 1, leave.Id != 0 ? leave.Id : null);
 		var employee = await _context.Employees.FindAsync(leave.Owner);
 		if (employee == null)
 		{
