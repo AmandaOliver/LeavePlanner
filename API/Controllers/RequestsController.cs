@@ -20,13 +20,15 @@ public class RequestsController
 	private readonly LeavePlannerContext _context;
 	private readonly EmployeesController _employeesController;
 	private readonly LeavesService _leavesService;
+	private readonly EmailService _emailService;
 
 
-	public RequestsController(LeavePlannerContext context, EmployeesController employeesController, LeavesService leavesService)
+	public RequestsController(LeavePlannerContext context, EmployeesController employeesController, LeavesService leavesService, EmailService emailService)
 	{
 		_context = context;
 		_employeesController = employeesController;
 		_leavesService = leavesService;
+		_emailService = emailService;
 	}
 	public async Task<IResult> GetRequestsOfAManager(string email)
 	{
@@ -62,6 +64,16 @@ public class RequestsController
 			request.ApprovedBy = email;
 			await _context.SaveChangesAsync();
 			await transaction.CommitAsync();
+			var employee = await _context.Employees.FindAsync(request.Owner);
+			if (employee != null)
+			{
+				string emailBody = $@"
+Hello {employee.Name}, 
+	Your leave request from {request.DateStart.ToShortDateString()} to {request.DateEnd.ToShortDateString()} 
+	has been approved. 
+	Enjoy your time off!.";
+				await _emailService.SendEmail(employee.Email, $"Leave Request approved", emailBody);
+			}
 			return Results.Ok(request);
 		}
 		catch (Exception ex)
@@ -88,6 +100,15 @@ public class RequestsController
 			request.RejectedBy = email;
 			await _context.SaveChangesAsync();
 			await transaction.CommitAsync();
+			var employee = await _context.Employees.FindAsync(request.Owner);
+			if (employee != null)
+			{
+				string emailBody = $@"
+Hello {employee.Name}, 
+	Your leave request from {request.DateStart.ToShortDateString()} to {request.DateEnd.ToShortDateString()} 
+	has been rejected. ";
+				await _emailService.SendEmail(employee.Email, $"Leave Request rejected", emailBody);
+			}
 			return Results.Ok(request);
 		}
 		catch (Exception ex)

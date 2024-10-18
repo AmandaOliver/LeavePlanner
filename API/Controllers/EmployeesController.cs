@@ -21,13 +21,21 @@ public class EmployeesController
     private readonly LeavePlannerContext _context;
     private readonly BankHolidayService _bankholidayService;
     private readonly PaidTimeOffLeft _paidTimeOffLeft;
+    private readonly IConfiguration _configuration;
+    private readonly string _leavePlannerUrl;
+    private readonly EmailService _emailService;
 
 
-    public EmployeesController(LeavePlannerContext context, BankHolidayService bankHolidayService, PaidTimeOffLeft paidTimeOffLeft)
+
+    public EmployeesController(LeavePlannerContext context, BankHolidayService bankHolidayService, PaidTimeOffLeft paidTimeOffLeft, IConfiguration configuration, EmailService emailService)
     {
         _context = context;
         _bankholidayService = bankHolidayService;
         _paidTimeOffLeft = paidTimeOffLeft;
+        _configuration = configuration;
+        _emailService = emailService;
+        // Access the LeavePlannerUrl from appsettings.json
+        _leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
 
     }
     public async Task<IResult> CreateEmployee(EmployeeCreateDTO model)
@@ -76,7 +84,15 @@ public class EmployeesController
             await _context.SaveChangesAsync();
             await _bankholidayService.GenerateEmployeeBankHolidays(employee);
             await transaction.CommitAsync();
-
+            var organization = await _context.Organizations.FindAsync(employee.Organization);
+            if (organization != null)
+            {
+                string emailBody = $@"
+Hello {employee.Name}, 
+	You have been added as an Employee of {organization.Name} organization in LeavePlanner App. 
+    Please log in with this email in {_leavePlannerUrl} to see your dashboard.";
+                await _emailService.SendEmail(employee.Email, $"You have been added to LeavePlanner", emailBody);
+            }
             return Results.Ok(employee);
         }
         catch (Exception ex)
