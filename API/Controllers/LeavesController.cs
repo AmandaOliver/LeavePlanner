@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
+using Microsoft.IdentityModel.Tokens;
+using Org.BouncyCastle.Crypto.Prng;
 
 
 
@@ -22,11 +24,13 @@ public class LeavesController
 {
 	private readonly LeavePlannerContext _context;
 	private readonly LeavesService _leavesService;
+	private readonly EmailService _emailService;
 
-	public LeavesController(LeavePlannerContext context, PaidTimeOffLeft paidTimeOffLeft, EmployeesController employeesController, LeavesService leavesService)
+	public LeavesController(LeavePlannerContext context, PaidTimeOffLeft paidTimeOffLeft, EmployeesController employeesController, LeavesService leavesService, EmailService emailService)
 	{
 		_context = context;
 		_leavesService = leavesService;
+		_emailService = emailService;
 	}
 	public async Task<IResult> GetLeavesApproved(string email)
 	{
@@ -59,7 +63,16 @@ public class LeavesController
 	}
 	public async Task<IResult> GetLeavesAwaitingApproval(string email)
 	{
-		var leaveRequests = await _leavesService.GetLeaveRequests(email);
+		var leaves = await _context.Leaves
+					   .Where(leave => leave.Owner == email &&
+									   leave.ApprovedBy == null && leave.RejectedBy == null && leave.Type != "bankHoliday")
+					   .ToListAsync();
+
+		if (leaves == null || leaves.Count == 0)
+		{
+			return Results.Ok(new List<LeaveDTO>());
+		}
+		var leaveRequests = await _leavesService.GetLeavesDynamicInfo(leaves);
 
 		return Results.Ok(leaveRequests);
 	}
@@ -122,7 +135,43 @@ public class LeavesController
 
 			await _context.SaveChangesAsync();
 			await transaction.CommitAsync();
+			if (employee.ManagedBy != null)
+			{
+				var manager = await _context.Employees.FindAsync(employee.ManagedBy);
+				if (manager != null)
+				{
+					var leaveWithDynamicInfo = await _leavesService.GetLeaveDynamicInfo(leave, true);
+					if (leaveWithDynamicInfo != null)
+					{
+						var conflictsInfo = "There are no other team members on leave during this time.";
+						if (leaveWithDynamicInfo.Conflicts != null && !leaveWithDynamicInfo.Conflicts.IsNullOrEmpty())
+						{
+							conflictsInfo = "This leave conflicts with other team members: \n";
 
+							foreach (var conflict in leaveWithDynamicInfo.Conflicts)
+							{
+								conflictsInfo += $"\n- {conflict.EmployeeName}:\n";
+								foreach (var conflictingLeave in conflict.ConflictingLeaves)
+								{
+									conflictsInfo += $"\t• Leave Type: {conflictingLeave.Type}, Description: {conflictingLeave.Description}\n";
+									conflictsInfo += $"\t  Start Date: {conflictingLeave.DateStart.ToShortDateString()}, End Date: {conflictingLeave.DateEnd.ToShortDateString()}\n";
+								}
+							}
+						}
+						string emailBody = $@"
+						Hello {manager.Name}, 
+							You have a new leave request from {employee.Name}.
+							Number of days requested: {leaveWithDynamicInfo.DaysRequested} days.
+							Description: {leave.Description}						
+							Start Date: {leave.DateStart.ToShortDateString()}
+							End Date: {leave.DateEnd.ToShortDateString()}
+							{conflictsInfo}
+						";
+						await _emailService.SendEmail(employee.ManagedBy, $"New Leave Request from {employee.Name}", emailBody);
+					}
+				}
+
+			}
 			return Results.Ok(leave);
 		}
 		catch (Exception ex)
