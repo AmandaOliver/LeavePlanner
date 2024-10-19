@@ -66,7 +66,7 @@ export function Header({
           'data-[active=true]:after:right-0',
           'data-[active=true]:after:h-[2px]',
           'data-[active=true]:after:rounded-[2px]',
-          'data-[active=true]:after:bg-default',
+          'data-[active=true]:after:bg-primary',
         ],
       }}
     >
@@ -95,13 +95,13 @@ export function Header({
                 isBordered
                 as="button"
                 className="transition-transform"
-                color="default"
+                color="primary"
                 size="sm"
                 src={avatarPicture}
               />
             </DropdownTrigger>
             <DropdownMenu aria-label="Profile Actions" variant="flat">
-              <DropdownItem key="profile" className="h-14 gap-2">
+              <DropdownItem key="profile" className="h-14 gap-2" showDivider>
                 <p className="font-semibold">Signed in as</p>
                 <p className="font-bold">{currentEmployee.email}</p>
               </DropdownItem>
@@ -114,7 +114,12 @@ export function Header({
                   ))}
               </>
 
-              <DropdownItem key="logout" color="danger" onClick={handleLogout}>
+              <DropdownItem
+                key="logout"
+                className="text-danger"
+                color="danger"
+                onClick={handleLogout}
+              >
                 Log Out
               </DropdownItem>
             </DropdownMenu>
