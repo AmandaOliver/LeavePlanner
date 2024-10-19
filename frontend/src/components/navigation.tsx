@@ -3,10 +3,12 @@ import { LogoutButton } from './logoutButton'
 import { useEmployeeModel } from '../models/Employee'
 import logo from '../../src/android-chrome-192x192.png'
 import { useOrganizationModel } from '../models/Organization'
+import { Header } from '../stories/Header/Header'
 
 export const Navigation = () => {
   const { currentEmployee } = useEmployeeModel()
   const { currentOrganization } = useOrganizationModel()
+  return <Header />
   return (
     <nav>
       <ul>
