@@ -1,58 +1,59 @@
-import { NavLink } from 'react-router-dom'
-import { LogoutButton } from './logoutButton'
+import { useLocation } from 'react-router-dom'
 import { useEmployeeModel } from '../models/Employee'
-import logo from '../../src/android-chrome-192x192.png'
 import { useOrganizationModel } from '../models/Organization'
 import { Header } from '../stories/Header/Header'
+import { useAuth0 } from '@auth0/auth0-react'
 
 export const Navigation = () => {
+  const { user } = useAuth0()
   const { currentEmployee } = useEmployeeModel()
   const { currentOrganization } = useOrganizationModel()
-  return <Header />
-  return (
-    <nav>
-      <ul>
-        <li>
-          <NavLink to="/">
-            <img
-              src={logo}
-              alt="LeavePlanner Logo"
-              style={{ height: '40px', width: '40px' }}
-            />
-            <h1>{currentOrganization?.name}</h1>
-          </NavLink>
-        </li>
-        {currentEmployee && (
-          <>
-            <li>
-              <NavLink to="/profile">Profile</NavLink>
-            </li>
-            <li>
-              <NavLink to="/leaves">My Leaves</NavLink>
-            </li>
-            {!!currentEmployee.subordinates?.length && (
-              <li>
-                <NavLink to={`/requests/${currentEmployee.email}`}>
-                  Leave requests
-                </NavLink>
-              </li>
-            )}
-            {currentEmployee.isOrgOwner && (
-              <li>
-                <NavLink
-                  to={`/setup-organization/${currentEmployee.organization}`}
-                >
-                  Setup your organization
-                </NavLink>
-              </li>
-            )}
-          </>
-        )}
+  const { logout } = useAuth0()
+  const location = useLocation()
 
-        <li>
-          <LogoutButton />
-        </li>
-      </ul>
-    </nav>
+  const handleLogout = () => {
+    logout({
+      logoutParams: {
+        returnTo: window.location.origin,
+      },
+    })
+  }
+  const menuItemsEmployee = [
+    { link: '/', label: 'Home' },
+    { link: '/profile', label: 'My Profile' },
+    { link: '/leaves', label: 'My Leaves' },
+  ]
+  const menuItemsManager = [
+    { link: `/requests/${currentEmployee?.email}`, label: 'Leave requests' },
+  ]
+  const menuItemOrgOwner = {
+    link: `/setup-organization/${currentEmployee?.organization}`,
+    label: 'Setup your organization',
+  }
+
+  const menuItems = []
+  if (currentEmployee) {
+    menuItems.push(...menuItemsEmployee)
+    if (!!currentEmployee.subordinates?.length) {
+      menuItems.push(...menuItemsManager)
+    }
+  }
+  const mobileMenuItems = [...menuItems]
+  const avatarMenuItems = [{ link: '/profile', label: 'My Profile' }]
+  if (currentEmployee?.isOrgOwner) {
+    avatarMenuItems.push(menuItemOrgOwner)
+    mobileMenuItems.push(menuItemOrgOwner)
+  }
+  return (
+    <Header
+      organizationName={currentOrganization?.name}
+      menuItems={menuItems}
+      activeMenu={location.pathname}
+      handleLogout={handleLogout}
+      currentEmployee={currentEmployee}
+      avatarMenuItems={avatarMenuItems}
+      mobileMenuItems={mobileMenuItems}
+      avatarPicture={user?.picture || ''}
+    />
   )
 }
