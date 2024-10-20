@@ -72,7 +72,30 @@ public class LeavesService : ILeavesService
 		var leaveDTOs = new List<LeaveDTO>();
 		foreach (var leave in leaves)
 		{
-			leaveDTOs.Add(await GetLeaveDynamicInfo(leave, withConflicts));
+			if (leave.Type == "bankHoliday")
+			{
+				var employee = await _context.Employees.FindAsync(leave.Owner);
+				if (employee == null)
+				{
+					throw new Exception("employee not found");
+				}
+				leaveDTOs.Add(new LeaveDTO
+				{
+					Id = leave.Id,
+					Type = leave.Type,
+					Owner = leave.Owner,
+					OwnerName = employee.Name,
+					DateStart = leave.DateStart,
+					DateEnd = leave.DateEnd,
+					Description = leave.Description,
+					ApprovedBy = leave.ApprovedBy,
+					RejectedBy = leave.RejectedBy,
+				});
+			}
+			else
+			{
+				leaveDTOs.Add(await GetLeaveDynamicInfo(leave, withConflicts));
+			}
 		}
 
 		return leaveDTOs;

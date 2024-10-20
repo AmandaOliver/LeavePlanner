@@ -174,7 +174,7 @@ Hello {employee.Name},
             // if country changes we need to update the leaves
             if (employee.Country != model.Country)
             {
-                var leaves = await _context.Leaves.Where(l => l.Owner == employee.Email).ToListAsync();
+                var leaves = await _context.Leaves.Where(l => l.Owner == employee.Email && l.Type == "bankHoliday").ToListAsync();
                 _context.Leaves.RemoveRange(leaves);
                 employee.Country = model.Country;
                 await _bankholidayService.GenerateEmployeeBankHolidays(employee);

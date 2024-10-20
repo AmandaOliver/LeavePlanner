@@ -43,8 +43,15 @@ public class LeavesController
 		{
 			return Results.Ok(new List<Leave>());
 		}
-		var leaveRequests = await _leavesService.GetLeavesDynamicInfo(leaves);
-		return Results.Ok(leaveRequests);
+		var leavesWithinNext3Months = leaves.Where(leave =>
+		{
+			if (leave.Type == "bankHoliday")
+			{
+				return leave.DateStart < DateTime.UtcNow.Date.AddMonths(3);
+			}
+			return true;
+		}).ToList();
+		return Results.Ok(leavesWithinNext3Months);
 	}
 	public async Task<IResult> GetLeavesRejected(string email)
 	{

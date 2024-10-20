@@ -78,19 +78,22 @@ public class BankHolidayService : IBankHolidayService
 				var holidaysForEmployeeCountry = await FetchBankHolidays(countryCode);
 				foreach (var holiday in holidaysForEmployeeCountry)
 				{
-					var leave = new Leave
+					if (holiday.StartDate.DayOfWeek != DayOfWeek.Saturday && holiday.StartDate.DayOfWeek != DayOfWeek.Sunday)
 					{
-						Type = "bankHoliday",
-						DateStart = holiday.StartDate,
-						DateEnd = holiday.EndDate,
-						Owner = employee.Email,
-						Description = holiday.Summary,
-						ApprovedBy = null, // Bank holiday doesn't need approval
-						RejectedBy = null,
-						OwnerNavigation = employee,
-						CreatedAt = DateTime.UtcNow
-					};
-					_context.Leaves.Add(leave);
+						var leave = new Leave
+						{
+							Type = "bankHoliday",
+							DateStart = holiday.StartDate,
+							DateEnd = holiday.EndDate,
+							Owner = employee.Email,
+							Description = holiday.Summary,
+							ApprovedBy = null, // Bank holiday doesn't need approval
+							RejectedBy = null,
+							OwnerNavigation = employee,
+							CreatedAt = DateTime.UtcNow
+						};
+						_context.Leaves.Add(leave);
+					}
 				}
 
 				await _context.SaveChangesAsync();
