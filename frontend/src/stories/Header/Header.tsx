@@ -13,7 +13,8 @@ import {
   Avatar,
   DropdownMenu,
   DropdownItem,
-  menuItem,
+  Badge,
+  Chip,
 } from '@nextui-org/react'
 import { NavLink } from 'react-router-dom'
 import { Logo } from './logo'
@@ -21,18 +22,19 @@ import { Logo } from './logo'
 type MenuItemType = {
   link: string
   label: string
+  badge?: number
 }
 type PropsType = {
   organizationName: string
   menuItems: MenuItemType[]
   activeMenu: string
   handleLogout: () => void
-  currentEmployee?: null | {
-    name: string
+  currentUser: {
     email: string
+    pendingRequests?: number
+    avatarPicture: string
   }
   avatarMenuItems?: MenuItemType[]
-  avatarPicture: string
   mobileMenuItems: MenuItemType[]
 }
 export function Header({
@@ -40,9 +42,8 @@ export function Header({
   menuItems,
   activeMenu,
   handleLogout,
-  currentEmployee,
+  currentUser,
   avatarMenuItems,
-  avatarPicture,
   mobileMenuItems,
 }: PropsType) {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false)
@@ -77,38 +78,59 @@ export function Header({
         </NavbarBrand>
       </NavbarContent>
 
-      <NavbarContent className="hidden sm:flex gap-4" justify="center">
-        {menuItems.map((menuItem, index) => {
-          const isActive = menuItem.link === activeMenu
-          return (
-            <NavbarItem isActive={isActive} key={`${menuItem.link}-${index}`}>
-              <NavLink to={menuItem.link}>{menuItem.label}</NavLink>
-            </NavbarItem>
-          )
-        })}
-      </NavbarContent>
-      <NavbarContent justify="end">
-        {currentEmployee && (
+      <>
+        <NavbarContent className="hidden sm:flex gap-4" justify="center">
+          {menuItems.map((menuItem, index) => {
+            const isActive = menuItem.link === activeMenu
+            return (
+              <NavbarItem isActive={isActive} key={`${menuItem.link}-${index}`}>
+                <NavLink to={menuItem.link}>{menuItem.label}</NavLink>
+              </NavbarItem>
+            )
+          })}
+        </NavbarContent>
+        <NavbarContent className="hidden sm:flex" justify="end">
           <Dropdown placement="bottom-end">
-            <DropdownTrigger className="hidden sm:block">
-              <Avatar
-                isBordered
-                as="button"
-                className="transition-transform"
-                color="primary"
-                size="sm"
-                src={avatarPicture}
-              />
-            </DropdownTrigger>
+            <Badge
+              content={currentUser.pendingRequests}
+              color="primary"
+              size="lg"
+              isInvisible={!currentUser.pendingRequests}
+            >
+              <DropdownTrigger>
+                <Avatar
+                  isBordered
+                  as="button"
+                  className="transition-transform"
+                  color="primary"
+                  size="sm"
+                  src={currentUser.avatarPicture}
+                />
+              </DropdownTrigger>
+            </Badge>
+
             <DropdownMenu aria-label="Profile Actions" variant="flat">
               <DropdownItem key="profile" className="h-14 gap-2" showDivider>
                 <p className="font-semibold">Signed in as</p>
-                <p className="font-bold">{currentEmployee.email}</p>
+                <p className="font-bold">{currentUser.email}</p>
               </DropdownItem>
               <>
                 {avatarMenuItems?.length &&
                   avatarMenuItems.map((menuItem) => (
                     <DropdownItem key={menuItem.label}>
+                      {menuItem.badge ? (
+                        <Chip
+                          color="primary"
+                          className="mr-1"
+                          size="sm"
+                          radius="full"
+                          variant="shadow"
+                        >
+                          {menuItem.badge}
+                        </Chip>
+                      ) : (
+                        ''
+                      )}
                       <NavLink to={menuItem.link}>{menuItem.label}</NavLink>
                     </DropdownItem>
                   ))}
@@ -124,12 +146,21 @@ export function Header({
               </DropdownItem>
             </DropdownMenu>
           </Dropdown>
-        )}
-        <NavbarMenuToggle
-          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-          className="sm:hidden"
-        />
-      </NavbarContent>
+        </NavbarContent>
+        <Badge
+          content={currentUser.pendingRequests}
+          color="primary"
+          size="md"
+          isInvisible={!currentUser.pendingRequests}
+          className="sm:hidden "
+        >
+          <NavbarMenuToggle
+            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+            className="sm:hidden w-9 h-9"
+          />
+        </Badge>
+      </>
+
       <NavbarMenu>
         {mobileMenuItems.map((menuItem, index) => {
           const isActive = menuItem.link === activeMenu
@@ -139,13 +170,26 @@ export function Header({
               isActive={isActive}
               key={`${menuItem.link}-${index}`}
             >
+              {menuItem.badge ? (
+                <Chip
+                  color="primary"
+                  className="mr-1"
+                  size="sm"
+                  radius="full"
+                  variant="shadow"
+                >
+                  {menuItem.badge}
+                </Chip>
+              ) : (
+                ''
+              )}
               <NavLink onClick={() => setIsMenuOpen(false)} to={menuItem.link}>
                 {menuItem.label}
               </NavLink>
             </NavbarMenuItem>
           )
         })}
-        <NavbarMenuItem className="w-full h-full mb-3 content-end">
+        <NavbarMenuItem className="w-full h-full mb-3 content-end flex-wrap flex justify-end">
           <Button onClick={handleLogout} color="danger" variant="bordered">
             Logout
           </Button>

@@ -3,7 +3,7 @@ import { Header } from './Header'
 
 import '../../index.css'
 const meta = {
-  title: 'Example/Header',
+  title: 'Header',
   component: Header,
 
   // This component will have an automatically generated Autodocs entry: https://storybook.js.org/docs/writing-docs/autodocs
@@ -18,7 +18,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const LoggedIn: Story = {
+export const Default: Story = {
   args: {
     organizationName: 'ACME',
     menuItems: [
@@ -28,17 +28,20 @@ export const LoggedIn: Story = {
     ],
     activeMenu: '/page2',
     handleLogout: () => {},
-    currentEmployee: { email: 'example@email.com', name: 'example' },
+    currentUser: {
+      email: 'example@email.com',
+      pendingRequests: 5,
+      avatarPicture: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
+    },
     avatarMenuItems: [
       { link: '/page3', label: 'page3' },
-      { link: '/page4', label: 'page4' },
+      { link: '/page4', label: 'page4', badge: 5 },
     ],
-    avatarPicture: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
     mobileMenuItems: [
       { link: '/page1', label: 'page1' },
       { link: '/page2', label: 'page2' },
       { link: '/page4', label: 'page4' },
-      { link: '/page5', label: 'page5' },
+      { link: '/page5', label: 'page5', badge: 1 },
     ],
   },
 }

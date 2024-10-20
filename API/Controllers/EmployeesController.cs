@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
+using Microsoft.IdentityModel.Tokens;
 public static class EmployeesEndpointsExtensions
 {
     public static void MapEmployeesEndpoints(this IEndpointRouteBuilder endpoints)
@@ -113,45 +114,46 @@ Hello {employee.Name},
         }
 
         // Fetch subordinates recursively
-        var employeeWithSubordinates = await GetEmployeeWithSubordinates(employee.Email);
+        var employeeWithSubordinates = await GetEmployeeWithSubordinates(employee);
 
         return Results.Ok(employeeWithSubordinates);
     }
 
-    public async Task<EmployeeWithSubordinatesDTO> GetEmployeeWithSubordinates(string employeeEmail)
+    public async Task<EmployeeWithSubordinatesDTO> GetEmployeeWithSubordinates(Employee employee)
     {
-        var employeeWithSubordinates = await _context.Employees
-                                    .Where(e => e.Email == employeeEmail)
-                                    .Select(e => new EmployeeWithSubordinatesDTO
-                                    {
-                                        Email = e.Email,
-                                        Name = e.Name,
-                                        Country = e.Country,
-                                        Organization = e.Organization,
-                                        ManagedBy = e.ManagedBy,
-                                        IsOrgOwner = e.IsOrgOwner,
-                                        PaidTimeOff = e.PaidTimeOff,
-                                        Title = e.Title,
-                                        Subordinates = new List<EmployeeWithSubordinatesDTO>()
-                                    })
-                                    .FirstOrDefaultAsync();
-
-        if (employeeWithSubordinates == null)
+        int paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, DateTime.UtcNow.Year, null);
+        int paidTimeOffLeftNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, DateTime.UtcNow.Year + 1, null);
+        var employeeWithSubordinates = new EmployeeWithSubordinatesDTO
         {
-            throw new Exception("Employee not found.");
-        }
-
-        employeeWithSubordinates.PaidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employeeWithSubordinates.Email, DateTime.UtcNow.Year, null);
-        employeeWithSubordinates.PaidTimeOffLeftNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employeeWithSubordinates.Email, DateTime.UtcNow.Year + 1, null);
+            Email = employee.Email,
+            Name = employee.Name,
+            Country = employee.Country,
+            Organization = employee.Organization,
+            ManagedBy = employee.ManagedBy,
+            IsOrgOwner = employee.IsOrgOwner,
+            PaidTimeOff = employee.PaidTimeOff,
+            Title = employee.Title,
+            PaidTimeOffLeft = paidTimeOffLeft,
+            PaidTimeOffLeftNextYear = paidTimeOffLeftNextYear,
+            Subordinates = new List<EmployeeWithSubordinatesDTO>()
+        };
 
         var subordinates = await _context.Employees
-                                        .Where(e => e.ManagedBy == employeeEmail)
+                                        .Where(e => e.ManagedBy == employee.Email)
                                         .ToListAsync();
-
-        foreach (var subordinate in subordinates)
+        if (subordinates != null)
         {
-            var subordinateWithSubordinates = await GetEmployeeWithSubordinates(subordinate.Email);
-            employeeWithSubordinates.Subordinates.Add(subordinateWithSubordinates);
+            var pendingRequests = 0;
+            foreach (var subordinate in subordinates)
+            {
+                pendingRequests += await _context.Leaves
+                      .Where(leave => leave.Owner == subordinate.Email &&
+                                      leave.ApprovedBy == null && leave.RejectedBy == null && leave.Type != "bankHoliday")
+                      .CountAsync();
+                var subordinateWithSubordinates = await GetEmployeeWithSubordinates(subordinate);
+                employeeWithSubordinates.Subordinates.Add(subordinateWithSubordinates);
+            }
+            employeeWithSubordinates.PendingRequests = pendingRequests;
         }
 
         return employeeWithSubordinates;

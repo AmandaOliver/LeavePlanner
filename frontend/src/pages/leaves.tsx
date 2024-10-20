@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLeavesModel } from '../models/Leaves'
 import { SetupLeave } from '../components/setupLeave'
 import { Leave } from '../components/leave'
-import LoadingPage from './loading'
+import LoadingPage from '../components/loading'
 import { useEmployeeModel } from '../models/Employee'
 type TabsType = 'leaves' | 'leavesAwaitingApproval' | 'leavesRejected'
 

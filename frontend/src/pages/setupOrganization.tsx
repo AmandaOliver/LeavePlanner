@@ -1,5 +1,5 @@
 import { useOrganizationModel } from '../models/Organization'
-import LoadingPage from './loading'
+import LoadingPage from '../components/loading'
 import { OrganizationTree } from '../components/organizationTree'
 import { SetupEmployee } from '../components/organizationTree/components/setupEmployee'
 

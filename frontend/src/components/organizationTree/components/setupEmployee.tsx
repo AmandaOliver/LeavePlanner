@@ -2,7 +2,7 @@ import { ChangeEvent, FormEvent, useRef, useState } from 'react'
 import { useCountriesModel } from '../../../models/Countries'
 import { EmployeeType, useEmployeeModel } from '../../../models/Employee'
 import { useOrganizationModel } from '../../../models/Organization'
-import LoadingPage from '../../../pages/loading'
+import LoadingPage from '../../loading'
 
 export const SetupEmployee = ({
   managerEmail,

@@ -18,31 +18,50 @@ export const Navigation = () => {
       },
     })
   }
+  const avatarMenuItemsEmployee = { link: '/profile', label: 'My Profile' }
+
   const menuItemsEmployee = [
     { link: '/', label: 'Home' },
     { link: '/profile', label: 'My Profile' },
     { link: '/leaves', label: 'My Leaves' },
   ]
-  const menuItemsManager = [
-    { link: `/requests/${currentEmployee?.email}`, label: 'Leave requests' },
-  ]
+  const menuItemManager = {
+    link: `/requests/${currentEmployee?.email}`,
+    label: 'Leave requests',
+    badge: currentEmployee?.pendingRequests,
+  }
+
   const menuItemOrgOwner = {
     link: `/setup-organization/${currentEmployee?.organization}`,
     label: 'Setup your organization',
   }
 
   const menuItems = []
-  if (currentEmployee) {
-    menuItems.push(...menuItemsEmployee)
-    if (!!currentEmployee.subordinates?.length) {
-      menuItems.push(...menuItemsManager)
-    }
+  const mobileMenuItems = []
+  const avatarMenuItems = []
+  let currentUser = {
+    email: user?.email || '',
+    pendingRequests: 0,
+    avatarPicture:
+      user?.picture || 'https://cdn-icons-png.flaticon.com/512/126/126486.png',
   }
-  const mobileMenuItems = [...menuItems]
-  const avatarMenuItems = [{ link: '/profile', label: 'My Profile' }]
-  if (currentEmployee?.isOrgOwner) {
-    avatarMenuItems.push(menuItemOrgOwner)
-    mobileMenuItems.push(menuItemOrgOwner)
+  if (currentEmployee) {
+    currentUser = {
+      ...currentUser,
+      email: currentEmployee.email,
+      pendingRequests: currentEmployee.pendingRequests,
+    }
+    avatarMenuItems.push(avatarMenuItemsEmployee)
+    menuItems.push(...menuItemsEmployee)
+    mobileMenuItems.push(...menuItemsEmployee)
+    if (!!currentEmployee.subordinates?.length) {
+      avatarMenuItems.push(menuItemManager)
+      mobileMenuItems.push(menuItemManager)
+    }
+    if (currentEmployee.isOrgOwner) {
+      avatarMenuItems.push(menuItemOrgOwner)
+      mobileMenuItems.push(menuItemOrgOwner)
+    }
   }
   return (
     <Header
@@ -50,10 +69,9 @@ export const Navigation = () => {
       menuItems={menuItems}
       activeMenu={location.pathname}
       handleLogout={handleLogout}
-      currentEmployee={currentEmployee}
+      currentUser={currentUser}
       avatarMenuItems={avatarMenuItems}
       mobileMenuItems={mobileMenuItems}
-      avatarPicture={user?.picture || ''}
     />
   )
 }

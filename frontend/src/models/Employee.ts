@@ -13,6 +13,7 @@ export type EmployeeType = {
   subordinates?: Array<EmployeeType>
   paidTimeOffLeft: number
   paidTimeOffLeftNextYear: number
+  pendingRequests: number
 }
 
 export type CreateEmployeeParamType = {

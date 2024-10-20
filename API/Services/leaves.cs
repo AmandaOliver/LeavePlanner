@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 public interface ILeavesService
 {
-	Task<List<LeaveDTO>> GetLeaveRequests(string email);
+	Task<List<LeaveDTO>> GetLeaveRequests(EmployeeWithSubordinatesDTO employee);
 	Task<LeaveDTO> GetLeaveDynamicInfo(Leave leave, bool withConflicts);
 	Task<List<LeaveDTO>> GetLeavesDynamicInfo(List<Leave> leaves, bool withConflicts);
 	Task<string> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId);
@@ -23,10 +23,10 @@ public class LeavesService : ILeavesService
 		_paidTimeOffLeft = paidTimeOffLeft;
 		_employeesController = employeesController;
 	}
-	public async Task<List<LeaveDTO>> GetLeaveRequests(string email)
+	public async Task<List<LeaveDTO>> GetLeaveRequests(EmployeeWithSubordinatesDTO employee)
 	{
 		var leaves = await _context.Leaves
-					   .Where(leave => leave.Owner == email &&
+					   .Where(leave => leave.Owner == employee.Email &&
 									   leave.ApprovedBy == null && leave.RejectedBy == null && leave.Type != "bankHoliday")
 					   .ToListAsync();
 
@@ -163,7 +163,12 @@ public class LeavesService : ILeavesService
 		{
 			return new List<ConflictDTO>(); // head of org doesn't have conflicts
 		}
-		var employeeWithSubordinates = await _employeesController.GetEmployeeWithSubordinates(employee.ManagedBy);
+		var manager = await _context.Employees.FindAsync(employee.ManagedBy);
+		if (manager == null)
+		{
+			throw new Exception("Manager not found");
+		}
+		var employeeWithSubordinates = await _employeesController.GetEmployeeWithSubordinates(manager);
 		var conflicts = new List<ConflictDTO>();
 		foreach (var subordinate in employeeWithSubordinates.Subordinates)
 		{

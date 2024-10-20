@@ -12,6 +12,7 @@ namespace LeavePlanner.Models
 		public int PaidTimeOffLeft { get; set; }
 		public int PaidTimeOffLeftNextYear { get; set; }
 		public string? Title { get; set; }
+		public int? PendingRequests { get; set; }
 		public List<EmployeeWithSubordinatesDTO> Subordinates { get; set; } = new List<EmployeeWithSubordinatesDTO>();
 	}
 }

@@ -71,6 +71,9 @@ export const useRequestsModel = () => {
       queryClient.invalidateQueries({
         queryKey: ['requests', currentEmployee?.email],
       })
+      queryClient.invalidateQueries({
+        queryKey: ['employee', currentEmployee?.email],
+      })
     },
   })
   const rejectRequestMutation = useMutation({
@@ -94,6 +97,9 @@ export const useRequestsModel = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['requests', currentEmployee?.email],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['employee', currentEmployee?.email],
       })
     },
   })

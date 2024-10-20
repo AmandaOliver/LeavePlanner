@@ -32,15 +32,20 @@ public class RequestsController
 	}
 	public async Task<IResult> GetRequestsOfAManager(string email)
 	{
-		var employeeWithSubordinates = await _employeesController.GetEmployeeWithSubordinates(email);
+		var manager = await _context.Employees.FindAsync(email);
+		if (manager == null)
+		{
+			return Results.NotFound("employee not found");
+		}
+		var employeeWithSubordinates = await _employeesController.GetEmployeeWithSubordinates(manager);
 		if (employeeWithSubordinates.Subordinates.IsNullOrEmpty())
 		{
-			Results.NotFound("employee is not a manager");
+			return Results.NotFound("employee is not a manager");
 		}
 		var requests = new List<LeaveDTO>();
 		foreach (var subordinate in employeeWithSubordinates.Subordinates)
 		{
-			var subordinateRequests = await _leavesService.GetLeaveRequests(subordinate.Email);
+			var subordinateRequests = await _leavesService.GetLeaveRequests(subordinate);
 			requests.AddRange(subordinateRequests);
 		}
 
