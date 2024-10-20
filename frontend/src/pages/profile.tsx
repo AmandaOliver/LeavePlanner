@@ -64,11 +64,11 @@ export const ProfilePage = () => {
           </h1>
 
           <h1 className="text-[20px] text-white">
-            - Days not used this year: {currentEmployee?.paidTimeOffLeft}
+            - Days available this year: {currentEmployee?.paidTimeOffLeft}
           </h1>
 
           <h1 className="text-[20px] text-white">
-            - Days not used next year:{' '}
+            - Days available next year:{' '}
             {currentEmployee?.paidTimeOffLeftNextYear}
           </h1>
         </CardBody>

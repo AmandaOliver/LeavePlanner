@@ -115,7 +115,6 @@ Hello {employee.Name},
 
         // Fetch subordinates recursively
         var employeeWithSubordinates = await GetEmployeeWithSubordinates(employee);
-
         return Results.Ok(employeeWithSubordinates);
     }
 
