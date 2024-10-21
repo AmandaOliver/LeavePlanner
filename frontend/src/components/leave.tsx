@@ -10,7 +10,6 @@ export const Leave = ({
   isReadOnly?: boolean
 }) => {
   const [isUpdateLeaveFormOpen, setIsUpdateLeaveFormOpen] = useState(false)
-  const { deleteLeave } = useLeavesModel()
   const summary = (
     <p>
       {leave.type} {!isReadOnly && leave.daysRequested + ' days'} from{' '}
@@ -41,9 +40,6 @@ export const Leave = ({
                 Update Leave
               </button>
             )}
-            <button onClick={() => deleteLeave({ id: leave.id })}>
-              Delete Leave
-            </button>
           </>
         )}
       {isUpdateLeaveFormOpen && (

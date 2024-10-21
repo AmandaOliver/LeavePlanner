@@ -38,31 +38,7 @@ export const SetupLeave = ({ leave }: { leave?: LeaveType }) => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div>
-        <label>Enter the start date*</label>
-        <input
-          type="date"
-          name="dateStart"
-          id="dateStart"
-          value={dateStart}
-          onChange={(event) => {
-            setDateStart(event.target.value)
-            setRequestedDays(undefined)
-            setConflicts([])
-          }}
-          required
-          min={
-            new Date(new Date().setDate(new Date().getDate() + 1))
-              .toISOString()
-              .split('T')[0]
-          } // Tomorrow's date
-          max={
-            new Date(new Date().getFullYear() + 2, 0, 1)
-              .toISOString()
-              .split('T')[0]
-          }
-        />
-      </div>
+      
       <div>
         <label>Enter the end date (you will work this day)*</label>
         <input

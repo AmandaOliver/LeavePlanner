@@ -1,13 +1,11 @@
 import { useState } from 'react'
-import { useLeavesModel } from '../models/Leaves'
-import { SetupLeave } from '../components/setupLeave'
-import { Leave } from '../components/leave'
+import { LeaveType, useLeavesModel } from '../models/Leaves'
 import LoadingPage from '../components/loading'
 import { useEmployeeModel } from '../models/Employee'
 import {
   Card,
   CardBody,
-  CardHeader,
+  Button,
   Divider,
   Table,
   TableBody,
@@ -15,28 +13,76 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  useDisclosure,
+  Modal,
+  ModalBody,
+  ModalContent,
 } from '@nextui-org/react'
 import { WatchIcon } from '../icons/watch'
 import { BussinessWatchIcon } from '../icons/bussinesswatch'
 import { PartyIcon } from '../icons/party'
 import { HistoryIcon } from '../icons/history'
-type TabsType = 'leaves' | 'leavesAwaitingApproval' | 'leavesRejected'
+import { PencilIcon } from '../icons/pencil'
+import { TrashIcon } from '../icons/trash'
+import { EyeIcon } from '../icons/eye'
+import { LeaveInfoModal } from '../components/leaveInfoModal'
+import { LeaveUpdateModal } from '../components/leaveUpdateModal'
+import { LeaveDeleteModal } from '../components/leaveDeleteModal'
 
 export const Leaves = () => {
-  const { leaves, leavesAwaitingApproval, leavesRejected, isLoading } =
-    useLeavesModel()
+  const { leaves, isLoading } = useLeavesModel()
   const { currentEmployee, isLoading: isLoadingEmployee } = useEmployeeModel()
-  const [isRequestLeaveFormOpen, setIsRequestLeaveFormOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<TabsType>('leaves')
-  const leavesToDisplay =
-    activeTab === 'leaves'
-      ? leaves
-      : activeTab === 'leavesAwaitingApproval'
-        ? leavesAwaitingApproval
-        : leavesRejected
+  const {
+    isOpen: isOpenInfoModal,
+    onOpen: onOpenInfoModal,
+    onOpenChange: onOpenChangeInfoModal,
+  } = useDisclosure()
+  const {
+    isOpen: isOpenUpdateModal,
+    onOpen: onOpenUpdateModal,
+    onOpenChange: onOpenChangeUpdateModal,
+  } = useDisclosure()
+  const {
+    isOpen: isOpenDeleteModal,
+    onOpen: onOpenDeleteModal,
+    onOpenChange: onOpenChangeDeleteModal,
+  } = useDisclosure()
+  const [selectedLeave, setSelectedLeave] = useState<LeaveType>()
+  const handleUpdateModalOpen = (leave: LeaveType) => {
+    setSelectedLeave(leave)
+    onOpenUpdateModal()
+  }
+  const handleDeleteModalOpen = (leave: LeaveType) => {
+    setSelectedLeave(leave)
+    onOpenDeleteModal()
+  }
   if (isLoading || isLoadingEmployee) return <LoadingPage />
   return (
     <>
+      {selectedLeave && (
+        <>
+          <LeaveInfoModal
+            isOpen={isOpenInfoModal}
+            onOpenChange={onOpenChangeInfoModal}
+          />
+          <LeaveUpdateModal
+            isOpen={isOpenUpdateModal}
+            onOpenChange={onOpenChangeUpdateModal}
+            leave={selectedLeave}
+            leaves={leaves.filter(
+              (leave) =>
+                new Date(leave.dateStart) >= new Date() &&
+                leave.id !== selectedLeave.id
+            )}
+          />
+
+          <LeaveDeleteModal
+            isOpen={isOpenDeleteModal}
+            leave={selectedLeave}
+            onOpenChange={onOpenChangeDeleteModal}
+          />
+        </>
+      )}
       <div className="m-8">
         <div className="flex flex-wrap flex-row items-center gap-4">
           <BussinessWatchIcon />
@@ -105,7 +151,45 @@ export const Leaves = () => {
                   <TableCell>{leave.dateStart}</TableCell>
                   <TableCell>{leave.dateEnd}</TableCell>
                   <TableCell>{leave.description}</TableCell>
-                  <TableCell>N/A</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap flex-row gap-2">
+                      <Button
+                        isIconOnly
+                        color="default"
+                        variant="light"
+                        aria-label="edit"
+                        size="sm"
+                        onPress={onOpenInfoModal}
+                      >
+                        <EyeIcon />
+                      </Button>
+
+                      {leave.type !== 'bankHoliday' && (
+                        <>
+                          <Button
+                            isIconOnly
+                            color="default"
+                            variant="light"
+                            aria-label="edit"
+                            size="sm"
+                            onPress={() => handleUpdateModalOpen(leave)}
+                          >
+                            <PencilIcon />
+                          </Button>
+                          <Button
+                            isIconOnly
+                            color="default"
+                            variant="light"
+                            aria-label="edit"
+                            size="sm"
+                            onPress={() => handleDeleteModalOpen(leave)}
+                          >
+                            <TrashIcon />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
           </TableBody>
@@ -155,46 +239,4 @@ export const Leaves = () => {
       </div>
     </>
   )
-  // return (
-  //   <>
-  //
-
-  //     <button onClick={() => setIsRequestLeaveFormOpen(true)}>
-  //       Request Leave
-  //     </button>
-  //     {isRequestLeaveFormOpen && (
-  //       <>
-  //         <SetupLeave />
-  //         <button onClick={() => setIsRequestLeaveFormOpen(false)}>
-  //           Close request form
-  //         </button>
-  //       </>
-  //     )}
-  //     <div id="leaves-tabs">
-  //       <button
-  //         onClick={() => setActiveTab('leaves')}
-  //         disabled={activeTab === 'leaves'}
-  //       >
-  //         Leaves
-  //       </button>
-  //       <button
-  //         disabled={activeTab === 'leavesAwaitingApproval'}
-  //         onClick={() => setActiveTab('leavesAwaitingApproval')}
-  //       >
-  //         Leaves Awaiting Approval
-  //       </button>
-  //       <button
-  //         disabled={activeTab === 'leavesRejected'}
-  //         onClick={() => setActiveTab('leavesRejected')}
-  //       >
-  //         Leaves Rejected
-  //       </button>
-  //     </div>
-  //     <ul>
-  //       {leavesToDisplay?.map((leave) => (
-  //         <Leave key={leave.id} leave={leave} />
-  //       ))}
-  //     </ul>
-  //   </>
-  // )
 }
