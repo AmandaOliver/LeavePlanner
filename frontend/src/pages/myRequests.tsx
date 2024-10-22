@@ -91,7 +91,7 @@ export const MyRequests = () => {
           <h1 className=" text-[32px]">Pending requests</h1>
         </div>
         <Divider />
-        <Table aria-label="Example static collection table" className="mt-8">
+        <Table aria-label="list" className="mt-8">
           <TableHeader>
             <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
             <TableColumn>DESCRIPTION</TableColumn>
@@ -150,7 +150,7 @@ export const MyRequests = () => {
           <h1 className=" text-[32px]">Rejected requests</h1>
         </div>
         <Divider />
-        <Table aria-label="Example static collection table" className="mt-8">
+        <Table aria-label="list" className="mt-8">
           <TableHeader>
             <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
             <TableColumn>DESCRIPTION</TableColumn>

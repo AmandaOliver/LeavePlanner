@@ -25,12 +25,20 @@ public class LeavesController
 	private readonly LeavePlannerContext _context;
 	private readonly LeavesService _leavesService;
 	private readonly EmailService _emailService;
+	private readonly IConfiguration _configuration;
 
-	public LeavesController(LeavePlannerContext context, PaidTimeOffLeft paidTimeOffLeft, EmployeesController employeesController, LeavesService leavesService, EmailService emailService)
+	private readonly string _leavePlannerUrl;
+
+
+	public LeavesController(LeavePlannerContext context, LeavesService leavesService, EmailService emailService, IConfiguration configuration)
 	{
 		_context = context;
 		_leavesService = leavesService;
 		_emailService = emailService;
+		_configuration = configuration;
+
+		_leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
+
 	}
 	public async Task<IResult> GetLeaveInfo(string id)
 	{
@@ -169,11 +177,11 @@ public class LeavesController
 
 							foreach (var conflict in leaveWithDynamicInfo.Conflicts)
 							{
-								conflictsInfo += $"\n- {conflict.EmployeeName}:\n";
+								conflictsInfo += $"\n\t- {conflict.EmployeeName}:\n";
 								foreach (var conflictingLeave in conflict.ConflictingLeaves)
 								{
-									conflictsInfo += $"\t• Leave Type: {conflictingLeave.Type}, Description: {conflictingLeave.Description}\n";
-									conflictsInfo += $"\t  Start Date: {conflictingLeave.DateStart.ToShortDateString()}, End Date: {conflictingLeave.DateEnd.ToShortDateString()}\n";
+									conflictsInfo += $"\t\tStart Date: {conflictingLeave.DateStart.ToShortDateString()}, End Date: {conflictingLeave.DateEnd.ToShortDateString()}\n";
+									conflictsInfo += $"\t\tDescription: {conflictingLeave.Description}\n";
 								}
 							}
 						}
@@ -185,6 +193,8 @@ Hello {manager.Name},
 	Start Date: {leave.DateStart.ToShortDateString()}
 	End Date: {leave.DateEnd.ToShortDateString()}
 	{conflictsInfo}
+	To review go to {_leavePlannerUrl}/requests/{manager.Email}
+
 						";
 						await _emailService.SendEmail(employee.ManagedBy, $"New Leave Request from {employee.Name}", emailBody);
 					}
@@ -248,11 +258,11 @@ Hello {manager.Name},
 
 							foreach (var conflict in leaveWithDynamicInfo.Conflicts)
 							{
-								conflictsInfo += $"\n- {conflict.EmployeeName}:\n";
+								conflictsInfo += $"\n\t- {conflict.EmployeeName}:\n";
 								foreach (var conflictingLeave in conflict.ConflictingLeaves)
 								{
-									conflictsInfo += $"\t• Leave Type: {conflictingLeave.Type}, Description: {conflictingLeave.Description}\n";
-									conflictsInfo += $"\t  Start Date: {conflictingLeave.DateStart.ToShortDateString()}, End Date: {conflictingLeave.DateEnd.ToShortDateString()}\n";
+									conflictsInfo += $"\t\tStart Date: {conflictingLeave.DateStart.ToShortDateString()}, End Date: {conflictingLeave.DateEnd.ToShortDateString()}\n";
+									conflictsInfo += $"\t\tDescription: {conflictingLeave.Description}\n";
 								}
 							}
 						}
@@ -264,6 +274,7 @@ Hello {manager.Name},
 	Start Date: {leave.DateStart.ToShortDateString()}
 	End Date: {leave.DateEnd.ToShortDateString()}
 	{conflictsInfo}
+	To review go to {_leavePlannerUrl}/requests/{manager.Email}
 						";
 						await _emailService.SendEmail(employee.ManagedBy, $"Leave Request Updated by {employee.Name}", emailBody);
 					}
@@ -316,9 +327,9 @@ Hello {manager.Name},
 Hello {manager.Name}, 
 	{employee.Name} has deleted a leave request.
 
-	Description: {leave.Description}						
 	Start Date: {leave.DateStart.ToShortDateString()}
 	End Date: {leave.DateEnd.ToShortDateString()}
+	Description: {leave.Description}						
 ";
 					await _emailService.SendEmail(employee.ManagedBy, $"Leave Request Deleted by {employee.Name}", emailBody);
 				}

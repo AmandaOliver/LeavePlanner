@@ -36,7 +36,7 @@ export const Navigation = () => {
   ]
   const menuItemManager = {
     link: `/requests/${currentEmployee?.email}`,
-    label: 'Leave requests',
+    label: 'Review leave requests',
     badge: currentEmployee?.pendingRequests,
   }
 

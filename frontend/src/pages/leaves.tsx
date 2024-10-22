@@ -128,7 +128,7 @@ export const Leaves = () => {
           <h1 className=" text-[32px]">Upcomming leaves</h1>
         </div>
         <Divider />
-        <Table aria-label="Example static collection table" className="mt-8">
+        <Table aria-label="list" className="mt-8">
           <TableHeader>
             <TableColumn>TYPE</TableColumn>
             <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
@@ -210,7 +210,7 @@ export const Leaves = () => {
           <h1 className=" text-[32px]">History</h1>
         </div>
         <Divider />
-        <Table aria-label="Example static collection table" className="mt-8">
+        <Table aria-label="list" className="mt-8">
           <TableHeader>
             <TableColumn>TYPE</TableColumn>
             <TableColumn className="hidden sm:table-cell">DATES</TableColumn>

@@ -1,5 +1,5 @@
 export const RequestIcon = () => (
-  <svg data-bhr-grim="BHR_GRIM" viewBox="0 0 20 20" width="20" height="20">
+  <svg data-bhr-grim="BHR_GRIM" viewBox="0 0 20 20" width="28" height="28">
     <g fillRule="evenodd" stroke="none" strokeWidth="1">
       <g fillRule="nonzero">
         <g>
