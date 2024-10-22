@@ -151,14 +151,14 @@ public class LeavesService : ILeavesService
 			var paidTimeOffLeftForCurrentYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateStart.Year, leaveId);
 			if (daysInCurrentYear > paidTimeOffLeftForCurrentYear)
 			{
-				return $"You cannot request more days than you have left for the year {dateStart.Year}.";
+				return $"You cannot request more days than you have left.\nDays requested: {daysInCurrentYear}.\nDays left for the year {dateStart.Year}: {paidTimeOffLeftForCurrentYear}.";
 			}
 
 			// Check for enough paid time off in next year
 			var paidTimeOffLeftForNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateEnd.Year, leaveId);
 			if (daysInNextYear > paidTimeOffLeftForNextYear)
 			{
-				return $"You cannot request more days than you have left for the year {dateEnd.Year}.";
+				return $"You cannot request more days than you have left.\nDays requested: {daysInNextYear}.\nDays left for the year {dateEnd.Year}: {paidTimeOffLeftForNextYear}.";
 			}
 		}
 		else
@@ -168,7 +168,7 @@ public class LeavesService : ILeavesService
 
 			if (totalWeekdaysRequested > paidTimeOffLeft)
 			{
-				return "You cannot request more days than you have left.";
+				return $"You cannot request more days than you have left.\nDays requested: {totalWeekdaysRequested}.\nDays left for {dateStart.Year}: {paidTimeOffLeft}.";
 			}
 		}
 

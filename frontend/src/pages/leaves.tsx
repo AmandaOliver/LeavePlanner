@@ -14,9 +14,6 @@ import {
   TableHeader,
   TableRow,
   useDisclosure,
-  Modal,
-  ModalBody,
-  ModalContent,
 } from '@nextui-org/react'
 import { WatchIcon } from '../icons/watch'
 import { BussinessWatchIcon } from '../icons/bussinesswatch'
@@ -47,42 +44,55 @@ export const Leaves = () => {
     onOpen: onOpenDeleteModal,
     onOpenChange: onOpenChangeDeleteModal,
   } = useDisclosure()
-  const [selectedLeave, setSelectedLeave] = useState<LeaveType>()
+  const [updateLeave, setUpdateLeave] = useState<LeaveType>()
+  const [infoLeave, setInfoLeave] = useState<LeaveType>()
+  const [deleteLeave, setDeleteLeave] = useState<LeaveType>()
   const handleUpdateModalOpen = (leave: LeaveType) => {
-    setSelectedLeave(leave)
+    setUpdateLeave(leave)
     onOpenUpdateModal()
   }
   const handleDeleteModalOpen = (leave: LeaveType) => {
-    setSelectedLeave(leave)
+    setDeleteLeave(leave)
     onOpenDeleteModal()
+  }
+  const handleInfoModalOpen = (leave: LeaveType) => {
+    setInfoLeave(leave)
+    onOpenInfoModal()
   }
   if (isLoading || isLoadingEmployee) return <LoadingPage />
   return (
     <>
-      {selectedLeave && (
-        <>
-          <LeaveInfoModal
-            isOpen={isOpenInfoModal}
-            onOpenChange={onOpenChangeInfoModal}
-          />
-          <LeaveUpdateModal
-            isOpen={isOpenUpdateModal}
-            onOpenChange={onOpenChangeUpdateModal}
-            leave={selectedLeave}
-            leaves={leaves.filter(
-              (leave) =>
-                new Date(leave.dateStart) >= new Date() &&
-                leave.id !== selectedLeave.id
-            )}
-          />
-
-          <LeaveDeleteModal
-            isOpen={isOpenDeleteModal}
-            leave={selectedLeave}
-            onOpenChange={onOpenChangeDeleteModal}
-          />
-        </>
+      {infoLeave?.id && (
+        <LeaveInfoModal
+          isOpen={isOpenInfoModal}
+          onOpenChange={onOpenChangeInfoModal}
+          leave={infoLeave}
+          onClose={() => setInfoLeave({} as LeaveType)}
+        />
       )}
+      {updateLeave?.id && (
+        <LeaveUpdateModal
+          isOpen={isOpenUpdateModal}
+          onOpenChange={onOpenChangeUpdateModal}
+          leave={updateLeave}
+          leaves={leaves.filter(
+            (leave) =>
+              new Date(leave.dateStart) >= new Date() &&
+              leave.id !== updateLeave.id
+          )}
+          onClose={() => setUpdateLeave({} as LeaveType)}
+        />
+      )}
+
+      {deleteLeave?.id && (
+        <LeaveDeleteModal
+          isOpen={isOpenDeleteModal}
+          leave={deleteLeave}
+          onOpenChange={onOpenChangeDeleteModal}
+          onClose={() => setDeleteLeave({} as LeaveType)}
+        />
+      )}
+
       <div className="m-8">
         <div className="flex flex-wrap flex-row items-center gap-4">
           <BussinessWatchIcon />
@@ -159,7 +169,7 @@ export const Leaves = () => {
                         variant="light"
                         aria-label="edit"
                         size="sm"
-                        onPress={onOpenInfoModal}
+                        onPress={() => handleInfoModalOpen(leave)}
                       >
                         <EyeIcon />
                       </Button>

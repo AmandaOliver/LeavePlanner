@@ -51,6 +51,7 @@ public class PaidTimeOffLeft : IPaidTimeOffLeft
 				throw new Exception("leave not found");
 			}
 			leaveCreationDate = currentLeave.CreatedAt;
+			_context.Leaves.Remove(currentLeave);
 		}
 		// Check for conflicting leaves
 		var conflictingLeaves = await _context.Leaves

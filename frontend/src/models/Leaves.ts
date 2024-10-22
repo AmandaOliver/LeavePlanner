@@ -52,6 +52,7 @@ export const useLeavesModel = () => {
   const { getAccessTokenSilently } = useAuth0()
   const queryClient = useQueryClient()
   const { currentEmployee } = useEmployeeModel()
+
   const fetchLeaves = async (): Promise<LeaveType[]> => {
     const accessToken = await getAccessTokenSilently()
 
@@ -135,6 +136,7 @@ export const useLeavesModel = () => {
       throw new Error('Failed to fetch rejected leaves')
     }
   }
+
   const leavesQuery = useQuery({
     queryKey: ['leaves', currentEmployee?.email],
     queryFn: fetchLeaves,
@@ -200,12 +202,15 @@ export const useLeavesModel = () => {
       }
       return await response.json()
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: ['leaves', currentEmployee?.email],
       })
-      queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: ['leavesAwaitingApproval', currentEmployee?.email],
+      })
+      await queryClient.invalidateQueries({
+        queryKey: ['employee', currentEmployee?.email],
       })
     },
   })

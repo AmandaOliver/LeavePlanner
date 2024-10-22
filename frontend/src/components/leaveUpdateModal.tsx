@@ -7,44 +7,97 @@ import {
   ModalFooter,
   Card,
   Button,
+  Textarea,
+  Skeleton,
 } from '@nextui-org/react'
-import {
-  ConflictType,
-  LeaveType,
-  LeaveTypes,
-  useLeavesModel,
-} from '../models/Leaves'
-import { useEffect, useState } from 'react'
-import { parseDate } from '@internationalized/date'
-import LoadingComponent from './loading'
-import { LoadingSpinner } from '../stories/Loading/Loading'
+import { ConflictType, LeaveType, useLeavesModel } from '../models/Leaves'
+import { useCallback, useEffect, useState } from 'react'
+import { CalendarDate, parseDate } from '@internationalized/date'
 
 export const LeaveUpdateModal = ({
   isOpen,
   onOpenChange,
   leave,
   leaves,
+  onClose,
 }: {
   isOpen: boolean
   onOpenChange: () => void
   leave: LeaveType
   leaves: LeaveType[]
+  onClose: () => void
 }) => {
   const [dateStart, setDateStart] = useState(leave.dateStart)
   const [dateEnd, setDateEnd] = useState(leave.dateEnd)
   const { createLeave, updateLeave, validateLeave } = useLeavesModel()
 
-  const [requestedDays, setRequestedDays] = useState<number | undefined>()
-  const [conflicts, setConflicts] = useState<ConflictType[]>([])
-  const [errors, setErrors] = useState<string>()
   const [feedback, setFeedback] = useState<{
     error?: string
     daysRequested?: number
+    conflicts: ConflictType[]
   }>()
   const [isLoading, setIsLoading] = useState(false)
+  const [description, setDescription] = useState(leave?.description || '')
+  const updateLeaveHandler = async () => {
+    setIsLoading(true)
+    await updateLeave({
+      id: leave.id,
+      description,
+      dateStart,
+      dateEnd,
+      type: 'paidTimeOff',
+    })
+    setIsLoading(false)
 
+    onClose()
+  }
+
+  const validateLeaveHandler = useCallback(
+    async ({ start, end }: { start: CalendarDate; end: CalendarDate }) => {
+      setDateStart(start.toString())
+      setDateEnd(end.add({ days: 1 }).toString())
+      setIsLoading(true)
+
+      setFeedback(
+        await validateLeave({
+          dateStart: start.toString(),
+          dateEnd: end.add({ days: 1 }).toString(),
+          id: leave?.id,
+        })
+      )
+
+      setIsLoading(false)
+    },
+    [
+      setDateStart,
+      setDateEnd,
+      setFeedback,
+      setIsLoading,
+      leave.id,
+      validateLeave,
+    ]
+  )
+  useEffect(() => {
+    const getFeedback = async () => {
+      setIsLoading(true)
+      setFeedback(
+        await validateLeave({
+          dateStart: parseDate(dateStart).toString(),
+          dateEnd: parseDate(dateEnd).toString(),
+          id: leave?.id,
+        })
+      )
+      setIsLoading(false)
+    }
+    getFeedback()
+  }, [dateEnd, dateStart, leave?.id, validateLeave])
   return (
-    <Modal isOpen={isOpen} size="lg" onOpenChange={onOpenChange}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="lg"
+      onOpenChange={onOpenChange}
+    >
       <ModalContent>
         {(onClose) => (
           <>
@@ -52,15 +105,39 @@ export const LeaveUpdateModal = ({
               Update leave
             </ModalHeader>
             <ModalBody>
-              {feedback?.error && (
-                <Card className="bg-danger w-full text-white p-4">
-                  ERROR: {feedback.error}
-                </Card>
-              )}
-              {feedback?.daysRequested && (
-                <Card className="bg-primary w-full text-white p-4">
-                  Days Requested: {feedback.daysRequested}
-                </Card>
+              {isLoading ? (
+                <Skeleton className="rounded-lg">
+                  <div className="h-14 rounded-lg bg-default-300"></div>
+                </Skeleton>
+              ) : (
+                <>
+                  {feedback?.error && (
+                    <Card className="bg-danger w-full text-white p-4">
+                      <p className="whitespace-pre-line">{feedback.error}</p>
+                    </Card>
+                  )}
+
+                  {feedback?.conflicts && feedback?.conflicts.length > 0 && (
+                    <Card className="bg-warning w-full text-white p-4">
+                      {feedback.conflicts?.map((conflict) => (
+                        <details key={conflict.employeeName}>
+                          <summary>{conflict.employeeName} is on leave</summary>
+                          {conflict.conflictingLeaves?.map((leave) => (
+                            <p>
+                              - from {new Date(leave.dateStart).toDateString()}{' '}
+                              until {new Date(leave.dateEnd).toDateString()}
+                            </p>
+                          ))}
+                        </details>
+                      ))}
+                    </Card>
+                  )}
+                  {feedback?.daysRequested !== undefined && (
+                    <Card className="bg-primary w-full text-white p-4">
+                      <p>Days Requested: {feedback.daysRequested}</p>
+                    </Card>
+                  )}
+                </>
               )}
               <DateRangePicker
                 allowsNonContiguousRanges
@@ -75,7 +152,7 @@ export const LeaveUpdateModal = ({
                 size="md"
                 value={{
                   start: parseDate(dateStart),
-                  end: parseDate(dateEnd),
+                  end: parseDate(dateEnd).add({ days: -1 }),
                 }}
                 isRequired
                 label="Days on leave"
@@ -89,21 +166,13 @@ export const LeaveUpdateModal = ({
                     .toISOString()
                     .split('T')[0]
                 )}
-                onChange={async ({ start, end }) => {
-                  setDateStart(start.toString())
-                  setDateEnd(end.toString())
-                  setIsLoading(true)
-
-                  setFeedback(
-                    await validateLeave({
-                      dateStart,
-                      dateEnd: end.toString(),
-                      id: leave?.id,
-                    })
-                  )
-
-                  setIsLoading(false)
-                }}
+                onChange={validateLeaveHandler}
+              />
+              <Textarea
+                label="Description"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="I am going to have the trip of my life..."
               />
             </ModalBody>
             <ModalFooter>
@@ -113,7 +182,7 @@ export const LeaveUpdateModal = ({
               <Button
                 color="primary"
                 isDisabled={!!feedback && !!feedback?.error}
-                onPress={() => {}}
+                onPress={updateLeaveHandler}
                 isLoading={isLoading}
               >
                 Update

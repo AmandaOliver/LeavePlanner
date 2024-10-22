@@ -10,7 +10,7 @@ public static class LeavesEndpointsExtensions
 {
 	public static void MapLeavesEndpoints(this IEndpointRouteBuilder endpoints)
 	{
-
+		endpoints.MapGet("/leave/{id}", async (LeavesController controller, string id) => await controller.GetLeaveInfo(id)).RequireAuthorization();
 		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email) => await controller.GetLeavesApproved(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/pending/{email}", async (LeavesController controller, string email) => await controller.GetLeavesAwaitingApproval(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/rejected/{email}", async (LeavesController controller, string email) => await controller.GetLeavesRejected(email)).RequireAuthorization();
@@ -31,6 +31,16 @@ public class LeavesController
 		_context = context;
 		_leavesService = leavesService;
 		_emailService = emailService;
+	}
+	public async Task<IResult> GetLeaveInfo(string id)
+	{
+		var leave = await _context.Leaves.FindAsync(int.Parse(id));
+		if (leave == null)
+		{
+			return Results.NotFound("leave not found");
+		}
+		var leaveWithDynamicInfo = await _leavesService.GetLeaveDynamicInfo(leave, true);
+		return Results.Ok(leaveWithDynamicInfo);
 	}
 	public async Task<IResult> GetLeavesApproved(string email)
 	{
@@ -97,6 +107,7 @@ public class LeavesController
 		}
 		Leave leaveRequest = new Leave
 		{
+			Id = leaveToValidate.Id ?? 0,
 			DateStart = leaveToValidate.DateStart,
 			DateEnd = leaveToValidate.DateEnd,
 			Type = "paidTimeOff",
@@ -210,6 +221,8 @@ Hello {manager.Name},
 			leave.DateEnd = leaveUpdate.DateEnd;
 			leave.Type = leaveUpdate.Type;
 			leave.CreatedAt = DateTime.UtcNow;
+			leave.ApprovedBy = null;
+			leave.RejectedBy = null;
 
 			_context.Leaves.Update(leave);
 			await _context.SaveChangesAsync();

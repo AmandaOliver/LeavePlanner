@@ -39,39 +39,7 @@ export const SetupLeave = ({ leave }: { leave?: LeaveType }) => {
   return (
     <form onSubmit={handleSubmit}>
       
-      <div>
-        <label>Enter the end date (you will work this day)*</label>
-        <input
-          type="date"
-          name="dateEnd"
-          id="dateEnd"
-          value={dateEnd}
-          onChange={async (event) => {
-            setDateEnd(event.target.value)
-            setIsLoading(true)
-            const feedback = await validateLeave({
-              dateStart,
-              dateEnd: event.target.value,
-              id: leave?.id,
-            })
-            if (feedback) {
-              setRequestedDays(feedback.daysRequested)
-              setConflicts(feedback.conflicts)
-            } else {
-              setRequestedDays(undefined)
-              setConflicts([])
-            }
-            setIsLoading(false)
-          }}
-          required
-          min={dateStart}
-          max={
-            new Date(new Date().getFullYear() + 2, 0, 2)
-              .toISOString()
-              .split('T')[0]
-          }
-        />
-      </div>
+  
       <div>
         <label>Enter the description *</label>
         <textarea
