@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Navbar,
   NavbarBrand,
@@ -46,8 +46,8 @@ export function Header({
   avatarMenuItems,
   mobileMenuItems,
 }: PropsType) {
-  const [isMenuOpen, setIsMenuOpen] = React.useState(false)
-
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isImageError, setIsImageError] = useState(false)
   return (
     <Navbar
       isMenuOpen={isMenuOpen}
@@ -104,7 +104,11 @@ export function Header({
                   className="transition-transform"
                   color="primary"
                   size="sm"
-                  src={currentUser.avatarPicture}
+                  src={
+                    // isImageError ? '/userIcon.svg' : currentUser.avatarPicture
+                    './userIcon.svg'
+                  }
+                  onError={() => setIsImageError(true)}
                 />
               </DropdownTrigger>
             </Badge>

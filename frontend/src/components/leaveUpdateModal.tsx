@@ -5,6 +5,8 @@ import {
   ModalHeader,
   DateRangePicker,
   ModalFooter,
+  Card,
+  Button,
 } from '@nextui-org/react'
 import {
   ConflictType,
@@ -12,9 +14,10 @@ import {
   LeaveTypes,
   useLeavesModel,
 } from '../models/Leaves'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { parseDate } from '@internationalized/date'
 import LoadingComponent from './loading'
+import { LoadingSpinner } from '../stories/Loading/Loading'
 
 export const LeaveUpdateModal = ({
   isOpen,
@@ -34,10 +37,14 @@ export const LeaveUpdateModal = ({
   const [requestedDays, setRequestedDays] = useState<number | undefined>()
   const [conflicts, setConflicts] = useState<ConflictType[]>([])
   const [errors, setErrors] = useState<string>()
-  const [feedback, setFeedback] = useState()
+  const [feedback, setFeedback] = useState<{
+    error?: string
+    daysRequested?: number
+  }>()
   const [isLoading, setIsLoading] = useState(false)
+
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Modal isOpen={isOpen} size="lg" onOpenChange={onOpenChange}>
       <ModalContent>
         {(onClose) => (
           <>
@@ -45,6 +52,16 @@ export const LeaveUpdateModal = ({
               Update leave
             </ModalHeader>
             <ModalBody>
+              {feedback?.error && (
+                <Card className="bg-danger w-full text-white p-4">
+                  ERROR: {feedback.error}
+                </Card>
+              )}
+              {feedback?.daysRequested && (
+                <Card className="bg-primary w-full text-white p-4">
+                  Days Requested: {feedback.daysRequested}
+                </Card>
+              )}
               <DateRangePicker
                 allowsNonContiguousRanges
                 visibleMonths={2}
@@ -90,8 +107,17 @@ export const LeaveUpdateModal = ({
               />
             </ModalBody>
             <ModalFooter>
-              {isLoading && <LoadingComponent />}
-              {feedback && <p>{feedback}</p>}
+              <Button variant="light" onPress={onClose}>
+                Close
+              </Button>
+              <Button
+                color="primary"
+                isDisabled={!!feedback && !!feedback?.error}
+                onPress={() => {}}
+                isLoading={isLoading}
+              >
+                Update
+              </Button>
             </ModalFooter>
           </>
         )}

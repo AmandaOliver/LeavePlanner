@@ -243,7 +243,7 @@ export const useLeavesModel = () => {
         }
       }
 
-      return await response.json()
+      return { error: await response.json() }
     },
   })
   const deleteLeaveMutation = useMutation({
