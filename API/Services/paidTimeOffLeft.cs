@@ -57,6 +57,7 @@ public class PaidTimeOffLeft : IPaidTimeOffLeft
 		var conflictingLeaves = await _context.Leaves
 			.Where(leave =>
 				leave.Owner == owner && // is a leave of this employee
+				leave.ApprovedBy != null && // we only take in account approved leaves
 				(leaveId != null ? leave.Id != leaveId : true) && // if we are updating, do not take in account the previous version
 				leave.CreatedAt < leaveCreationDate && // we only take in account leaves created previously (this is important when retrieving days dynamically on get calls)
 				(

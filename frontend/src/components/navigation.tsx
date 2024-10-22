@@ -3,14 +3,22 @@ import { useEmployeeModel } from '../models/Employee'
 import { useOrganizationModel } from '../models/Organization'
 import { Header } from '../stories/Header/Header'
 import { useAuth0 } from '@auth0/auth0-react'
+import { Skeleton, useDisclosure } from '@nextui-org/react'
+import { LeaveModal } from './leaveModal'
+import { useLeavesModel } from '../models/Leaves'
+import { useState } from 'react'
 
 export const Navigation = () => {
   const { user } = useAuth0()
-  const { currentEmployee } = useEmployeeModel()
-  const { currentOrganization } = useOrganizationModel()
-  const { logout } = useAuth0()
-  const location = useLocation()
+  const { leaves, isLoading } = useLeavesModel()
 
+  const { currentEmployee, isLoading: isLoadingEmployee } = useEmployeeModel()
+  const { currentOrganization, isLoading: isLoadingOrg } =
+    useOrganizationModel()
+  const { logout, isLoading: isLoadingUser } = useAuth0()
+  const location = useLocation()
+  const { isOpen, onOpen, onOpenChange } = useDisclosure()
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false)
   const handleLogout = () => {
     logout({
       logoutParams: {
@@ -24,6 +32,7 @@ export const Navigation = () => {
     { link: '/', label: 'Home' },
     { link: '/profile', label: 'My Profile' },
     { link: '/leaves', label: 'My Leaves' },
+    { link: '/requests', label: 'My Requests' },
   ]
   const menuItemManager = {
     link: `/requests/${currentEmployee?.email}`,
@@ -39,6 +48,7 @@ export const Navigation = () => {
   const menuItems = []
   const mobileMenuItems = []
   const avatarMenuItems = []
+
   let currentUser = {
     email: user?.email || '',
     pendingRequests: 0,
@@ -63,15 +73,33 @@ export const Navigation = () => {
       mobileMenuItems.push(menuItemOrgOwner)
     }
   }
+  if (isLoading || isLoadingEmployee || isLoadingOrg || isLoadingUser)
+    return <Skeleton className="w-full h-16" />
   return (
-    <Header
-      organizationName={currentOrganization?.name}
-      menuItems={menuItems}
-      activeMenu={location.pathname}
-      handleLogout={handleLogout}
-      currentUser={currentUser}
-      avatarMenuItems={avatarMenuItems}
-      mobileMenuItems={mobileMenuItems}
-    />
+    <>
+      {isLeaveModalOpen && (
+        <LeaveModal
+          leaves={leaves}
+          isOpen={isOpen}
+          onOpenChange={onOpenChange}
+          onCloseCb={() => setIsLeaveModalOpen(false)}
+        />
+      )}
+
+      <Header
+        organizationName={currentOrganization?.name}
+        menuItems={menuItems}
+        activeMenu={location.pathname}
+        handleLogout={handleLogout}
+        currentUser={currentUser}
+        avatarMenuItems={avatarMenuItems}
+        mobileMenuItems={mobileMenuItems}
+        handleButtonClick={() => {
+          setIsLeaveModalOpen(true)
+          onOpen()
+        }}
+        buttonLabel="Request a leave"
+      />
+    </>
   )
 }

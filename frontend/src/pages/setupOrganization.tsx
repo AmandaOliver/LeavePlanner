@@ -1,12 +1,12 @@
 import { useOrganizationModel } from '../models/Organization'
-import LoadingPage from '../components/loading'
+import { LoadingComponent } from '../components/loading'
 import { OrganizationTree } from '../components/organizationTree'
 import { SetupEmployee } from '../components/organizationTree/components/setupEmployee'
 
 export const SetupOrganization = () => {
   const { isLoading, currentOrganization } = useOrganizationModel()
 
-  if (isLoading) return <LoadingPage />
+  if (isLoading) return <LoadingComponent />
 
   return (
     <>

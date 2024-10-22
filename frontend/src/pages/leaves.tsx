@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { LeaveType, useLeavesModel } from '../models/Leaves'
-import LoadingPage from '../components/loading'
 import { useEmployeeModel } from '../models/Employee'
 import {
   Card,
@@ -23,8 +22,9 @@ import { PencilIcon } from '../icons/pencil'
 import { TrashIcon } from '../icons/trash'
 import { EyeIcon } from '../icons/eye'
 import { LeaveInfoModal } from '../components/leaveInfoModal'
-import { LeaveUpdateModal } from '../components/leaveUpdateModal'
+import { LeaveModal } from '../components/leaveModal'
 import { LeaveDeleteModal } from '../components/leaveDeleteModal'
+import { LoadingComponent } from '../components/loading'
 
 export const Leaves = () => {
   const { leaves, isLoading } = useLeavesModel()
@@ -59,7 +59,7 @@ export const Leaves = () => {
     setInfoLeave(leave)
     onOpenInfoModal()
   }
-  if (isLoading || isLoadingEmployee) return <LoadingPage />
+  if (isLoading || isLoadingEmployee) return <LoadingComponent />
   return (
     <>
       {infoLeave?.id && (
@@ -67,11 +67,10 @@ export const Leaves = () => {
           isOpen={isOpenInfoModal}
           onOpenChange={onOpenChangeInfoModal}
           leave={infoLeave}
-          onClose={() => setInfoLeave({} as LeaveType)}
         />
       )}
       {updateLeave?.id && (
-        <LeaveUpdateModal
+        <LeaveModal
           isOpen={isOpenUpdateModal}
           onOpenChange={onOpenChangeUpdateModal}
           leave={updateLeave}
@@ -80,7 +79,7 @@ export const Leaves = () => {
               new Date(leave.dateStart) >= new Date() &&
               leave.id !== updateLeave.id
           )}
-          onClose={() => setUpdateLeave({} as LeaveType)}
+          onCloseCb={() => setUpdateLeave({} as LeaveType)}
         />
       )}
 
@@ -89,7 +88,6 @@ export const Leaves = () => {
           isOpen={isOpenDeleteModal}
           leave={deleteLeave}
           onOpenChange={onOpenChangeDeleteModal}
-          onClose={() => setDeleteLeave({} as LeaveType)}
         />
       )}
 
@@ -133,12 +131,11 @@ export const Leaves = () => {
         <Table aria-label="Example static collection table" className="mt-8">
           <TableHeader>
             <TableColumn>TYPE</TableColumn>
-            <TableColumn>START DATE</TableColumn>
-            <TableColumn>END DATE</TableColumn>
+            <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
             <TableColumn>DESCRIPTION</TableColumn>
             <TableColumn>ACTIONS</TableColumn>
           </TableHeader>
-          <TableBody>
+          <TableBody emptyContent={'No leaves in the next 6 months.'}>
             {leaves
               .filter((leave) => new Date(leave.dateStart) >= new Date())
               .sort((a, b) => (a.dateStart < b.dateStart ? -1 : 1))
@@ -151,18 +148,20 @@ export const Leaves = () => {
                       ) : (
                         <BussinessWatchIcon />
                       )}
-                      <p className="hidden sm:block">
+                      <p className="hidden lg:block">
                         {leave.type === 'bankHoliday'
                           ? 'Bank Holiday'
                           : 'Paid Time Off'}
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell>{leave.dateStart}</TableCell>
-                  <TableCell>{leave.dateEnd}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {new Date(leave.dateStart).toDateString()} to{' '}
+                    {new Date(leave.dateEnd).toDateString()}
+                  </TableCell>
                   <TableCell>{leave.description}</TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap flex-row gap-2">
+                    <div className="flex flex-wrap flex-row ">
                       <Button
                         isIconOnly
                         color="default"
@@ -214,12 +213,11 @@ export const Leaves = () => {
         <Table aria-label="Example static collection table" className="mt-8">
           <TableHeader>
             <TableColumn>TYPE</TableColumn>
-            <TableColumn>START DATE</TableColumn>
-            <TableColumn>END DATE</TableColumn>
+            <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
             <TableColumn>DESCRIPTION</TableColumn>
           </TableHeader>
 
-          <TableBody>
+          <TableBody emptyContent="No history.">
             {leaves
               .filter((leave) => new Date(leave.dateStart) < new Date())
               .sort((a, b) => (a.dateStart < b.dateStart ? -1 : 1))
@@ -232,15 +230,17 @@ export const Leaves = () => {
                       ) : (
                         <BussinessWatchIcon />
                       )}
-                      <p className="hidden sm:block">
+                      <p className="hidden md:block">
                         {leave.type === 'bankHoliday'
                           ? 'Bank Holiday'
                           : 'Paid Time Off'}
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell>{leave.dateStart}</TableCell>
-                  <TableCell>{leave.dateEnd}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {new Date(leave.dateStart).toDateString()} to{' '}
+                    {new Date(leave.dateEnd).toDateString()}
+                  </TableCell>
                   <TableCell>{leave.description}</TableCell>
                 </TableRow>
               ))}

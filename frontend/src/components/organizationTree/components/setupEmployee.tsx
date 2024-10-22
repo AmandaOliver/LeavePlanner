@@ -2,7 +2,7 @@ import { ChangeEvent, FormEvent, useRef, useState } from 'react'
 import { useCountriesModel } from '../../../models/Countries'
 import { EmployeeType, useEmployeeModel } from '../../../models/Employee'
 import { useOrganizationModel } from '../../../models/Organization'
-import LoadingPage from '../../loading'
+import { LoadingComponent } from '../../loading'
 
 export const SetupEmployee = ({
   managerEmail,
@@ -36,7 +36,7 @@ export const SetupEmployee = ({
   const titleRef = useRef<HTMLInputElement>(null)
   const nameRef = useRef<HTMLInputElement>(null)
 
-  if (isLoadingCountries || isLoadingOrganization) return <LoadingPage />
+  if (isLoadingCountries || isLoadingOrganization) return <LoadingComponent />
   const handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
     setEmployeeEmail(event.target.value)
     setEmailError(null)

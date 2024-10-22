@@ -13,12 +13,10 @@ export const LeaveDeleteModal = ({
   isOpen,
   onOpenChange,
   leave,
-  onClose,
 }: {
   isOpen: boolean
   onOpenChange: () => void
   leave: LeaveType
-  onClose: () => void
 }) => {
   const { deleteLeave } = useLeavesModel()
   const [isLoading, setIsLoading] = useState(false)
@@ -31,7 +29,7 @@ export const LeaveDeleteModal = ({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} onOpenChange={onOpenChange}>
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
       <ModalContent>
         {(onClose) => (
           <>

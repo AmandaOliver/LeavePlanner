@@ -7,15 +7,16 @@ import { HomePage } from './pages/home'
 import { NotFoundPage } from './pages/not-found'
 import { ProfilePage } from './pages/profile'
 import { Navigation } from './components/navigation'
-import LoadingPage from './components/loading'
 import { SetupOrganization } from './pages/setupOrganization'
 import { Leaves } from './pages/leaves'
 import { Requests } from './pages/requests'
+import { MyRequests } from './pages/myRequests'
+import { LoadingComponent } from './components/loading'
 
 export const EmployeeRoutes = () => {
   const { currentEmployee, isLoading } = useEmployeeModel()
   if (isLoading) {
-    return <LoadingPage />
+    return <LoadingComponent />
   }
   return (
     <>
@@ -34,6 +35,10 @@ export const EmployeeRoutes = () => {
           <Route
             path="/leaves"
             element={<AuthenticationGuard component={Leaves} />}
+          />
+          <Route
+            path="/requests"
+            element={<AuthenticationGuard component={MyRequests} />}
           />
           <Route
             path="/requests/:id"

@@ -13,42 +13,65 @@ import {
 import { ConflictType, LeaveType, useLeavesModel } from '../models/Leaves'
 import { useCallback, useEffect, useState } from 'react'
 import { CalendarDate, parseDate } from '@internationalized/date'
+import { useEmployeeModel } from '../models/Employee'
 
-export const LeaveUpdateModal = ({
+export const LeaveModal = ({
   isOpen,
   onOpenChange,
   leave,
   leaves,
-  onClose,
+  onCloseCb,
 }: {
   isOpen: boolean
   onOpenChange: () => void
-  leave: LeaveType
+  leave?: LeaveType
   leaves: LeaveType[]
-  onClose: () => void
+  onCloseCb: () => void
 }) => {
-  const [dateStart, setDateStart] = useState(leave.dateStart)
-  const [dateEnd, setDateEnd] = useState(leave.dateEnd)
-  const { createLeave, updateLeave, validateLeave } = useLeavesModel()
+  const [dateStart, setDateStart] = useState(
+    leave?.dateStart ||
+      new Date(new Date().setDate(new Date().getDate() + 1))
+        .toISOString()
+        .split('T')[0]
+  )
+  const [dateEnd, setDateEnd] = useState(
+    leave?.dateEnd ||
+      new Date(new Date().setDate(new Date().getDate() + 2))
+        .toISOString()
+        .split('T')[0]
+  )
+  const [description, setDescription] = useState(leave?.description || '')
 
+  const { createLeave, updateLeave, validateLeave } = useLeavesModel()
+  const { currentEmployee } = useEmployeeModel()
   const [feedback, setFeedback] = useState<{
     error?: string
     daysRequested?: number
     conflicts: ConflictType[]
   }>()
+  const [isLoadingInfo, setIsLoadingInfo] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [description, setDescription] = useState(leave?.description || '')
-  const updateLeaveHandler = async () => {
-    setIsLoading(true)
-    await updateLeave({
-      id: leave.id,
-      description,
-      dateStart,
-      dateEnd,
-      type: 'paidTimeOff',
-    })
-    setIsLoading(false)
 
+  const leaveHandler = async (onClose: () => void) => {
+    setIsLoading(true)
+    if (leave) {
+      await updateLeave({
+        id: leave.id,
+        description,
+        dateStart,
+        dateEnd,
+        type: 'paidTimeOff',
+      })
+    } else {
+      await createLeave({
+        description,
+        dateStart,
+        dateEnd,
+        type: 'paidTimeOff',
+      })
+    }
+    setIsLoading(false)
+    onCloseCb()
     onClose()
   }
 
@@ -56,7 +79,7 @@ export const LeaveUpdateModal = ({
     async ({ start, end }: { start: CalendarDate; end: CalendarDate }) => {
       setDateStart(start.toString())
       setDateEnd(end.add({ days: 1 }).toString())
-      setIsLoading(true)
+      setIsLoadingInfo(true)
 
       setFeedback(
         await validateLeave({
@@ -66,20 +89,20 @@ export const LeaveUpdateModal = ({
         })
       )
 
-      setIsLoading(false)
+      setIsLoadingInfo(false)
     },
     [
       setDateStart,
       setDateEnd,
       setFeedback,
-      setIsLoading,
-      leave.id,
+      setIsLoadingInfo,
+      leave?.id,
       validateLeave,
     ]
   )
   useEffect(() => {
     const getFeedback = async () => {
-      setIsLoading(true)
+      setIsLoadingInfo(true)
       setFeedback(
         await validateLeave({
           dateStart: parseDate(dateStart).toString(),
@@ -87,14 +110,14 @@ export const LeaveUpdateModal = ({
           id: leave?.id,
         })
       )
-      setIsLoading(false)
+      setIsLoadingInfo(false)
     }
     getFeedback()
-  }, [dateEnd, dateStart, leave?.id, validateLeave])
+  }, [dateEnd, dateStart, leave, validateLeave])
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={onCloseCb}
       size="lg"
       onOpenChange={onOpenChange}
     >
@@ -102,10 +125,10 @@ export const LeaveUpdateModal = ({
         {(onClose) => (
           <>
             <ModalHeader className="flex flex-col gap-1">
-              Update leave
+              {leave ? 'Update leave' : 'Request a leave'}
             </ModalHeader>
             <ModalBody>
-              {isLoading ? (
+              {isLoadingInfo ? (
                 <Skeleton className="rounded-lg">
                   <div className="h-14 rounded-lg bg-default-300"></div>
                 </Skeleton>
@@ -132,16 +155,27 @@ export const LeaveUpdateModal = ({
                       ))}
                     </Card>
                   )}
-                  {feedback?.daysRequested !== undefined && (
-                    <Card className="bg-primary w-full text-white p-4">
-                      <p>Days Requested: {feedback.daysRequested}</p>
-                    </Card>
-                  )}
+                  {feedback?.daysRequested !== undefined &&
+                    currentEmployee?.paidTimeOffLeft && (
+                      <Card className="bg-primary w-full text-white p-4">
+                        <p>Days Requested: {feedback.daysRequested}</p>
+
+                        {new Date(dateStart).getFullYear() ===
+                          new Date(dateEnd).getFullYear() && (
+                          <p>
+                            If approved, you'll have{' '}
+                            {currentEmployee.paidTimeOffLeft -
+                              feedback.daysRequested}{' '}
+                            days left in {new Date(dateStart).getFullYear()}.
+                          </p>
+                        )}
+                      </Card>
+                    )}
                 </>
               )}
               <DateRangePicker
                 allowsNonContiguousRanges
-                visibleMonths={2}
+                visibleMonths={window.innerWidth > 640 ? 2 : 1}
                 isDateUnavailable={(date) =>
                   leaves.some(
                     (leave) =>
@@ -182,10 +216,10 @@ export const LeaveUpdateModal = ({
               <Button
                 color="primary"
                 isDisabled={!!feedback && !!feedback?.error}
-                onPress={updateLeaveHandler}
+                onPress={() => leaveHandler(onClose)}
                 isLoading={isLoading}
               >
-                Update
+                {leave ? 'Update' : 'Request'}
               </Button>
             </ModalFooter>
           </>

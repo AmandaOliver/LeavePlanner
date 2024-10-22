@@ -1,6 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEmployeeModel } from './Employee'
+import { useNavigate } from 'react-router-dom'
 
 export type LeaveTypes =
   | 'sickLeave'
@@ -52,7 +53,7 @@ export const useLeavesModel = () => {
   const { getAccessTokenSilently } = useAuth0()
   const queryClient = useQueryClient()
   const { currentEmployee } = useEmployeeModel()
-
+  const navigate = useNavigate()
   const fetchLeaves = async (): Promise<LeaveType[]> => {
     const accessToken = await getAccessTokenSilently()
 
@@ -178,6 +179,7 @@ export const useLeavesModel = () => {
       queryClient.invalidateQueries({
         queryKey: ['leaves', currentEmployee?.email],
       })
+      navigate('/requests')
     },
   })
   const updateLeaveMutation = useMutation({
@@ -212,6 +214,7 @@ export const useLeavesModel = () => {
       await queryClient.invalidateQueries({
         queryKey: ['employee', currentEmployee?.email],
       })
+      navigate('/requests')
     },
   })
   const validateLeaveMutation = useMutation({

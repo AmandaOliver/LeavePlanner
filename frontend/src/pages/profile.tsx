@@ -2,7 +2,7 @@ import { Card, CardBody, Image, Spacer } from '@nextui-org/react'
 import { useEmployeeModel } from '../models/Employee'
 import { useAuth0 } from '@auth0/auth0-react'
 import '../index.css'
-import LoadingComponent from '../components/loading'
+import { LoadingComponent } from '../components/loading'
 import { useState } from 'react'
 export const ProfilePage = () => {
   const { currentEmployee, isLoading: isCurrentEmployeeLoading } =

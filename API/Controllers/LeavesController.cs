@@ -53,15 +53,15 @@ public class LeavesController
 		{
 			return Results.Ok(new List<Leave>());
 		}
-		var leavesWithinNext3Months = leaves.Where(leave =>
+		var leavesWithinNext6Months = leaves.Where(leave =>
 		{
 			if (leave.Type == "bankHoliday")
 			{
-				return leave.DateStart < DateTime.UtcNow.Date.AddMonths(3);
+				return leave.DateStart < DateTime.UtcNow.Date.AddMonths(6);
 			}
 			return true;
 		}).ToList();
-		return Results.Ok(leavesWithinNext3Months);
+		return Results.Ok(leavesWithinNext6Months);
 	}
 	public async Task<IResult> GetLeavesRejected(string email)
 	{

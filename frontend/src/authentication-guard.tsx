@@ -1,5 +1,5 @@
 import { withAuthenticationRequired } from '@auth0/auth0-react'
-import LoadingPage from './components/loading'
+import { LoadingComponent } from './components/loading'
 
 export const AuthenticationGuard = ({
   component,
@@ -7,7 +7,7 @@ export const AuthenticationGuard = ({
   component: React.ComponentType<object>
 }) => {
   const Component = withAuthenticationRequired(component, {
-    onRedirecting: () => <LoadingPage />,
+    onRedirecting: () => <LoadingComponent />,
   })
 
   return <Component />

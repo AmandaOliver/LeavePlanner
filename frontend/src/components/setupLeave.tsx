@@ -1,7 +1,6 @@
 import { FormEvent, useState } from 'react'
 import { LeaveType, useLeavesModel, ConflictType } from '../models/Leaves'
 import { useEmployeeModel } from '../models/Employee'
-import LoadingPage from './loading'
 import { Leave } from './leave'
 
 export const SetupLeave = ({ leave }: { leave?: LeaveType }) => {
@@ -34,12 +33,8 @@ export const SetupLeave = ({ leave }: { leave?: LeaveType }) => {
     }
   }
 
-  if (!currentEmployee || isLoading) return <LoadingPage />
-
   return (
     <form onSubmit={handleSubmit}>
-      
-  
       <div>
         <label>Enter the description *</label>
         <textarea

@@ -43,5 +43,7 @@ export const Default: Story = {
       { link: '/page4', label: 'page4' },
       { link: '/page5', label: 'page5', badge: 1 },
     ],
+    buttonLabel: 'Some Action',
+    handleButtonClick: () => {},
   },
 }

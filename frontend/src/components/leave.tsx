@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LeaveType, useLeavesModel } from '../models/Leaves'
+import { LeaveType } from '../models/Leaves'
 import { SetupLeave } from './setupLeave'
 
 export const Leave = ({

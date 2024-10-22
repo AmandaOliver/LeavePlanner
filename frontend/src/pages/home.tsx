@@ -1,5 +1,5 @@
 import { useEmployeeModel } from '../models/Employee'
-import LoadingComponent from '../components/loading'
+import { LoadingComponent } from '../components/loading'
 
 export const HomePage = () => {
   const { currentEmployee, isLoading } = useEmployeeModel()
