@@ -66,7 +66,11 @@ export const LeaveInfoModal = ({
                       end: parseDate(leave.dateEnd).add({ days: -1 }),
                     }}
                     label="Days on leave"
+                    isReadOnly
                   />
+                  <Card className="shadow-none bg-default-100 w-full text-default-600 p-4">
+                    <p>Description: {leave.description}</p>
+                  </Card>
                 </>
               )}
             </ModalBody>
