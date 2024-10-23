@@ -8,7 +8,7 @@ export const OrganizationTree = () => {
   const renderSubordinates = (subordinates: Array<EmployeeType>) =>
     subordinates.map((employee) => {
       return (
-        <Card className="bg-default-200 p-4 m-4">
+        <Card className="bg-default-200 p-4 m-4" key={employee.email}>
           <CardHeader>
             <Employee employee={employee} />
           </CardHeader>

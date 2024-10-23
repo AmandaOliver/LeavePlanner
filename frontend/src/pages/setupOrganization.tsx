@@ -1,7 +1,6 @@
 import { useOrganizationModel } from '../models/Organization'
 import { LoadingComponent } from '../components/loading'
 import { OrganizationTree } from '../components/organizationTree'
-import { SetupEmployee } from '../components/organizationTree/components/setupEmployee'
 import { TreeIcon } from '../icons/tree'
 import { Divider } from '@nextui-org/react'
 
@@ -15,7 +14,7 @@ export const SetupOrganization = () => {
       {!currentOrganization.tree.length && (
         <>
           <p>First, setup the head of the organization</p>
-          <SetupEmployee isHead={true} />
+          {/* <SetupEmployee isHead={true} /> */}
         </>
       )}
       <div className="m-8">
