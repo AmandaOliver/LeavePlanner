@@ -201,7 +201,7 @@ public class LeavesService : ILeavesService
 				var conflictingLeaves = await _context.Leaves
 					.Where(leave =>
 						leave.Owner == subordinate.Email && // is a leave of this employee
-						leaveRequest.Id != leave.Id && // do not take in account leaves of the same employee
+						(leave.Type == "bankHoliday" || leave.ApprovedBy != null) &&
 						(
 							(leaveRequest.DateStart >= leave.DateStart && leaveRequest.DateStart < leave.DateEnd) ||   // Start date is within an existing leave (excluding an exact match on end date)
 							(leaveRequest.DateEnd > leave.DateStart && leaveRequest.DateEnd <= leave.DateEnd) ||       // End date is within an existing leave (excluding an exact match on start date)
