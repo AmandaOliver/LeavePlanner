@@ -25,12 +25,14 @@ export const EmployeeModal = ({
   employee,
   onCloseCb,
   managerEmail,
+  label,
 }: {
   isOpen: boolean
   onOpenChange: () => void
   employee?: EmployeeType
   onCloseCb: () => void
   managerEmail?: string
+  label: string
 }) => {
   const { countries, isLoading: isLoadingCountries } = useCountriesModel()
   const { currentOrganization, isLoading: isLoadingOrganization } =
@@ -168,9 +170,7 @@ export const EmployeeModal = ({
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader className="flex flex-col gap-1">
-              {employee ? 'Update' : 'Create'} employee
-            </ModalHeader>
+            <ModalHeader className="flex flex-col gap-1">{label}</ModalHeader>
             <ModalBody>
               {/* if we are editing we can't change the email */}
               {!employee && (

@@ -2,7 +2,9 @@ import { useOrganizationModel } from '../models/Organization'
 import { LoadingComponent } from '../components/loading'
 import { OrganizationTree } from '../components/organizationTree'
 import { TreeIcon } from '../icons/tree'
-import { Divider } from '@nextui-org/react'
+import { Divider, useDisclosure } from '@nextui-org/react'
+import { EmployeeModal } from '../components/employeeModal'
+import { FirstIcon } from '../icons/first'
 
 export const SetupOrganization = () => {
   const { isLoading, currentOrganization } = useOrganizationModel()
@@ -12,10 +14,12 @@ export const SetupOrganization = () => {
   return (
     <>
       {!currentOrganization.tree.length && (
-        <>
-          <p>First, setup the head of the organization</p>
-          {/* <SetupEmployee isHead={true} /> */}
-        </>
+        <EmployeeModal
+          isOpen={true}
+          onOpenChange={() => {}}
+          onCloseCb={() => {}}
+          label={'Set the head employee'}
+        />
       )}
       <div className="m-8">
         <div className="flex flex-wrap flex-row items-center gap-4">

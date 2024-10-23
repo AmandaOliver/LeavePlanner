@@ -48,6 +48,7 @@ export const Employee = ({ employee }: { employee: EmployeeType }) => {
           employee={updateEmployee}
           onOpenChange={onOpenChangeUpdateModal}
           onCloseCb={() => setUpdateEmployee({} as EmployeeType)}
+          label={'Update Employee'}
         />
       )}
       {createEmployee?.email && (
@@ -56,6 +57,7 @@ export const Employee = ({ employee }: { employee: EmployeeType }) => {
           onOpenChange={onOpenChangeUpdateModal}
           onCloseCb={() => setUpdateEmployee({} as EmployeeType)}
           managerEmail={createEmployee.email}
+          label={'Create Employee'}
         />
       )}
       {deleteEmployee?.email && (
