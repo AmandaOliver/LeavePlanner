@@ -44,7 +44,7 @@ export const EmployeeModal = ({
   const [selectedCountry, setSelectedCountry] = useState(
     employee?.country || ''
   )
-  const [ptoDays, setPtoDays] = useState(employee?.paidTimeOff || 0)
+  const [ptoDays, setPtoDays] = useState(employee?.paidTimeOff || 1)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [nameError, setNameError] = useState<string | null>(null)
   const [ptoError, setPtoError] = useState<string | null>(null)
@@ -97,7 +97,8 @@ export const EmployeeModal = ({
     }
   }
   const handlePtoBlur = () => {
-    if (ptoRef.current && !ptoRef.current.value) {
+    console.log(ptoRef.current?.value)
+    if (ptoRef.current && !ptoRef.current.checkValidity()) {
       setPtoError('Please enter number of days of paid time off')
     } else {
       setPtoError(null)
@@ -247,13 +248,14 @@ export const EmployeeModal = ({
                 name="ptoDays"
                 id="ptoDaysInput"
                 label="days of paid time off per year"
-                value={ptoDays as unknown as string}
+                value={(ptoDays as unknown as string) || '0'}
                 onChange={handlePtoChange}
                 onBlur={handlePtoBlur}
                 ref={ptoRef}
                 placeholder="Enter a number"
-                min="0"
-                isInvalid={!ptoDays || !!ptoError}
+                min="1"
+                max="365"
+                isInvalid={!!ptoError}
                 errorMessage={ptoError}
                 isRequired
               />
@@ -269,7 +271,11 @@ export const EmployeeModal = ({
                   !!ptoError ||
                   !!countryError ||
                   !!titleError ||
-                  !!nameError
+                  !!nameError ||
+                  !employeeEmail ||
+                  !employeeName ||
+                  !employeeTitle ||
+                  !selectedCountry
                 }
                 onPress={() => employeeHandler(onClose)}
                 isLoading={isLoading}

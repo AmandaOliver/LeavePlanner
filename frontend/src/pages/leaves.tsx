@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
   useDisclosure,
+  Tooltip,
 } from '@nextui-org/react'
 import { WatchIcon } from '../icons/watch'
 import { BussinessWatchIcon } from '../icons/bussinesswatch'
@@ -162,39 +163,45 @@ export const Leaves = () => {
                   <TableCell>{leave.description}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap flex-row ">
-                      <Button
-                        isIconOnly
-                        color="default"
-                        variant="light"
-                        aria-label="edit"
-                        size="sm"
-                        onPress={() => handleInfoModalOpen(leave)}
-                      >
-                        <EyeIcon />
-                      </Button>
+                      <Tooltip content="See leave info">
+                        <Button
+                          isIconOnly
+                          color="default"
+                          variant="light"
+                          aria-label="edit"
+                          size="sm"
+                          onPress={() => handleInfoModalOpen(leave)}
+                        >
+                          <EyeIcon />
+                        </Button>
+                      </Tooltip>
 
                       {leave.type !== 'bankHoliday' && (
                         <>
-                          <Button
-                            isIconOnly
-                            color="default"
-                            variant="light"
-                            aria-label="edit"
-                            size="sm"
-                            onPress={() => handleUpdateModalOpen(leave)}
-                          >
-                            <PencilIcon />
-                          </Button>
-                          <Button
-                            isIconOnly
-                            color="default"
-                            variant="light"
-                            aria-label="edit"
-                            size="sm"
-                            onPress={() => handleDeleteModalOpen(leave)}
-                          >
-                            <TrashIcon />
-                          </Button>
+                          <Tooltip content="Edit leave">
+                            <Button
+                              isIconOnly
+                              color="default"
+                              variant="light"
+                              aria-label="edit"
+                              size="sm"
+                              onPress={() => handleUpdateModalOpen(leave)}
+                            >
+                              <PencilIcon />
+                            </Button>
+                          </Tooltip>
+                          <Tooltip content="Delete leave">
+                            <Button
+                              isIconOnly
+                              color="default"
+                              variant="light"
+                              aria-label="edit"
+                              size="sm"
+                              onPress={() => handleDeleteModalOpen(leave)}
+                            >
+                              <TrashIcon />
+                            </Button>
+                          </Tooltip>
                         </>
                       )}
                     </div>

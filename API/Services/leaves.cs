@@ -114,9 +114,9 @@ public class LeavesService : ILeavesService
 			{
 				return "You cannot update bank holidays.";
 			}
-			if (leave.RejectedBy != null)
+			if (leave.ApprovedBy != null && dateStart < DateTime.UtcNow.Date)
 			{
-				return "You cannot update a rejected leave.";
+				return "You cannot update an already taken leave";
 			}
 		}
 

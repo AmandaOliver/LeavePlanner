@@ -75,17 +75,77 @@ export const useOrganizationModel = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: ['organization', data.organizationId],
+        queryKey: ['organization'],
       })
       queryClient.invalidateQueries({
         queryKey: ['employee', user?.email],
       })
     },
   })
-
+  const deleteOrganizationMutation = useMutation({
+    mutationFn: async () => {
+      const accessToken = await getAccessTokenSilently()
+      const response = await fetch(
+        `${process.env.REACT_APP_API_SERVER_URL}/organization/${organizationQuery.data.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+      if (response.status === 200) {
+        return response.json()
+      } else {
+        throw new Error('Failed to delete organization')
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ['organization'],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['employee', user?.email],
+      })
+    },
+  })
+  const renameOrganizationMutation = useMutation({
+    mutationFn: async (newName: string) => {
+      const accessToken = await getAccessTokenSilently()
+      const response = await fetch(
+        `${process.env.REACT_APP_API_SERVER_URL}/organization/${organizationQuery.data.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            name: newName,
+          }),
+        }
+      )
+      if (response.status === 200) {
+        return response.json()
+      } else {
+        throw new Error('Failed to update organization')
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ['organization'],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['employee', user?.email],
+      })
+    },
+  })
   return {
     createOrganizationAndEmployee:
       createOrganizationAndEmployeeMutation.mutateAsync,
+    deleteOrganization: deleteOrganizationMutation.mutateAsync,
+    renameOrganization: renameOrganizationMutation.mutateAsync,
     currentOrganization: organizationQuery.data,
     isLoading: organizationQuery.isLoading,
   }

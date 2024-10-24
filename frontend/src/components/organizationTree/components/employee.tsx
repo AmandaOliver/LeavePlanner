@@ -55,7 +55,7 @@ export const Employee = ({ employee }: { employee: EmployeeType }) => {
         <EmployeeModal
           isOpen={isOpenUpdateModal}
           onOpenChange={onOpenChangeUpdateModal}
-          onCloseCb={() => setUpdateEmployee({} as EmployeeType)}
+          onCloseCb={() => setCreateEmployee({} as EmployeeType)}
           managerEmail={createEmployee.email}
           label={'Create Employee'}
         />

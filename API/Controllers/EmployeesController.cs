@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
-using Microsoft.IdentityModel.Tokens;
 public static class EmployeesEndpointsExtensions
 {
     public static void MapEmployeesEndpoints(this IEndpointRouteBuilder endpoints)

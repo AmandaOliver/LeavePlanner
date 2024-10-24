@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
   useDisclosure,
+  Tooltip,
 } from '@nextui-org/react'
 import { LeaveType, useLeavesModel } from '../models/Leaves'
 import { RequestIcon } from '../icons/request'
@@ -107,36 +108,42 @@ export const MyRequests = () => {
                 <TableCell>{leave.description}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap flex-row">
-                    <Button
-                      isIconOnly
-                      color="default"
-                      variant="light"
-                      aria-label="edit"
-                      size="sm"
-                      onPress={() => handleInfoModalOpen(leave)}
-                    >
-                      <EyeIcon />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      color="default"
-                      variant="light"
-                      aria-label="edit"
-                      size="sm"
-                      onPress={() => handleUpdateModalOpen(leave)}
-                    >
-                      <PencilIcon />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      color="default"
-                      variant="light"
-                      aria-label="edit"
-                      size="sm"
-                      onPress={() => handleDeleteModalOpen(leave)}
-                    >
-                      <TrashIcon />
-                    </Button>
+                    <Tooltip content="See request info">
+                      <Button
+                        isIconOnly
+                        color="default"
+                        variant="light"
+                        aria-label="edit"
+                        size="sm"
+                        onPress={() => handleInfoModalOpen(leave)}
+                      >
+                        <EyeIcon />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip content="Edit request">
+                      <Button
+                        isIconOnly
+                        color="default"
+                        variant="light"
+                        aria-label="edit"
+                        size="sm"
+                        onPress={() => handleUpdateModalOpen(leave)}
+                      >
+                        <PencilIcon />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip content="Delete request">
+                      <Button
+                        isIconOnly
+                        color="default"
+                        variant="light"
+                        aria-label="edit"
+                        size="sm"
+                        onPress={() => handleDeleteModalOpen(leave)}
+                      >
+                        <TrashIcon />
+                      </Button>
+                    </Tooltip>
                   </div>
                 </TableCell>
               </TableRow>
@@ -166,16 +173,42 @@ export const MyRequests = () => {
                 <TableCell>{leave.description}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap flex-row">
-                    <Button
-                      isIconOnly
-                      color="default"
-                      variant="light"
-                      aria-label="edit"
-                      size="sm"
-                      onPress={() => handleInfoModalOpen(leave)}
-                    >
-                      <EyeIcon />
-                    </Button>
+                    <Tooltip content="See request info">
+                      <Button
+                        isIconOnly
+                        color="default"
+                        variant="light"
+                        aria-label="edit"
+                        size="sm"
+                        onPress={() => handleInfoModalOpen(leave)}
+                      >
+                        <EyeIcon />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip content="Edit request">
+                      <Button
+                        isIconOnly
+                        color="default"
+                        variant="light"
+                        aria-label="edit"
+                        size="sm"
+                        onPress={() => handleUpdateModalOpen(leave)}
+                      >
+                        <PencilIcon />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip content="Delete request">
+                      <Button
+                        isIconOnly
+                        color="default"
+                        variant="light"
+                        aria-label="edit"
+                        size="sm"
+                        onPress={() => handleDeleteModalOpen(leave)}
+                      >
+                        <TrashIcon />
+                      </Button>
+                    </Tooltip>
                   </div>
                 </TableCell>
               </TableRow>
