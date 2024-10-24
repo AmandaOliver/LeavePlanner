@@ -1,5 +1,6 @@
 import { useEmployeeModel } from '../models/Employee'
 import { LoadingComponent } from '../components/loading'
+import { CalendarContextProvider } from './Calendar/CalendarContext'
 
 export const HomePage = () => {
   const { currentEmployee, isLoading } = useEmployeeModel()
@@ -8,7 +9,7 @@ export const HomePage = () => {
   }
   return (
     <>
-      <div>Welcome to LeavePlanner {currentEmployee?.name}</div>
+      <CalendarContextProvider />
     </>
   )
 }
