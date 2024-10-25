@@ -48,7 +48,9 @@ export const Day = ({ dayDate }: DayProps) => {
             return (
               <div
                 key={`leave-${dayDate}`}
-                className="border-white pl-2 align-middle border-solid border-l-3 rounded-lg w-[calc(100vw/7)] h-[25px] bg-secondary text-white truncate overflow-hidden"
+                className={`${isFilling && 'border-gray-50'} 
+          ${isToday && 'border-primary-100'} 
+          ${isPast && 'border-default-100'} pl-2 align-middle border-solid border-l-3 rounded-lg w-[calc(100vw/7)] h-[25px] bg-secondary text-white truncate overflow-hidden`}
               >
                 {leave.type === 'bankHoliday' ? (
                   <PartyIcon dimension={'12'} fill="white" />
@@ -62,7 +64,9 @@ export const Day = ({ dayDate }: DayProps) => {
           return (
             <div
               key={`leave-${dayDate}`}
-              className="border-white pl-2 border-solid border-l-3 rounded-l-lg w-[calc(100vw/7)] h-[25px] bg-secondary text-white whitespace-nowrap overflow-visible z-10"
+              className={`${isFilling && 'border-gray-50'} 
+          ${isToday && 'border-primary-100'} 
+          ${isPast && 'border-default-100'} pl-2 border-solid border-l-3 rounded-l-lg w-[calc(100vw/7)] h-[25px] bg-secondary text-white whitespace-nowrap overflow-visible z-10`}
             >
               {leave.type === 'bankHoliday' ? (
                 <PartyIcon dimension={'12'} fill="white" />
@@ -97,9 +101,9 @@ export const Day = ({ dayDate }: DayProps) => {
       <div
         id={dayDate.day.toString()}
         className={`flex h-[150px] items-center text-default-600 border-none justify-start w-full flex-col flex-nowrap  border  
-          ${isFilling && 'bg-default-100/30'} 
+          ${isFilling && 'bg-gray-50'} 
           ${isToday && 'bg-primary-100'} 
-          ${isPast && 'bg-primary-100/40'}`}
+          ${isPast && 'bg-default-100'}`}
       >
         {dayDate?.day}
         {leavesElements}
