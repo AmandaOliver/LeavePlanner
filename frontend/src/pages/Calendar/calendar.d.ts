@@ -37,4 +37,5 @@ type CalendarStateType = {
   setInterval: Dispatch<SetStateAction<DateTime>>
   setVisibleDate: Dispatch<SetStateAction<DateTime>>
   visibleDate: DateTime
+  myleaves?: LeaveType[]
 }

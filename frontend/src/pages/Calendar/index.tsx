@@ -1,4 +1,4 @@
-import { DateTime, Interval } from 'luxon'
+import { Interval } from 'luxon'
 import { useMemo } from 'react'
 import Week from './components/week'
 import { WEEKDAYS, FIRSTDAYOFWEEK } from './constants'
@@ -23,10 +23,10 @@ export const WorkspaceCalendar = () => {
       <section className="flex flex-col w-full h-full">
         <Header />
         <section className="flex flex-col h-full w-full">
-          <div className="flex justify-around py-2 sticky text-xs">
+          <div className="flex justify-around py-2 sticky text-sm text-white font-bold bg-primary">
             {headerElement}
           </div>
-          <div className="flex flex-col w-full h-[80vh] overflow-scroll">
+          <div className="flex flex-col w-full h-[calc(100vh-164px)] overflow-scroll">
             {splitIntervals.map((weekInterval: Interval) => (
               <Week
                 key={`${weekInterval.toISO()}`}

@@ -10,6 +10,7 @@ import {
 import { useRef, useState } from 'react'
 
 import { OrganizationType, useOrganizationModel } from '../models/Organization'
+import { useNavigate } from 'react-router-dom'
 
 export const OrganizationModal = ({
   isOpen,
@@ -28,13 +29,14 @@ export const OrganizationModal = ({
   const nameRef = useRef<HTMLInputElement>(null)
   const [nameError, setNameError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-
+  const navigate = useNavigate()
   const organizationHandler = async (onClose: () => void) => {
     setIsLoading(true)
     if (organization) {
       await renameOrganization(orgName)
     } else {
-      await createOrganizationAndEmployee(orgName)
+      const organization = await createOrganizationAndEmployee(orgName)
+      navigate(`/setup-organization/${organization.id}`)
     }
     setIsLoading(false)
     onCloseCb()

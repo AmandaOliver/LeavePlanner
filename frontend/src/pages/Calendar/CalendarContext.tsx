@@ -3,6 +3,7 @@ import { DateTime, Interval } from 'luxon'
 import { createContext, useContext, useState } from 'react'
 import { CALENDARMODE } from './constants'
 import { WorkspaceCalendar } from '.'
+import { useGetMyLeaves } from '../../models/Calendar'
 
 export const statusFiltersOptions = ['draft', 'scheduled', 'failed', 'sent']
 
@@ -17,6 +18,7 @@ const CalendarContextProvider = () => {
   const [interval, setInterval] = useState<Interval>(InitialInterval)
   const [visibleDate, setInternalVisibleDate] = useState(DateTime.now())
   const [calendarMode, setCalendarMode] = useState(CALENDARMODE.MONTH)
+  const myleaves = useGetMyLeaves(interval)
 
   const loadPreviousInterval = () => {
     setInterval((previousInterval) => {
@@ -116,6 +118,7 @@ const CalendarContextProvider = () => {
         setInterval,
         setVisibleDate: setInternalVisibleDate,
         visibleDate,
+        myleaves: myleaves.data,
       }}
     >
       <WorkspaceCalendar />

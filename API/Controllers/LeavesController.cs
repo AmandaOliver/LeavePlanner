@@ -3,6 +3,7 @@ using LeavePlanner.Data;
 using LeavePlanner.Models;
 using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Crypto.Prng;
+using Microsoft.AspNetCore.Mvc;
 
 
 
@@ -11,7 +12,7 @@ public static class LeavesEndpointsExtensions
 	public static void MapLeavesEndpoints(this IEndpointRouteBuilder endpoints)
 	{
 		endpoints.MapGet("/leave/{id}", async (LeavesController controller, string id) => await controller.GetLeaveInfo(id)).RequireAuthorization();
-		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email) => await controller.GetLeavesApproved(email)).RequireAuthorization();
+		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetLeavesApproved(email, start, end)).RequireAuthorization();
 		endpoints.MapGet("/leaves/pending/{email}", async (LeavesController controller, string email) => await controller.GetLeavesAwaitingApproval(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/rejected/{email}", async (LeavesController controller, string email) => await controller.GetLeavesRejected(email)).RequireAuthorization();
 		endpoints.MapPost("/leaves/validate", async (LeavesController controller, LeaveValidateDTO model) => await controller.ValidateLeaveRequest(model)).RequireAuthorization();
@@ -50,7 +51,7 @@ public class LeavesController
 		var leaveWithDynamicInfo = await _leavesService.GetLeaveDynamicInfo(leave, true);
 		return Results.Ok(leaveWithDynamicInfo);
 	}
-	public async Task<IResult> GetLeavesApproved(string email)
+	public async Task<IResult> GetLeavesApproved(string email, [FromQuery] string? start, [FromQuery] string? end)
 	{
 		var leaves = await _context.Leaves
 						   .Where(leave => leave.Owner == email &&
@@ -61,15 +62,32 @@ public class LeavesController
 		{
 			return Results.Ok(new List<Leave>());
 		}
-		var leavesWithinNext6Months = leaves.Where(leave =>
+		if (start == null && end == null)
 		{
-			if (leave.Type == "bankHoliday")
+			var leavesWithinNext6Months = leaves.Where(leave =>
 			{
-				return leave.DateStart < DateTime.UtcNow.Date.AddMonths(6);
-			}
-			return true;
-		}).ToList();
-		return Results.Ok(leavesWithinNext6Months);
+				if (leave.Type == "bankHoliday")
+				{
+					return leave.DateStart < DateTime.UtcNow.Date.AddMonths(6);
+				}
+				return true;
+			}).ToList();
+			return Results.Ok(leavesWithinNext6Months);
+		}
+		else if (start != null && end != null)
+		{
+			var leavesWithinRange = leaves.Where(leave =>
+				{
+					return leave.DateStart > DateTime.Parse(start) && leave.DateEnd <= DateTime.Parse(end);
+
+
+				}).ToList();
+			return Results.Ok(leavesWithinRange);
+		}
+		else
+		{
+			return Results.BadRequest("You need to specify start and end, or none of those");
+		}
 	}
 	public async Task<IResult> GetLeavesRejected(string email)
 	{

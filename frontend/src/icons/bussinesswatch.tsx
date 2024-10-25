@@ -1,10 +1,17 @@
-export const BussinessWatchIcon = () => (
+export const BussinessWatchIcon = ({
+  dimension,
+  fill,
+}: {
+  dimension?: string
+  fill?: string
+}) => (
   <svg
     data-bhr-grim="BHR_GRIM"
     viewBox="0 0 28 24"
-    width="28"
-    height="28"
-    fill="currentColor"
+    width={dimension || '28'}
+    height={dimension || '28'}
+    className="inline align-baseline"
+    fill={fill || 'currentColor'}
   >
     <g fillRule="evenodd" stroke="none" strokeWidth="1">
       <g fillRule="nonzero">
