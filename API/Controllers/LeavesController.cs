@@ -13,6 +13,7 @@ public static class LeavesEndpointsExtensions
 	{
 		endpoints.MapGet("/leave/{id}", async (LeavesController controller, string id) => await controller.GetLeaveInfo(id)).RequireAuthorization();
 		endpoints.MapGet("/myleaves/{email}", async (LeavesController controller, string email, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyLeaves(email, start, end)).RequireAuthorization();
+		endpoints.MapGet("/allleaves", async (LeavesController controller, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetAllLeaves(start, end)).RequireAuthorization();
 		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email) => await controller.GetLeavesApproved(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/pending/{email}", async (LeavesController controller, string email) => await controller.GetLeavesAwaitingApproval(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/rejected/{email}", async (LeavesController controller, string email) => await controller.GetLeavesRejected(email)).RequireAuthorization();
@@ -81,6 +82,54 @@ public class LeavesController
 			foreach (var leave in leavesWithinRange)
 			{
 
+				leaveDTOs.Add(new LeaveDTO
+				{
+					Id = leave.Id,
+					Type = leave.Type,
+					Owner = leave.Owner,
+					OwnerName = employee.Name,
+					DateStart = leave.DateStart,
+					DateEnd = leave.DateEnd,
+					Description = leave.Description,
+					ApprovedBy = leave.ApprovedBy,
+					RejectedBy = leave.RejectedBy,
+				});
+			}
+			return Results.Ok(leaveDTOs);
+		}
+		else
+		{
+			return Results.BadRequest("You need to specify start and end");
+		}
+	}
+	public async Task<IResult> GetAllLeaves([FromQuery] string? start, [FromQuery] string? end)
+	{
+		var leaves = await _context.Leaves
+						   .Where(leave => leave.Type == "bankHoliday" || leave.ApprovedBy != null)
+						   .ToListAsync();
+
+		if (leaves == null || leaves.Count == 0)
+		{
+			return Results.Ok(new List<Leave>());
+		}
+
+		if (start != null && end != null)
+		{
+
+			var leavesWithinRange = leaves.Where(leave =>
+				{
+					return leave.DateStart > DateTime.Parse(start) && leave.DateEnd <= DateTime.Parse(end);
+
+				}).ToList();
+			var leaveDTOs = new List<LeaveDTO>();
+
+			foreach (var leave in leavesWithinRange)
+			{
+				var employee = await _context.Employees.FindAsync(leave.Owner);
+				if (employee == null)
+				{
+					throw new Exception("employee not found");
+				}
 				leaveDTOs.Add(new LeaveDTO
 				{
 					Id = leave.Id,

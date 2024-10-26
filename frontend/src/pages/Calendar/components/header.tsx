@@ -1,10 +1,8 @@
-import { useState } from 'react'
 import { useCalendarContext } from '../CalendarContext'
 import { CALENDARMODE } from '../constants'
 import { Button, Select, SelectItem } from '@nextui-org/react'
 import { ChevronLeftIcon } from '../../../icons/chevron_left'
 import { ChevronRightIcon } from '../../../icons/chevron_right'
-import { useGetMyLeaves } from '../../../models/Calendar'
 
 const Header = () => {
   const {
@@ -15,6 +13,7 @@ const Header = () => {
     goToNextMonth,
     goToNextWeek,
     goToToday,
+    setSelectedFilter,
   } = useCalendarContext()
   const prevCallback = () =>
     calendarMode === CALENDARMODE.MONTH
@@ -52,16 +51,15 @@ const Header = () => {
       </div>
       <Select
         className="max-w-xs"
-        defaultSelectedKeys={['my leaves']}
+        defaultSelectedKeys={['myleaves']}
         label="Filter options"
         size="sm"
         onChange={(event) => {
-          // setSelectedFilter(event.target.value)
+          setSelectedFilter(event.target.value)
         }}
       >
         <SelectItem key={'myleaves'}>{'My Leaves'}</SelectItem>
-        <SelectItem key={'my team leaves'}>{"My Team's Leaves"}</SelectItem>
-        <SelectItem key={'all leaves'}>{'All Leaves'}</SelectItem>
+        <SelectItem key={'allleaves'}>{'All Leaves'}</SelectItem>
       </Select>
       <Button
         data-testid="mode-control-today"

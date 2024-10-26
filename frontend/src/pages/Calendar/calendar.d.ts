@@ -24,7 +24,7 @@ interface ClickPreviousAction {
 type CalendarModeType = CALENDARMODE.WEEK | CALENDARMODE.MONTH
 
 type BaseChannel = Partial<ChannelInterface>
-
+type selectedFilterType = 'myleaves' | 'allleaves'
 type CalendarStateType = {
   calendarMode: CalendarModeType
   goToPreviousMonth: () => void
@@ -37,5 +37,6 @@ type CalendarStateType = {
   setInterval: Dispatch<SetStateAction<DateTime>>
   setVisibleDate: Dispatch<SetStateAction<DateTime>>
   visibleDate: DateTime
-  myleaves?: LeaveType[]
+  leaves?: LeaveType[]
+  setSelectedFilter: Dispatch<SetStateAction<selectedFilterType>>
 }

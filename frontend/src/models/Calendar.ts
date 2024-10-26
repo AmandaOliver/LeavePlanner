@@ -33,3 +33,32 @@ export const useGetMyLeaves = (interval: Interval) => {
     queryFn: fetchMyLeaves,
   })
 }
+
+export const useGetAllLeaves = (interval: Interval) => {
+  const { getAccessTokenSilently } = useAuth0()
+
+  const fetchAllLeaves = async (): Promise<LeaveType[]> => {
+    const accessToken = await getAccessTokenSilently()
+    const response = await fetch(
+      `${process.env.REACT_APP_API_SERVER_URL}/allleaves?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    if (response.status === 200) {
+      return response.json()
+    } else {
+      throw new Error('Error fetching my leaves')
+    }
+  }
+
+  return useQuery({
+    queryKey: ['allleaves', interval],
+    queryFn: fetchAllLeaves,
+  })
+}

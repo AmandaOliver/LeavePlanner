@@ -10,7 +10,7 @@ interface DayProps {
 }
 
 export const Day = ({ dayDate }: DayProps) => {
-  const { visibleDate, myleaves } = useCalendarContext()
+  const { visibleDate, leaves } = useCalendarContext()
   const isToday = useMemo(
     () => dayDate.hasSame(DateTime.now(), 'day'),
     [dayDate]
@@ -30,13 +30,13 @@ export const Day = ({ dayDate }: DayProps) => {
   }, [dayDate.day, isToday])
   const body = useMemo(() => {
     let leavesElements
-    const leaves = myleaves?.filter(
+    const leavesToShow = leaves?.filter(
       (leave) =>
         DateTime.fromISO(leave.dateStart) <= dayDate &&
         DateTime.fromISO(leave.dateEnd) > dayDate
     )
-    if (leaves) {
-      leavesElements = leaves
+    if (leavesToShow) {
+      leavesElements = leavesToShow
         .sort((a, b) => (a.dateStart < b.dateStart ? -1 : 1))
         .map((leave) => {
           if (DateTime.fromISO(leave.dateStart).hasSame(dayDate, 'day')) {
@@ -67,7 +67,7 @@ export const Day = ({ dayDate }: DayProps) => {
                           : isPast
                             ? 'border-default-100'
                             : 'border-white'
-                    } ${leave.type === 'bankHoliday' ? 'bg-secondary' : leave.approvedBy ? 'bg-default-500' : 'bg-default-200'} pl-2 align-middle border-solid border-l-3 rounded-lg w-[calc(100vw/7)] h-[25px]  text-white truncate overflow-hidden`}
+                    } ${leave.type === 'bankHoliday' ? 'bg-secondary' : leave.approvedBy ? 'bg-default-500' : 'bg-default-200'} pl-2 mb-1 align-middle border-solid border-l-3 rounded-lg w-[calc(100vw/7)] h-[25px]  text-white truncate overflow-hidden`}
                   >
                     {leave.type === 'bankHoliday' ? (
                       <PartyIcon dimension={'12'} fill="white" />
@@ -99,7 +99,7 @@ export const Day = ({ dayDate }: DayProps) => {
                         : isPast
                           ? 'border-default-100'
                           : 'border-white'
-                  } ${leave.type === 'bankHoliday' ? 'bg-secondary' : leave.approvedBy ? 'bg-default-500' : 'bg-default-200'} pl-2 border-solid border-l-3 rounded-l-lg w-[calc(100vw/7)] h-[25px] text-white whitespace-nowrap overflow-visible z-10`}
+                  } ${leave.type === 'bankHoliday' ? 'bg-secondary' : leave.approvedBy ? 'bg-default-500' : 'bg-default-200'} mb-1 pl-2 border-solid border-l-3 rounded-l-lg w-[calc(100vw/7)] h-[25px] text-white whitespace-nowrap overflow-visible z-10`}
                 >
                   {leave.type === 'bankHoliday' ? (
                     <PartyIcon dimension={'12'} fill="white" />
@@ -127,7 +127,7 @@ export const Day = ({ dayDate }: DayProps) => {
               >
                 <div
                   key={`leave-${dayDate}`}
-                  className={`${leave.type === 'bankHoliday' ? 'bg-secondary' : leave.approvedBy ? 'bg-default-500' : 'bg-default-200'} w-full h-[25px] rounded-r-lg`}
+                  className={`${leave.type === 'bankHoliday' ? 'bg-secondary' : leave.approvedBy ? 'bg-default-500' : 'bg-default-200'} mb-1 w-full h-[25px] rounded-r-lg`}
                 ></div>
               </Tooltip>
             )
@@ -144,7 +144,7 @@ export const Day = ({ dayDate }: DayProps) => {
               >
                 <div
                   key={`leave-${dayDate}`}
-                  className={`${leave.type === 'bankHoliday' ? 'bg-secondary' : leave.approvedBy ? 'bg-default-500' : 'bg-default-200'} w-full h-[25px]`}
+                  className={`${leave.type === 'bankHoliday' ? 'bg-secondary' : leave.approvedBy ? 'bg-default-500' : 'bg-default-200'} mb-1  w-full h-[25px]`}
                 ></div>
               </Tooltip>
             )
@@ -163,7 +163,7 @@ export const Day = ({ dayDate }: DayProps) => {
         {leavesElements}
       </div>
     )
-  }, [dayDate, isFilling, isPast, isToday, myleaves])
+  }, [dayDate, isFilling, isPast, isToday, leaves])
 
   return <>{body}</>
 }
