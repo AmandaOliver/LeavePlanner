@@ -12,7 +12,8 @@ public static class LeavesEndpointsExtensions
 	public static void MapLeavesEndpoints(this IEndpointRouteBuilder endpoints)
 	{
 		endpoints.MapGet("/leave/{id}", async (LeavesController controller, string id) => await controller.GetLeaveInfo(id)).RequireAuthorization();
-		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetLeavesApproved(email, start, end)).RequireAuthorization();
+		endpoints.MapGet("/myleaves/{email}", async (LeavesController controller, string email, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyLeaves(email, start, end)).RequireAuthorization();
+		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email) => await controller.GetLeavesApproved(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/pending/{email}", async (LeavesController controller, string email) => await controller.GetLeavesAwaitingApproval(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/rejected/{email}", async (LeavesController controller, string email) => await controller.GetLeavesRejected(email)).RequireAuthorization();
 		endpoints.MapPost("/leaves/validate", async (LeavesController controller, LeaveValidateDTO model) => await controller.ValidateLeaveRequest(model)).RequireAuthorization();
@@ -51,7 +52,57 @@ public class LeavesController
 		var leaveWithDynamicInfo = await _leavesService.GetLeaveDynamicInfo(leave, true);
 		return Results.Ok(leaveWithDynamicInfo);
 	}
-	public async Task<IResult> GetLeavesApproved(string email, [FromQuery] string? start, [FromQuery] string? end)
+	public async Task<IResult> GetMyLeaves(string email, [FromQuery] string? start, [FromQuery] string? end)
+	{
+		var leaves = await _context.Leaves
+						   .Where(leave => leave.Owner == email &&
+										   (leave.RejectedBy == null))
+						   .ToListAsync();
+		var employee = await _context.Employees.FindAsync(leaves[0].Owner);
+		if (employee == null)
+		{
+			throw new Exception("employee not found");
+		}
+		if (leaves == null || leaves.Count == 0)
+		{
+			return Results.Ok(new List<Leave>());
+		}
+
+		if (start != null && end != null)
+		{
+
+			var leavesWithinRange = leaves.Where(leave =>
+				{
+					return leave.DateStart > DateTime.Parse(start) && leave.DateEnd <= DateTime.Parse(end);
+
+				}).ToList();
+			var leaveDTOs = new List<LeaveDTO>();
+
+			foreach (var leave in leavesWithinRange)
+			{
+
+				leaveDTOs.Add(new LeaveDTO
+				{
+					Id = leave.Id,
+					Type = leave.Type,
+					Owner = leave.Owner,
+					OwnerName = employee.Name,
+					DateStart = leave.DateStart,
+					DateEnd = leave.DateEnd,
+					Description = leave.Description,
+					ApprovedBy = leave.ApprovedBy,
+					RejectedBy = leave.RejectedBy,
+				});
+			}
+			return Results.Ok(leaveDTOs);
+		}
+		else
+		{
+			return Results.BadRequest("You need to specify start and end");
+		}
+	}
+
+	public async Task<IResult> GetLeavesApproved(string email)
 	{
 		var leaves = await _context.Leaves
 						   .Where(leave => leave.Owner == email &&
@@ -62,32 +113,18 @@ public class LeavesController
 		{
 			return Results.Ok(new List<Leave>());
 		}
-		if (start == null && end == null)
+
+		var leavesWithinNext6Months = leaves.Where(leave =>
 		{
-			var leavesWithinNext6Months = leaves.Where(leave =>
+			if (leave.Type == "bankHoliday")
 			{
-				if (leave.Type == "bankHoliday")
-				{
-					return leave.DateStart < DateTime.UtcNow.Date.AddMonths(6);
-				}
-				return true;
-			}).ToList();
-			return Results.Ok(leavesWithinNext6Months);
-		}
-		else if (start != null && end != null)
-		{
-			var leavesWithinRange = leaves.Where(leave =>
-				{
-					return leave.DateStart > DateTime.Parse(start) && leave.DateEnd <= DateTime.Parse(end);
+				return leave.DateStart < DateTime.UtcNow.Date.AddMonths(6);
+			}
+			return true;
+		}).ToList();
+		return Results.Ok(leavesWithinNext6Months);
 
 
-				}).ToList();
-			return Results.Ok(leavesWithinRange);
-		}
-		else
-		{
-			return Results.BadRequest("You need to specify start and end, or none of those");
-		}
 	}
 	public async Task<IResult> GetLeavesRejected(string email)
 	{
