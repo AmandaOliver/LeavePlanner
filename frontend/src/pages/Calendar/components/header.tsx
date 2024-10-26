@@ -60,6 +60,7 @@ const Header = () => {
       >
         <SelectItem key={'myleaves'}>{'My Leaves'}</SelectItem>
         <SelectItem key={'allleaves'}>{'All Leaves'}</SelectItem>
+        <SelectItem key={'mycircleleaves'}>{'My Circle Leaves'}</SelectItem>
       </Select>
       <Button
         data-testid="mode-control-today"

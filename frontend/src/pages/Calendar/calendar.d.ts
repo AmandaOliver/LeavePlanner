@@ -24,7 +24,7 @@ interface ClickPreviousAction {
 type CalendarModeType = CALENDARMODE.WEEK | CALENDARMODE.MONTH
 
 type BaseChannel = Partial<ChannelInterface>
-type selectedFilterType = 'myleaves' | 'allleaves'
+type selectedFilterType = 'myleaves' | 'allleaves' | 'mycircleleaves'
 type CalendarStateType = {
   calendarMode: CalendarModeType
   goToPreviousMonth: () => void

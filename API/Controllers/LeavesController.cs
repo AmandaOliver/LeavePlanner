@@ -13,6 +13,7 @@ public static class LeavesEndpointsExtensions
 	{
 		endpoints.MapGet("/leave/{id}", async (LeavesController controller, string id) => await controller.GetLeaveInfo(id)).RequireAuthorization();
 		endpoints.MapGet("/myleaves/{email}", async (LeavesController controller, string email, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyLeaves(email, start, end)).RequireAuthorization();
+		endpoints.MapGet("/mycircleleaves/{email}", async (LeavesController controller, string email, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyCircleLeaves(email, start, end)).RequireAuthorization();
 		endpoints.MapGet("/allleaves", async (LeavesController controller, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetAllLeaves(start, end)).RequireAuthorization();
 		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email) => await controller.GetLeavesApproved(email)).RequireAuthorization();
 		endpoints.MapGet("/leaves/pending/{email}", async (LeavesController controller, string email) => await controller.GetLeavesAwaitingApproval(email)).RequireAuthorization();
@@ -29,16 +30,18 @@ public class LeavesController
 	private readonly LeavesService _leavesService;
 	private readonly EmailService _emailService;
 	private readonly IConfiguration _configuration;
+	private readonly EmployeesController _employeesController;
 
 	private readonly string _leavePlannerUrl;
 
 
-	public LeavesController(LeavePlannerContext context, LeavesService leavesService, EmailService emailService, IConfiguration configuration)
+	public LeavesController(LeavePlannerContext context, LeavesService leavesService, EmailService emailService, IConfiguration configuration, EmployeesController employeesController)
 	{
 		_context = context;
 		_leavesService = leavesService;
 		_emailService = emailService;
 		_configuration = configuration;
+		_employeesController = employeesController;
 
 		_leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
 
@@ -62,7 +65,7 @@ public class LeavesController
 		var employee = await _context.Employees.FindAsync(leaves[0].Owner);
 		if (employee == null)
 		{
-			throw new Exception("employee not found");
+			return Results.BadRequest("employee not found");
 		}
 		if (leaves == null || leaves.Count == 0)
 		{
@@ -88,6 +91,102 @@ public class LeavesController
 					Type = leave.Type,
 					Owner = leave.Owner,
 					OwnerName = employee.Name,
+					DateStart = leave.DateStart,
+					DateEnd = leave.DateEnd,
+					Description = leave.Description,
+					ApprovedBy = leave.ApprovedBy,
+					RejectedBy = leave.RejectedBy,
+				});
+			}
+			return Results.Ok(leaveDTOs);
+		}
+		else
+		{
+			return Results.BadRequest("You need to specify start and end");
+		}
+	}
+	public async Task<IResult> GetMyCircleLeaves(string email, [FromQuery] string? start, [FromQuery] string? end)
+	{
+		if (start != null && end != null)
+		{
+			var employee = await _context.Employees.FindAsync(email);
+			if (employee == null)
+			{
+				return Results.BadRequest("employee not found");
+			}
+			var allLeaves = new List<Leave>();
+			var manager = await _context.Employees.FindAsync(employee.ManagedBy);
+
+			if (manager == null)
+			{
+				// it's head, we don't check teammates
+				var employeeLeaves = await _context.Leaves
+							   .Where(leave => leave.Owner == email &&
+											   (leave.Type == "bankHoliday" || leave.ApprovedBy != null))
+							   .ToListAsync();
+				allLeaves.AddRange(employeeLeaves);
+			}
+			else
+			{
+				// get leaves from the manager
+				var managerLeaves = await _context.Leaves
+					   .Where(leave => leave.Owner == employee.ManagedBy &&
+									   (leave.Type == "bankHoliday" || leave.ApprovedBy != null))
+					   .ToListAsync();
+				allLeaves.AddRange(managerLeaves);
+				// has a team, get leaves from the team
+				var managerWithSubordinates = await _employeesController.GetEmployeeWithSubordinates(manager);
+
+				foreach (var subordinate in managerWithSubordinates.Subordinates)
+				{
+					var subordinateLeaves = await _context.Leaves
+								   .Where(leave => leave.Owner == subordinate.Email &&
+												   (leave.Type == "bankHoliday" || leave.ApprovedBy != null))
+								   .ToListAsync();
+					allLeaves.AddRange(subordinateLeaves);
+				}
+
+			}
+
+			// get leaves from subordinates
+			var employeeWithSubordinates = await _employeesController.GetEmployeeWithSubordinates(employee);
+			if (employeeWithSubordinates == null)
+			{
+				return Results.BadRequest("employee with subordinates not found");
+			}
+			foreach (var subordinate in employeeWithSubordinates.Subordinates)
+			{
+				var subordinateLeaves = await _context.Leaves
+							   .Where(leave => leave.Owner == subordinate.Email &&
+											   (leave.Type == "bankHoliday" || leave.ApprovedBy != null))
+							   .ToListAsync();
+				allLeaves.AddRange(subordinateLeaves);
+			}
+			if (allLeaves == null || allLeaves.Count == 0)
+			{
+				return Results.Ok(new List<Leave>());
+			}
+
+			var leavesWithinRange = allLeaves.Where(leave =>
+				{
+					return leave.DateStart > DateTime.Parse(start) && leave.DateEnd <= DateTime.Parse(end);
+
+				}).ToList();
+			var leaveDTOs = new List<LeaveDTO>();
+
+			foreach (var leave in leavesWithinRange)
+			{
+				var leaveOwner = await _context.Employees.FindAsync(leave.Owner);
+				if (leaveOwner == null)
+				{
+					return Results.BadRequest("error getting owner");
+				}
+				leaveDTOs.Add(new LeaveDTO
+				{
+					Id = leave.Id,
+					Type = leave.Type,
+					Owner = leave.Owner,
+					OwnerName = leaveOwner.Name,
 					DateStart = leave.DateStart,
 					DateEnd = leave.DateEnd,
 					Description = leave.Description,
@@ -128,7 +227,7 @@ public class LeavesController
 				var employee = await _context.Employees.FindAsync(leave.Owner);
 				if (employee == null)
 				{
-					throw new Exception("employee not found");
+					return Results.BadRequest("employee not found");
 				}
 				leaveDTOs.Add(new LeaveDTO
 				{
