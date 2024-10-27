@@ -1,9 +1,9 @@
-import { useEffect, useMemo } from 'react'
-import { DateTime, Interval } from 'luxon'
+import { ReactNode, useEffect, useMemo } from 'react'
+import { DateTime } from 'luxon'
 import { useCalendarContext } from '../CalendarContext'
-import { PartyIcon } from '../../../icons/party'
-import { BussinessWatchIcon } from '../../../icons/bussinesswatch'
 import { Tooltip } from '@nextui-org/react'
+import { LeaveStartDay } from './leaveStartDay'
+import { getSpaces } from '../../getMarginTop'
 
 interface DayProps {
   dayDate: DateTime
@@ -29,128 +29,74 @@ export const Day = ({ dayDate }: DayProps) => {
     }
   }, [dayDate.day, isToday])
   const body = useMemo(() => {
-    let leavesElements
-    const leavesToShow = leaves?.filter(
-      (leave) =>
-        DateTime.fromISO(leave.dateStart) <= dayDate &&
-        DateTime.fromISO(leave.dateEnd) > dayDate
-    )
-    if (leavesToShow) {
-      leavesElements = leavesToShow
-        .sort((a, b) => (a.dateStart < b.dateStart ? -1 : 1))
-        .map((leave) => {
-          if (DateTime.fromISO(leave.dateStart).hasSame(dayDate, 'day')) {
-            const leaveDuration = Interval.fromDateTimes(
-              DateTime.fromISO(leave.dateStart),
-              DateTime.fromISO(leave.dateEnd)
-            )
-              .toDuration('days')
-              ?.toObject().days
-            if (leaveDuration && leaveDuration < 2) {
-              return (
-                <Tooltip
-                  content={
-                    leave.type === 'bankHoliday'
-                      ? 'Bank Holiday'
-                      : leave.approvedBy
-                        ? 'Paid Time Off'
-                        : 'Request'
-                  }
-                >
-                  <div
-                    key={`leave-${dayDate}`}
-                    className={`${
-                      isFilling
-                        ? 'border-gray-50'
-                        : isToday
-                          ? 'border-primary-100'
-                          : isPast
-                            ? 'border-default-100'
-                            : 'border-white'
-                    } ${leave.type === 'bankHoliday' ? 'bg-secondary' : leave.approvedBy ? 'bg-default-500' : 'bg-default-200'} pl-2 mb-1 align-middle border-solid border-l-3 rounded-lg w-[calc(100vw/7)] h-[25px]  text-white truncate overflow-hidden`}
-                  >
-                    {leave.type === 'bankHoliday' ? (
-                      <PartyIcon dimension={'12'} fill="white" />
-                    ) : (
-                      <BussinessWatchIcon dimension="12" fill="white" />
-                    )}
-                    <p className="pl-2 inline">{leave.ownerName}</p>
-                  </div>
-                </Tooltip>
-              )
-            }
-            return (
-              <Tooltip
-                content={
-                  leave.type === 'bankHoliday'
-                    ? 'Bank Holiday'
-                    : leave.approvedBy
-                      ? 'Paid Time Off'
-                      : 'Request'
-                }
-              >
-                <div
-                  key={`leave-${dayDate}`}
-                  className={`${
-                    isFilling
-                      ? 'border-gray-50'
-                      : isToday
-                        ? 'border-primary-100'
-                        : isPast
-                          ? 'border-default-100'
-                          : 'border-white'
-                  } ${leave.type === 'bankHoliday' ? 'bg-secondary' : leave.approvedBy ? 'bg-default-500' : 'bg-default-200'} mb-1 pl-2 border-solid border-l-3 rounded-l-lg w-[calc(100vw/7)] h-[25px] text-white whitespace-nowrap overflow-visible z-10`}
-                >
-                  {leave.type === 'bankHoliday' ? (
-                    <PartyIcon dimension={'12'} fill="white" />
-                  ) : (
-                    <BussinessWatchIcon dimension="12" fill="white" />
-                  )}
-                  <p className="pl-2 inline">{leave.ownerName}</p>
-                </div>
-              </Tooltip>
-            )
-          } else if (
-            DateTime.fromISO(leave.dateEnd)
-              .minus({ days: 1 })
-              .hasSame(dayDate, 'day')
-          ) {
-            return (
-              <Tooltip
-                content={
-                  leave.type === 'bankHoliday'
-                    ? 'Bank Holiday'
-                    : leave.approvedBy
-                      ? 'Paid Time Off'
-                      : 'Request'
-                }
-              >
-                <div
-                  key={`leave-${dayDate}`}
-                  className={`${leave.type === 'bankHoliday' ? 'bg-secondary' : leave.approvedBy ? 'bg-default-500' : 'bg-default-200'} mb-1 w-full h-[25px] rounded-r-lg`}
-                ></div>
-              </Tooltip>
-            )
-          } else {
-            return (
-              <Tooltip
-                content={
-                  leave.type === 'bankHoliday'
-                    ? 'Bank Holiday'
-                    : leave.approvedBy
-                      ? 'Paid Time Off'
-                      : 'Request'
-                }
-              >
-                <div
-                  key={`leave-${dayDate}`}
-                  className={`${leave.type === 'bankHoliday' ? 'bg-secondary' : leave.approvedBy ? 'bg-default-500' : 'bg-default-200'} mb-1  w-full h-[25px]`}
-                ></div>
-              </Tooltip>
-            )
+    const leavesToShow = leaves
+      ?.filter(
+        (leave) =>
+          DateTime.fromISO(leave.dateStart) <= dayDate &&
+          DateTime.fromISO(leave.dateEnd) > dayDate
+      )
+      .sort((a, b) => (a.dateStart < b.dateStart ? -1 : 1))
+    const leavesElements = leavesToShow?.map((leave) => {
+      const background =
+        leave.type === 'bankHoliday'
+          ? 'bg-secondary'
+          : leave.approvedBy
+            ? 'bg-default-500'
+            : 'bg-default-200'
+      const spaces = getSpaces(leave, leaves || [], dayDate)
+      const distanceTop = `${spaces * 32}px`
+      const common = `mb-1 h-[28px] min-h-[28px] w-full`
+      const TooltipElement = ({ children }: { children: ReactNode }) => (
+        <Tooltip
+          content={
+            leave.type === 'bankHoliday'
+              ? 'Bank Holiday'
+              : leave.approvedBy
+                ? 'Paid Time Off'
+                : 'Request'
           }
-        })
-    }
+        >
+          {children}
+        </Tooltip>
+      )
+
+      if (DateTime.fromISO(leave.dateStart).hasSame(dayDate, 'day')) {
+        return (
+          <LeaveStartDay
+            leave={leave}
+            dayDate={dayDate}
+            background={background}
+            common={common}
+            distanceTop={distanceTop}
+          />
+        )
+      } else if (
+        DateTime.fromISO(leave.dateEnd)
+          .minus({ days: 1 })
+          .hasSame(dayDate, 'day')
+      ) {
+        return (
+          <TooltipElement>
+            <div
+              key={`leave-${dayDate}`}
+              className={`${background} ${common} rounded-r-lg`}
+              style={{ marginTop: distanceTop }}
+            ></div>
+          </TooltipElement>
+        )
+      } else {
+        return (
+          <TooltipElement>
+            <div
+              key={`leave-${dayDate}`}
+              className={`${background} ${common}`}
+              style={{ marginTop: distanceTop }}
+            ></div>
+          </TooltipElement>
+        )
+      }
+    })
+
     return (
       <div
         id={dayDate.day.toString()}
@@ -159,7 +105,7 @@ export const Day = ({ dayDate }: DayProps) => {
           ${isToday && 'bg-primary-100'} 
           ${isPast && 'bg-default-100'}`}
       >
-        {dayDate?.day}
+        <div className="mb-1">{dayDate?.day}</div>
         {leavesElements}
       </div>
     )
