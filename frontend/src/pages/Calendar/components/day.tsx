@@ -4,6 +4,7 @@ import { useCalendarContext } from '../CalendarContext'
 import { Tooltip } from '@nextui-org/react'
 import { LeaveStartDay } from './leaveStartDay'
 import { getSpaces } from '../../getMarginTop'
+import { LeaveType } from '../../../models/Leaves'
 
 interface DayProps {
   dayDate: DateTime
@@ -43,7 +44,9 @@ export const Day = ({ dayDate }: DayProps) => {
           : leave.approvedBy
             ? 'bg-default-500'
             : 'bg-default-200'
-      const spaces = getSpaces(leave, leaves || [], dayDate)
+      let processedLeaves: LeaveType[] = []
+
+      const spaces = getSpaces(leave, leaves || [], dayDate, processedLeaves)
       const distanceTop = `${spaces * 32}px`
       const common = `mb-1 h-[28px] min-h-[28px] w-full`
       const TooltipElement = ({ children }: { children: ReactNode }) => (
