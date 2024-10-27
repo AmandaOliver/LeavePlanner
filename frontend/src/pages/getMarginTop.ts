@@ -11,29 +11,7 @@ const leavesOverlaps = (
     DateTime.fromISO(leave1.dateEnd)
   )
   const leaveThatOverlaps = leaves
-    .sort((leaveA, leaveB) => {
-      const startA = DateTime.fromISO(leaveA.dateStart)
-      const startB = DateTime.fromISO(leaveB.dateStart)
-
-      // First, compare by start date
-      const startComparison = startA < startB ? -1 : startA > startB ? 1 : 0
-
-      if (startComparison !== 0) {
-        return startComparison
-      }
-
-      // If start dates are the same, compare by duration (end date - start date)
-      const durationA = DateTime.fromISO(leaveA.dateEnd).diff(
-        startA,
-        'days'
-      ).days
-      const durationB = DateTime.fromISO(leaveB.dateEnd).diff(
-        startB,
-        'days'
-      ).days
-
-      return durationA - durationB
-    })
+    .sort((a, b) => (a.dateStart < b.dateStart ? 1 : -1))
     .filter(
       (l) =>
         l.id !== leave1.id &&
