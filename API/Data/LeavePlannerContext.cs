@@ -7,13 +7,19 @@ namespace LeavePlanner.Data;
 
 public partial class LeavePlannerContext : DbContext
 {
-    public LeavePlannerContext()
+    private readonly IConfiguration _configuration;
+
+    public LeavePlannerContext(IConfiguration configuration)
     {
+        _configuration = configuration;
+
     }
 
-    public LeavePlannerContext(DbContextOptions<LeavePlannerContext> options)
+    public LeavePlannerContext(DbContextOptions<LeavePlannerContext> options, IConfiguration configuration)
         : base(options)
     {
+        _configuration = configuration;
+
     }
 
     public virtual DbSet<Country> Countries { get; set; }
@@ -25,7 +31,12 @@ public partial class LeavePlannerContext : DbContext
     public virtual DbSet<Organization> Organizations { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseMySQL("server=127.0.0.1;port=3306;user=root;password=;database=LeavePlanner;");
+    {
+        // Get connection string from appsettings.json
+
+        var connectionString = _configuration.GetConnectionString("LeavePlannerDB");
+        optionsBuilder.UseMySQL(connectionString);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

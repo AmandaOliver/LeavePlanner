@@ -29,7 +29,7 @@ CREATE TABLE Employees (
 -- Create the Leaves table without foreign keys
 CREATE TABLE Leaves (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    type ENUM('sickLeave', 'paidTimeOff', 'unpaidTimeOff', 'bankHoliday'),
+    type ENUM('paidTimeOff', 'bankHoliday'),
     dateStart DATETIME NOT NULL,
     dateEnd DATETIME NOT NULL,
     owner VARCHAR(255),
@@ -37,14 +37,6 @@ CREATE TABLE Leaves (
     approvedBy VARCHAR(255), -- NULL if not approved or bank holiday, employee ID if approved
     rejectedBy VARCHAR(255), -- NULL if not approved or bank holiday, employee ID if approved
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create the Notifications table without foreign keys
-CREATE TABLE Notifications (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    creator VARCHAR(255) NOT NULL,
-    leaveId INT,
-    recipient VARCHAR(255) NOT NULL
 );
 
 -- Add foreign key constraints to Employees
@@ -58,12 +50,6 @@ ALTER TABLE Leaves
     ADD CONSTRAINT fk_leave_approvedBy FOREIGN KEY (approvedBy) REFERENCES Employees(email),
     ADD CONSTRAINT fk_leave_rejectedBy FOREIGN KEY (rejectedBy) REFERENCES Employees(email);
 
-
--- Add foreign key constraints to Notifications
-ALTER TABLE Notifications
-    ADD CONSTRAINT fk_notification_creator FOREIGN KEY (creator) REFERENCES Employees(email),
-    ADD CONSTRAINT fk_notification_leave FOREIGN KEY (leaveId) REFERENCES Leaves(id),
-    ADD CONSTRAINT fk_notification_recipient FOREIGN KEY (recipient) REFERENCES Employees(email);
 
 -- Add indexes to commonly queried fields
 CREATE INDEX idx_organization ON Employees(organization);

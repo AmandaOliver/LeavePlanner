@@ -7,17 +7,7 @@ using Microsoft.OpenApi.Models;
 
 
 var builder = WebApplication.CreateBuilder(args);
-// Add CORS policy
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowSpecificOrigin", builder =>
-    {
-        builder.WithOrigins("https://localhost:3000")
-               .AllowAnyHeader()
-               .AllowAnyMethod()
-               .AllowCredentials();
-    });
-});
+
 builder.Services.AddControllers();
 builder.Services.AddScoped<LeavesService>();
 builder.Services.AddScoped<BankHolidayService>();
@@ -67,7 +57,17 @@ builder.Services.AddEntityFrameworkMySQL()
                 {
                     options.UseMySQL(builder.Configuration.GetConnectionString("LeavePlannerDB"));
                 });
-
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", policy =>
+    {
+        policy.WithOrigins(builder.Configuration.GetConnectionString("LeavePlannerUrl"))
+               .AllowAnyHeader()
+               .AllowAnyMethod()
+               .AllowCredentials();
+    });
+});
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

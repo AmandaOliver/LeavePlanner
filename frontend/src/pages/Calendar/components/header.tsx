@@ -68,6 +68,7 @@ const Header = () => {
         variant="flat"
         color="primary"
         size="lg"
+        className="hidden sm:block"
       >
         Go to Today
       </Button>
