@@ -71,6 +71,7 @@ export const Day = ({ dayDate }: DayProps) => {
             background={background}
             common={common}
             distanceTop={distanceTop}
+            key={`start-${leave.owner}`}
           />
         )
       } else if (
@@ -102,8 +103,9 @@ export const Day = ({ dayDate }: DayProps) => {
 
     return (
       <div
+        key={dayDate.day.toString()}
         id={dayDate.day.toString()}
-        className={`flex h-[150px] items-center text-default-600 border-none justify-start w-full flex-col flex-nowrap  border  
+        className={`flex h-[150px] overflow-scroll items-center text-default-600 border-none justify-start w-full flex-col flex-nowrap  border  
           ${isFilling && 'bg-gray-50'} 
           ${isToday && 'bg-primary-100'} 
           ${isPast && 'bg-default-100'}`}

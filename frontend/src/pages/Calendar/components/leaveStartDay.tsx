@@ -25,13 +25,7 @@ export const LeaveStartDay = ({
     .toDuration('days')
     ?.toObject().days
 
-  const IconElement =
-    leave.type === 'bankHoliday' ? (
-      <PartyIcon dimension={'12'} fill="white" />
-    ) : (
-      <BussinessWatchIcon dimension="12" fill="white" />
-    )
-  const text = 'ml-1 pl-2 text-white'
+  const text = 'ml-1 text-white'
   const name = <p className="pl-2 inline">{leave.ownerName}</p>
   const textConfig =
     leaveDuration && leaveDuration < 2
@@ -57,7 +51,6 @@ export const LeaveStartDay = ({
         className={`${background} ${common} ${text} ${textConfig}`}
         style={{ marginTop: distanceTop }}
       >
-        {IconElement}
         {name}
       </div>
     </TooltipElement>
