@@ -37,7 +37,7 @@ type PropsType = {
   avatarMenuItems?: MenuItemType[]
   mobileMenuItems: MenuItemType[]
   handleButtonClick: () => void
-  buttonLabel: string
+  buttonLabel?: string
 }
 export function Header({
   organizationName,
@@ -93,9 +93,11 @@ export function Header({
         })}
       </NavbarContent>
       <NavbarContent justify="end">
-        <Button color="primary" onClick={handleButtonClick}>
-          {buttonLabel}
-        </Button>
+        {buttonLabel && (
+          <Button color="primary" onClick={handleButtonClick}>
+            {buttonLabel}
+          </Button>
+        )}
 
         <div className="hidden sm:flex flex-wrap flex-grow-0 w-fit justify-items-end">
           <Dropdown placement="bottom-end">
