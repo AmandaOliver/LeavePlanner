@@ -14,9 +14,17 @@ import { EmployeeModal } from '../components/employeeModal'
 import { OrganizationDeleteModal } from '../components/organizationDeleteModal'
 import { OrganizationModal } from '../components/organizationModal'
 import { useState } from 'react'
+import { ImportModal } from '../components/importModal'
+import { EyeIcon } from '../icons/eye'
+import { BussinessWatchIcon } from '../icons/bussinesswatch'
 
 export const SetupOrganization = () => {
   const { isLoading, currentOrganization } = useOrganizationModel()
+  const {
+    isOpen: isOpenHeadModal,
+    onOpen: onOpenHeadModal,
+    onOpenChange: onOpenChangeHeadModal,
+  } = useDisclosure()
   const {
     isOpen: isOpenUpdateModal,
     onOpen: onOpenUpdateModal,
@@ -27,10 +35,18 @@ export const SetupOrganization = () => {
     onOpen: onOpenDeleteModal,
     onOpenChange: onOpenChangeDeleteModal,
   } = useDisclosure()
+  const {
+    isOpen: isOpenImportModal,
+    onOpen: onOpenImportModal,
+    onOpenChange: onOpenChangeImportModal,
+  } = useDisclosure()
 
   const [updateOrganization, setUpdateOrganization] = useState(
     {} as OrganizationType
   )
+  const [headOrganization, setHeadOrganization] = useState(false)
+  const [importOrganization, setImportOrganization] = useState(false)
+
   if (isLoading) return <LoadingComponent />
 
   return (
@@ -47,17 +63,24 @@ export const SetupOrganization = () => {
           onCloseCb={() => setUpdateOrganization({} as OrganizationType)}
         />
       )}
-      {!currentOrganization.tree.length && (
+      {headOrganization && (
         <EmployeeModal
-          isOpen={true}
-          onOpenChange={() => {}}
-          onCloseCb={() => {}}
+          isOpen={isOpenHeadModal}
+          onOpenChange={onOpenChangeHeadModal}
           label={'Set the head employee'}
+          onCloseCb={() => setHeadOrganization(false)}
+        />
+      )}
+      {importOrganization && (
+        <ImportModal
+          isOpen={isOpenImportModal}
+          onOpenChange={onOpenChangeImportModal}
+          onCloseCb={() => setImportOrganization(false)}
         />
       )}
       <div className="m-8">
         <div className="flex flex-wrap flex-row items-center gap-4">
-          <TreeIcon />
+          <BussinessWatchIcon />
           <h1 className=" text-[32px]">Organization info</h1>
 
           <Divider />
@@ -87,10 +110,33 @@ export const SetupOrganization = () => {
       <div className="m-8">
         <div className="flex flex-wrap flex-row items-center gap-4">
           <TreeIcon />
-          <h1 className=" text-[32px]">Organization hierarchy</h1>
+          <h1 className=" text-[32px]">Organization tree</h1>
 
           <Divider />
         </div>
+        {!currentOrganization.tree.length && (
+          <div className="flex flex-wrap flex-row p-4 gap-4">
+            <Button
+              color="primary"
+              onPress={() => {
+                setHeadOrganization(true)
+                onOpenHeadModal()
+              }}
+            >
+              Create Head Employee Manually
+            </Button>
+
+            <Button
+              color="primary"
+              onPress={() => {
+                setImportOrganization(true)
+                onOpenImportModal()
+              }}
+            >
+              Import Full Tree From CSV
+            </Button>
+          </div>
+        )}
         <OrganizationTree />
       </div>
     </>

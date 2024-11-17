@@ -55,7 +55,7 @@ export const Navigation = () => {
     avatarPicture:
       user?.picture || 'https://cdn-icons-png.flaticon.com/512/126/126486.png',
   }
-  if (currentEmployee) {
+  if (currentEmployee?.country) {
     currentUser = {
       ...currentUser,
       email: currentEmployee.email,
@@ -98,9 +98,7 @@ export const Navigation = () => {
           setIsLeaveModalOpen(true)
           onOpen()
         }}
-        buttonLabel={
-          currentEmployee?.organization ? 'Request a leave' : undefined
-        }
+        buttonLabel={currentEmployee?.country ? 'Request a leave' : undefined}
       />
     </>
   )

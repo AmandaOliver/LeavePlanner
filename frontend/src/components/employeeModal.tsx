@@ -97,8 +97,10 @@ export const EmployeeModal = ({
     }
   }
   const handlePtoBlur = () => {
-    console.log(ptoRef.current?.value)
-    if (ptoRef.current && !ptoRef.current.checkValidity()) {
+    if (
+      ptoRef.current &&
+      (!ptoRef.current.checkValidity() || !ptoRef.current.value)
+    ) {
       setPtoError('Please enter number of days of paid time off')
     } else {
       setPtoError(null)
@@ -248,7 +250,7 @@ export const EmployeeModal = ({
                 name="ptoDays"
                 id="ptoDaysInput"
                 label="days of paid time off per year"
-                value={(ptoDays as unknown as string) || '0'}
+                value={ptoDays as unknown as string}
                 onChange={handlePtoChange}
                 onBlur={handlePtoBlur}
                 ref={ptoRef}
