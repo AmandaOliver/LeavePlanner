@@ -35,8 +35,8 @@ export const OrganizationModal = ({
     if (organization) {
       await renameOrganization(orgName)
     } else {
-      const organization = await createOrganizationAndEmployee(orgName)
-      navigate(`/setup-organization/${organization.id}`)
+      await createOrganizationAndEmployee(orgName)
+      navigate(`/setup-organization`)
     }
     setIsLoading(false)
     onCloseCb()

@@ -15,13 +15,13 @@ public class LeavesService : ILeavesService
 {
 	private readonly LeavePlannerContext _context;
 	private readonly PaidTimeOffLeft _paidTimeOffLeft;
-	private readonly EmployeesController _employeesController;
+	private readonly EmployeesService _employeesService;
 
-	public LeavesService(LeavePlannerContext context, PaidTimeOffLeft paidTimeOffLeft, EmployeesController employeesController)
+	public LeavesService(LeavePlannerContext context, PaidTimeOffLeft paidTimeOffLeft, EmployeesService employeesService)
 	{
 		_context = context;
 		_paidTimeOffLeft = paidTimeOffLeft;
-		_employeesController = employeesController;
+		_employeesService = employeesService;
 	}
 	public async Task<List<LeaveDTO>> GetLeaveRequests(EmployeeWithSubordinatesDTO employee)
 	{
@@ -191,7 +191,7 @@ public class LeavesService : ILeavesService
 		{
 			throw new Exception("Manager not found");
 		}
-		var employeeWithSubordinates = await _employeesController.GetEmployeeWithSubordinates(manager);
+		var employeeWithSubordinates = await _employeesService.GetEmployeeWithSubordinates(manager);
 		var conflicts = new List<ConflictDTO>();
 		foreach (var subordinate in employeeWithSubordinates.Subordinates)
 		{

@@ -20,20 +20,20 @@ public class EmployeesController
 {
     private readonly LeavePlannerContext _context;
     private readonly BankHolidayService _bankholidayService;
-    private readonly PaidTimeOffLeft _paidTimeOffLeft;
     private readonly IConfiguration _configuration;
     private readonly string _leavePlannerUrl;
     private readonly EmailService _emailService;
+    private readonly EmployeesService _employeesService;
 
 
 
-    public EmployeesController(LeavePlannerContext context, BankHolidayService bankHolidayService, PaidTimeOffLeft paidTimeOffLeft, IConfiguration configuration, EmailService emailService)
+    public EmployeesController(LeavePlannerContext context, BankHolidayService bankHolidayService, IConfiguration configuration, EmailService emailService, EmployeesService employeesService)
     {
         _context = context;
         _bankholidayService = bankHolidayService;
-        _paidTimeOffLeft = paidTimeOffLeft;
         _configuration = configuration;
         _emailService = emailService;
+        _employeesService = employeesService;
         // Access the LeavePlannerUrl from appsettings.json
         _leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
 
@@ -41,10 +41,10 @@ public class EmployeesController
     public async Task<IResult> CreateEmployee(EmployeeCreateDTO model)
     {
 
-        // Check for invalid data
-        if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Country) || model.Organization == 0 || model.PaidTimeOff == 0)
+        var validationResult = await _employeesService.ValidateEmployee(model);
+        if (validationResult != "success")
         {
-            return Results.BadRequest("Invalid data.");
+            return Results.BadRequest(validationResult);
         }
 
         using var transaction = await _context.Database.BeginTransactionAsync();
@@ -113,49 +113,8 @@ Hello {employee.Name},
         }
 
         // Fetch subordinates recursively
-        var employeeWithSubordinates = await GetEmployeeWithSubordinates(employee);
+        var employeeWithSubordinates = await _employeesService.GetEmployeeWithSubordinates(employee);
         return Results.Ok(employeeWithSubordinates);
-    }
-
-    public async Task<EmployeeWithSubordinatesDTO> GetEmployeeWithSubordinates(Employee employee)
-    {
-        int paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, DateTime.UtcNow.Year, null);
-        int paidTimeOffLeftNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, DateTime.UtcNow.Year + 1, null);
-        var employeeWithSubordinates = new EmployeeWithSubordinatesDTO
-        {
-            Email = employee.Email,
-            Name = employee.Name,
-            Country = employee.Country,
-            Organization = employee.Organization,
-            ManagedBy = employee.ManagedBy,
-            IsOrgOwner = employee.IsOrgOwner,
-            PaidTimeOff = employee.PaidTimeOff,
-            Title = employee.Title,
-            PaidTimeOffLeft = paidTimeOffLeft,
-            PaidTimeOffLeftNextYear = paidTimeOffLeftNextYear,
-            Subordinates = new List<EmployeeWithSubordinatesDTO>()
-        };
-
-        var subordinates = await _context.Employees
-                                        .Where(e => e.ManagedBy == employee.Email)
-                                        .ToListAsync();
-        if (subordinates != null)
-        {
-            var pendingRequests = 0;
-            foreach (var subordinate in subordinates)
-            {
-                pendingRequests += await _context.Leaves
-                      .Where(leave => leave.Owner == subordinate.Email &&
-                                      leave.ApprovedBy == null && leave.RejectedBy == null && leave.Type != "bankHoliday")
-                      .CountAsync();
-                var subordinateWithSubordinates = await GetEmployeeWithSubordinates(subordinate);
-                employeeWithSubordinates.Subordinates.Add(subordinateWithSubordinates);
-            }
-            employeeWithSubordinates.PendingRequests = pendingRequests;
-        }
-
-        return employeeWithSubordinates;
-
     }
 
     public async Task<IResult> UpdateEmployee(string email, EmployeeUpdateDTO model)

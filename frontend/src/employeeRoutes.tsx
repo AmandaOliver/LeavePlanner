@@ -45,7 +45,7 @@ export const EmployeeRoutes = () => {
             element={<AuthenticationGuard component={Requests} />}
           />
           <Route
-            path="/setup-organization/:id"
+            path="/setup-organization"
             element={<AuthenticationGuard component={SetupOrganization} />}
           />
 

@@ -30,18 +30,18 @@ public class LeavesController
 	private readonly LeavesService _leavesService;
 	private readonly EmailService _emailService;
 	private readonly IConfiguration _configuration;
-	private readonly EmployeesController _employeesController;
+	private readonly EmployeesService _employeesService;
 
 	private readonly string _leavePlannerUrl;
 
 
-	public LeavesController(LeavePlannerContext context, LeavesService leavesService, EmailService emailService, IConfiguration configuration, EmployeesController employeesController)
+	public LeavesController(LeavePlannerContext context, LeavesService leavesService, EmailService emailService, IConfiguration configuration, EmployeesService employeesService)
 	{
 		_context = context;
 		_leavesService = leavesService;
 		_emailService = emailService;
 		_configuration = configuration;
-		_employeesController = employeesController;
+		_employeesService = employeesService;
 
 		_leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
 
@@ -62,16 +62,15 @@ public class LeavesController
 						   .Where(leave => leave.Owner == email &&
 										   (leave.RejectedBy == null))
 						   .ToListAsync();
+		if (leaves.IsNullOrEmpty() || leaves == null || leaves.Count == 0)
+		{
+			return Results.Ok(new List<Leave>());
+		}
 		var employee = await _context.Employees.FindAsync(leaves[0].Owner);
 		if (employee == null)
 		{
 			return Results.BadRequest("employee not found");
 		}
-		if (leaves == null || leaves.Count == 0)
-		{
-			return Results.Ok(new List<Leave>());
-		}
-
 		if (start != null && end != null)
 		{
 
@@ -135,7 +134,7 @@ public class LeavesController
 					   .ToListAsync();
 				allLeaves.AddRange(managerLeaves);
 				// has a team, get leaves from the team
-				var managerWithSubordinates = await _employeesController.GetEmployeeWithSubordinates(manager);
+				var managerWithSubordinates = await _employeesService.GetEmployeeWithSubordinates(manager);
 
 				foreach (var subordinate in managerWithSubordinates.Subordinates)
 				{
@@ -149,7 +148,7 @@ public class LeavesController
 			}
 
 			// get leaves from subordinates
-			var employeeWithSubordinates = await _employeesController.GetEmployeeWithSubordinates(employee);
+			var employeeWithSubordinates = await _employeesService.GetEmployeeWithSubordinates(employee);
 			if (employeeWithSubordinates == null)
 			{
 				return Results.BadRequest("employee with subordinates not found");

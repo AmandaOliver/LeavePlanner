@@ -18,15 +18,15 @@ public static class RequestsEndpointsExtensions
 public class RequestsController
 {
 	private readonly LeavePlannerContext _context;
-	private readonly EmployeesController _employeesController;
+	private readonly EmployeesService _employeesService;
 	private readonly LeavesService _leavesService;
 	private readonly EmailService _emailService;
 
 
-	public RequestsController(LeavePlannerContext context, EmployeesController employeesController, LeavesService leavesService, EmailService emailService)
+	public RequestsController(LeavePlannerContext context, EmployeesService employeesService, LeavesService leavesService, EmailService emailService)
 	{
 		_context = context;
-		_employeesController = employeesController;
+		_employeesService = employeesService;
 		_leavesService = leavesService;
 		_emailService = emailService;
 	}
@@ -37,7 +37,7 @@ public class RequestsController
 		{
 			return Results.NotFound("employee not found");
 		}
-		var employeeWithSubordinates = await _employeesController.GetEmployeeWithSubordinates(manager);
+		var employeeWithSubordinates = await _employeesService.GetEmployeeWithSubordinates(manager);
 		if (employeeWithSubordinates.Subordinates.IsNullOrEmpty())
 		{
 			return Results.NotFound("employee is not a manager");

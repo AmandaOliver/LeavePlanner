@@ -2,12 +2,12 @@ namespace LeavePlanner.Models
 {
 	public class EmployeeCreateDTO
 	{
-		public string Email { get; set; } = null!;
-		public int Organization { get; set; } = 0;
+		public required string Email { get; set; }
+		public int Organization { get; set; }
 		public string? ManagedBy { get; set; }
-		public string Country { get; set; } = null!;
-		public int PaidTimeOff { get; set; } = 0;
-		public string? Title { get; set; }
-		public string? Name { get; set; }
+		public required string Country { get; set; }
+		public int PaidTimeOff { get; set; }
+		public required string Title { get; set; }
+		public required string Name { get; set; }
 	}
 }

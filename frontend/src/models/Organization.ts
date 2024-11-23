@@ -82,6 +82,36 @@ export const useOrganizationModel = () => {
       })
     },
   })
+  const importOrganizationMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const accessToken = await getAccessTokenSilently()
+      if (!user) return false
+      const response = await fetch(
+        `${process.env.REACT_APP_API_SERVER_URL}/organization/import/${organizationQuery.data?.id}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: formData,
+        }
+      )
+      if (response.status === 200) {
+        return response.text()
+      } else {
+        const error = await response.json()
+        throw new Error(error.detail)
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ['organization'],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['employee', user?.email],
+      })
+    },
+  })
   const deleteOrganizationMutation = useMutation({
     mutationFn: async () => {
       const accessToken = await getAccessTokenSilently()
@@ -146,6 +176,7 @@ export const useOrganizationModel = () => {
       createOrganizationAndEmployeeMutation.mutateAsync,
     deleteOrganization: deleteOrganizationMutation.mutateAsync,
     renameOrganization: renameOrganizationMutation.mutateAsync,
+    importOrganization: importOrganizationMutation.mutateAsync,
     currentOrganization: organizationQuery.data,
     isLoading: organizationQuery.isLoading,
   }

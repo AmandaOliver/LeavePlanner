@@ -15,7 +15,6 @@ import { OrganizationDeleteModal } from '../components/organizationDeleteModal'
 import { OrganizationModal } from '../components/organizationModal'
 import { useState } from 'react'
 import { ImportModal } from '../components/importModal'
-import { EyeIcon } from '../icons/eye'
 import { BussinessWatchIcon } from '../icons/bussinesswatch'
 
 export const SetupOrganization = () => {
@@ -115,27 +114,31 @@ export const SetupOrganization = () => {
           <Divider />
         </div>
         {!currentOrganization.tree.length && (
-          <div className="flex flex-wrap flex-row p-4 gap-4">
-            <Button
-              color="primary"
-              onPress={() => {
-                setHeadOrganization(true)
-                onOpenHeadModal()
-              }}
-            >
-              Create Head Employee Manually
-            </Button>
-
-            <Button
-              color="primary"
-              onPress={() => {
-                setImportOrganization(true)
-                onOpenImportModal()
-              }}
-            >
-              Import Full Tree From CSV
-            </Button>
-          </div>
+          <Card className="bg-default-200 p-4 m-4">
+            <p className="p-4 m-auto">No employees registered.</p>
+            <div className="flex flex-wrap flex-row justify-center gap-4">
+              <Button
+                color="primary"
+                onPress={() => {
+                  setImportOrganization(true)
+                  onOpenImportModal()
+                }}
+              >
+                Import Full Tree From CSV
+              </Button>
+              <p className="self-center">or</p>
+              <Button
+                color="primary"
+                variant="bordered"
+                onPress={() => {
+                  setHeadOrganization(true)
+                  onOpenHeadModal()
+                }}
+              >
+                Create Employees Manually
+              </Button>
+            </div>
+          </Card>
         )}
         <OrganizationTree />
       </div>
