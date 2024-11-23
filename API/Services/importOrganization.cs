@@ -43,9 +43,18 @@ public class OrganizationImportService
 			{
 				throw new Exception("Error parsing the CSV, verify the structure.");
 			}
+			var headFound = false;
 			// Step 1: Insert employees without setting managedBy
 			foreach (var employee in employees)
 			{
+				if (string.IsNullOrEmpty(employee.ManagerEmail))
+				{
+					if (headFound == true)
+					{
+						throw new Exception("Error in organization structure, you can't have two heads (employees without manager)");
+					}
+					headFound = true;
+				}
 
 				var validationResult = await _employeesService.ValidateEmployee(new EmployeeCreateDTO
 				{

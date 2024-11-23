@@ -41,7 +41,7 @@ export const Navigation = () => {
   }
 
   const menuItemOrgOwner = {
-    link: `/setup-organization/${currentEmployee?.organization}`,
+    link: `/setup-organization`,
     label: 'Setup your organization',
   }
 
@@ -68,10 +68,10 @@ export const Navigation = () => {
       avatarMenuItems.push(menuItemManager)
       mobileMenuItems.push(menuItemManager)
     }
-    if (currentEmployee.isOrgOwner) {
-      avatarMenuItems.push(menuItemOrgOwner)
-      mobileMenuItems.push(menuItemOrgOwner)
-    }
+  }
+  if (currentEmployee?.isOrgOwner) {
+    avatarMenuItems.push(menuItemOrgOwner)
+    mobileMenuItems.push(menuItemOrgOwner)
   }
   if (isLoading || isLoadingEmployee || isLoadingOrg || isLoadingUser)
     return <Skeleton className="w-full h-16" />
