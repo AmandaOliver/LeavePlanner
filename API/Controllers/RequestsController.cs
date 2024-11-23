@@ -10,6 +10,7 @@ public static class RequestsEndpointsExtensions
 	{
 
 		endpoints.MapGet("/requests/{email}", async (RequestsController controller, string email) => await controller.GetRequestsOfAManager(email)).RequireAuthorization();
+		endpoints.MapGet("/requests/reviewed/{email}", async (RequestsController controller, string email) => await controller.GetReviewedRequestsOfAManager(email)).RequireAuthorization();
 		endpoints.MapPost("/requests/{email}/approve/{id}", async (RequestsController controller, string email, string id) => await controller.ApproveRequest(id, email)).RequireAuthorization();
 		endpoints.MapPost("/requests/{email}/reject/{id}", async (RequestsController controller, string email, string id) => await controller.RejectRequest(id, email)).RequireAuthorization();
 
@@ -51,6 +52,28 @@ public class RequestsController
 
 		return Results.Ok(requests);
 	}
+	public async Task<IResult> GetReviewedRequestsOfAManager(string email)
+	{
+		var manager = await _context.Employees.FindAsync(email);
+		if (manager == null)
+		{
+			return Results.NotFound("employee not found");
+		}
+		var employeeWithSubordinates = await _employeesService.GetEmployeeWithSubordinates(manager);
+		if (employeeWithSubordinates.Subordinates.IsNullOrEmpty())
+		{
+			return Results.NotFound("employee is not a manager");
+		}
+		var requests = new List<LeaveDTO>();
+		foreach (var subordinate in employeeWithSubordinates.Subordinates)
+		{
+			var subordinateRequests = await _leavesService.GetReviewedRequests(subordinate);
+			requests.AddRange(subordinateRequests);
+		}
+
+		return Results.Ok(requests);
+	}
+
 	public async Task<IResult> ApproveRequest(string id, string email)
 	{
 		if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(email))

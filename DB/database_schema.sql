@@ -55,6 +55,10 @@ ALTER TABLE Leaves
 CREATE INDEX idx_organization ON Employees(organization);
 CREATE INDEX idx_owner ON Leaves(owner);
 
+-- Add system employee for the default bank holidays approvals 
+INSERT INTO LeavePlanner.Employees (Email, Name, Title, ManagedBy, Country, PaidTimeOff)
+VALUES ('system', 'System', 'System Account', NULL, 'None', 0);
+
 -- Populate the Countries table with Google Calendar codes as the code and English names as the name
 INSERT INTO Countries (code, name) VALUES
 ('ad', 'Andorra'),

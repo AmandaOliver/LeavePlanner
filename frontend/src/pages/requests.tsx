@@ -20,7 +20,7 @@ import { RequestReviewModal } from '../components/requestReviewModal'
 import { PartyIcon } from '../icons/party'
 import { BussinessWatchIcon } from '../icons/bussinesswatch'
 export const Requests = () => {
-  const { requests, isLoading } = useRequestsModel()
+  const { requests, isLoading, reviewedRequests } = useRequestsModel()
   const {
     isOpen: isOpenReviewModal,
     onOpen: onOpenReviewModal,
@@ -93,6 +93,51 @@ export const Requests = () => {
                       Review
                     </Button>
                   </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="m-8">
+        <div className="flex flex-wrap flex-row items-center gap-4">
+          <EyeIcon />
+          <h1 className=" text-[32px]">Reviewed requests</h1>
+        </div>
+        <Divider />
+        <Table aria-label="list" className="mt-8">
+          <TableHeader>
+            <TableColumn>TYPE</TableColumn>
+            <TableColumn>OWNER</TableColumn>
+            <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
+            <TableColumn>DESCRIPTION</TableColumn>
+            <TableColumn>STATUS</TableColumn>
+          </TableHeader>
+          <TableBody emptyContent={'No reviewed requests.'}>
+            {reviewedRequests.map((request) => (
+              <TableRow key={request.id}>
+                <TableCell>
+                  <div className="flex flex-wrap flex-row items-center gap-4">
+                    {request.type === 'bankHoliday' ? (
+                      <PartyIcon />
+                    ) : (
+                      <BussinessWatchIcon />
+                    )}
+                    <p className="hidden md:block">
+                      {request.type === 'bankHoliday'
+                        ? 'Bank Holiday'
+                        : 'Paid Time Off'}
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell>{request.ownerName}</TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  {new Date(request.dateStart).toDateString()} to{' '}
+                  {new Date(request.dateEnd).toDateString()}
+                </TableCell>
+                <TableCell>{request.description}</TableCell>
+                <TableCell>
+                  {request.approvedBy ? 'Approved' : 'Rejected'}
                 </TableCell>
               </TableRow>
             ))}

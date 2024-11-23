@@ -87,7 +87,7 @@ public class BankHolidayService : IBankHolidayService
 							DateEnd = holiday.EndDate,
 							Owner = employee.Email,
 							Description = holiday.Summary,
-							ApprovedBy = !string.IsNullOrEmpty(employee.ManagedBy) ? employee.ManagedBy : employee.Email,
+							ApprovedBy = "system",
 							RejectedBy = null,
 							OwnerNavigation = employee,
 							CreatedAt = DateTime.UtcNow

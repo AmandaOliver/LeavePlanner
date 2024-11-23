@@ -38,6 +38,21 @@ public class LeavesService : ILeavesService
 
 		return leaveRequests;
 	}
+	public async Task<List<LeaveDTO>> GetReviewedRequests(EmployeeWithSubordinatesDTO employee)
+	{
+		var leaves = await _context.Leaves
+					   .Where(leave => leave.Owner == employee.Email &&
+									   ((leave.ApprovedBy != null && leave.ApprovedBy != "system") || leave.RejectedBy != null))
+					   .ToListAsync();
+
+		if (leaves == null || leaves.Count == 0)
+		{
+			return new List<LeaveDTO>();
+		}
+		var leaveRequests = await GetLeavesDynamicInfo(leaves, false);
+
+		return leaveRequests;
+	}
 	public async Task<LeaveDTO> GetLeaveDynamicInfo(Leave leave, bool withConflicts = false)
 	{
 		int requestedDaysThisYear = await _paidTimeOffLeft.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year, leave.Id != 0 ? leave.Id : null);

@@ -45,9 +45,38 @@ export const useRequestsModel = () => {
       throw new Error('Failed to fetch requests')
     }
   }
+  const fetchReviewedRequests = async (): Promise<LeaveType[]> => {
+    const accessToken = await getAccessTokenSilently()
+
+    const response = await fetch(
+      `${process.env.REACT_APP_API_SERVER_URL}/requests/reviewed/${currentEmployee?.email}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    if (response.ok) {
+      const responseJson = await response.json()
+      return responseJson.map((request: LeaveType) => ({
+        ...request,
+        dateStart: request.dateStart.split('T')[0],
+        dateEnd: request.dateEnd.split('T')[0],
+      }))
+    } else {
+      throw new Error('Failed to fetch reviewed requests')
+    }
+  }
   const requestsQuery = useQuery({
     queryKey: ['requests', currentEmployee?.email],
     queryFn: fetchRequests,
+  })
+  const reviewedRequestsQuery = useQuery({
+    queryKey: ['reviewedRequests', currentEmployee?.email],
+    queryFn: fetchReviewedRequests,
   })
   const approveRequestMutation = useMutation({
     mutationFn: async ({ requestId }: ApproveRequestParams) => {
@@ -70,6 +99,9 @@ export const useRequestsModel = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['requests', currentEmployee?.email],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['reviewedRequests', currentEmployee?.email],
       })
       queryClient.invalidateQueries({
         queryKey: ['employee', currentEmployee?.email],
@@ -99,13 +131,17 @@ export const useRequestsModel = () => {
         queryKey: ['requests', currentEmployee?.email],
       })
       queryClient.invalidateQueries({
+        queryKey: ['reviewedRequests', currentEmployee?.email],
+      })
+      queryClient.invalidateQueries({
         queryKey: ['employee', currentEmployee?.email],
       })
     },
   })
   return {
     requests: requestsQuery.data ?? [],
-    isLoading: requestsQuery.isLoading,
+    reviewedRequests: reviewedRequestsQuery.data ?? [],
+    isLoading: requestsQuery.isLoading || reviewedRequestsQuery.isLoading,
     approveRequest: approveRequestMutation.mutateAsync,
     rejectRequest: rejectRequestMutation.mutateAsync,
   }
