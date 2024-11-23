@@ -175,6 +175,7 @@ public class OrganizationsController
                 PaidTimeOff = manager.PaidTimeOff,
                 ManagedBy = manager.ManagedBy,
                 Title = manager.Title,
+                IsOrgOwner = manager.IsOrgOwner,
                 Subordinates = BuildEmployeeHierarchy(subordinates, allEmployees)
             };
             result.Add(employeeDto);

@@ -69,6 +69,7 @@ export const Employee = ({ employee }: { employee: EmployeeType }) => {
       )}
       <div className="flex flex-wrap flex-row w-full justify-between">
         <div>
+          {employee.isOrgOwner && <p className="font-bold">Is Admin</p>}
           <p>Name: {employee.name}</p>
           <p>Title: {employee.title}</p>
           <p>Email: {employee.email}</p>

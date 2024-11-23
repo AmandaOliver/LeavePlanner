@@ -1,6 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { useQuery } from '@tanstack/react-query'
-import { LeaveType } from './Leaves'
 
 export const useLeaveModel = (id: string) => {
   const { getAccessTokenSilently } = useAuth0()

@@ -64,7 +64,8 @@ public class OrganizationImportService
 					Country = employee.Country,
 					PaidTimeOff = employee.PaidTimeOff,
 					ManagedBy = employee.ManagerEmail,
-					Organization = int.Parse(organizationId)
+					Organization = int.Parse(organizationId),
+					IsOrgOwner = employee.IsAdmin
 				});
 				if (validationResult != "success")
 				{
@@ -81,7 +82,8 @@ public class OrganizationImportService
 						Title = employee.Title,
 						Country = employee.Country,
 						PaidTimeOff = employee.PaidTimeOff,
-						Organization = int.Parse(organizationId)
+						Organization = int.Parse(organizationId),
+						IsOrgOwner = employee.IsAdmin
 					};
 					_context.Employees.Add(newEmployee);
 				}

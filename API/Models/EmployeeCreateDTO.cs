@@ -9,5 +9,6 @@ namespace LeavePlanner.Models
 		public int PaidTimeOff { get; set; }
 		public required string Title { get; set; }
 		public required string Name { get; set; }
+		public required bool IsOrgOwner { get; set; }
 	}
 }

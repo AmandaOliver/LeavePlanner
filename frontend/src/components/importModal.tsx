@@ -19,8 +19,6 @@ import {
 import { useState } from 'react'
 import { useOrganizationModel } from '../models/Organization'
 import { InfoIcon } from '../icons/info'
-import { EyeIcon } from '../icons/eye'
-// email, name, title, managerEmail, country, paidTimeOff
 export const ImportModal = ({
   isOpen,
   onOpenChange,
@@ -83,12 +81,13 @@ export const ImportModal = ({
             <ModalBody>
               <Table aria-label="Example csv" hideHeader>
                 <TableHeader>
-                  <TableColumn>fake</TableColumn>
-                  <TableColumn>fake</TableColumn>
-                  <TableColumn>fake</TableColumn>
-                  <TableColumn>fake</TableColumn>
-                  <TableColumn>fake</TableColumn>
-                  <TableColumn>fake</TableColumn>
+                  <TableColumn>hidden</TableColumn>
+                  <TableColumn>hidden</TableColumn>
+                  <TableColumn>hidden</TableColumn>
+                  <TableColumn>hidden</TableColumn>
+                  <TableColumn>hidden</TableColumn>
+                  <TableColumn>hidden</TableColumn>
+                  <TableColumn>hidden</TableColumn>
                 </TableHeader>
                 <TableBody>
                   <TableRow key="1">
@@ -210,6 +209,17 @@ export const ImportModal = ({
                         </Code>
                       </Tooltip>
                     </TableCell>
+                    <TableCell className="min-w-40">
+                      <Tooltip
+                        content="Required. true or false"
+                        color="primary"
+                      >
+                        <Code className="flex flex-wrap flex-row items-center gap-2 rounded-md">
+                          <InfoIcon />
+                          IsAdmin
+                        </Code>
+                      </Tooltip>
+                    </TableCell>
                   </TableRow>
                   <TableRow key="2">
                     <TableCell>name@email.com</TableCell>
@@ -218,6 +228,7 @@ export const ImportModal = ({
                     <TableCell>boss@email.com</TableCell>
                     <TableCell>Spain</TableCell>
                     <TableCell>30</TableCell>
+                    <TableCell>false</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>

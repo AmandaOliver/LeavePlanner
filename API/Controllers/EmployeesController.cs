@@ -60,6 +60,7 @@ public class EmployeesController
                 existingEmployee.PaidTimeOff = model.PaidTimeOff;
                 existingEmployee.Title = model.Title;
                 existingEmployee.Name = model.Name;
+                existingEmployee.IsOrgOwner = model.IsOrgOwner;
 
                 _context.Employees.Update(existingEmployee);
                 employee = existingEmployee;
@@ -72,7 +73,7 @@ public class EmployeesController
                     Country = model.Country,
                     Organization = model.Organization,
                     ManagedBy = model.ManagedBy,
-                    IsOrgOwner = false,
+                    IsOrgOwner = model.IsOrgOwner,
                     PaidTimeOff = model.PaidTimeOff,
                     Title = model.Title,
                     Name = model.Name,
@@ -140,6 +141,16 @@ Hello {employee.Name},
             employee.PaidTimeOff = model.PaidTimeOff != 0 ? model.PaidTimeOff : employee.PaidTimeOff;
             employee.Title = model.Title ?? employee.Title;
             employee.Name = model.Name ?? employee.Name;
+            if (employee.IsOrgOwner == true && model.IsOrgOwner == false)
+            {
+                var anotherOwner = await _context.Employees.FirstOrDefaultAsync(e => e.IsOrgOwner == true && employee.Email != e.Email);
+                if (anotherOwner == null)
+                {
+                    await transaction.RollbackAsync();
+                    return Results.BadRequest("You can't leave the organization without admins");
+                }
+            }
+            employee.IsOrgOwner = model.IsOrgOwner;
 
             await transaction.CommitAsync();
             await _context.SaveChangesAsync();

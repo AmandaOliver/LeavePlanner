@@ -3,21 +3,16 @@ import {
   ModalContent,
   ModalBody,
   ModalHeader,
-  DateRangePicker,
   ModalFooter,
-  Card,
   Button,
-  Textarea,
-  Skeleton,
   Input,
+  Switch,
+  Card,
 } from '@nextui-org/react'
-import { ConflictType, LeaveType, useLeavesModel } from '../models/Leaves'
-import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react'
-import { CalendarDate, parseDate } from '@internationalized/date'
+import { ChangeEvent, useRef, useState } from 'react'
 import { EmployeeType, useEmployeeModel } from '../models/Employee'
 import { useCountriesModel } from '../models/Countries'
 import { useOrganizationModel } from '../models/Organization'
-import { LoadingComponent } from './loading'
 
 export const EmployeeModal = ({
   isOpen,
@@ -34,9 +29,8 @@ export const EmployeeModal = ({
   managerEmail?: string
   label: string
 }) => {
-  const { countries, isLoading: isLoadingCountries } = useCountriesModel()
-  const { currentOrganization, isLoading: isLoadingOrganization } =
-    useOrganizationModel()
+  const { countries } = useCountriesModel()
+  const { currentOrganization } = useOrganizationModel()
   const { createEmployee, updateEmployee } = useEmployeeModel()
   const [employeeEmail, setEmployeeEmail] = useState(employee?.email || '')
   const [employeeTitle, setEmployeeTitle] = useState(employee?.title || '')
@@ -44,6 +38,7 @@ export const EmployeeModal = ({
   const [selectedCountry, setSelectedCountry] = useState(
     employee?.country || ''
   )
+  const [isOrgOwner, setIsOrgOwner] = useState(employee?.isOrgOwner || false)
   const [ptoDays, setPtoDays] = useState(employee?.paidTimeOff || 1)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [nameError, setNameError] = useState<string | null>(null)
@@ -51,6 +46,7 @@ export const EmployeeModal = ({
   const [countryError, setCountryError] = useState<string | null>(null)
   const [titleError, setTitleError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(false)
 
   const emailRef = useRef<HTMLInputElement>(null)
   const ptoRef = useRef<HTMLInputElement>(null)
@@ -123,20 +119,22 @@ export const EmployeeModal = ({
   }
 
   const employeeHandler = async (onClose: () => void) => {
+    let response
     setIsLoading(true)
     if (employee) {
       // we are updating an employee
-      await updateEmployee({
+      response = await updateEmployee({
         name: employeeName,
         email: employeeEmail,
         country: selectedCountry,
         paidTimeOff: ptoDays,
         title: employeeTitle,
+        isOrgOwner,
       })
     } else {
       if (managerEmail) {
         // we are creating an employee
-        await createEmployee({
+        response = await createEmployee({
           name: employeeName,
           email: employeeEmail,
           country: selectedCountry,
@@ -144,10 +142,11 @@ export const EmployeeModal = ({
           managedBy: managerEmail,
           organization: currentOrganization.id,
           title: employeeTitle,
+          isOrgOwner,
         })
       } else {
         // we are creating the head of the organization
-        await createEmployee({
+        response = await createEmployee({
           name: employeeName,
           email: employeeEmail,
           country: selectedCountry,
@@ -155,12 +154,18 @@ export const EmployeeModal = ({
           managedBy: null,
           organization: currentOrganization.id,
           title: employeeTitle,
+          isOrgOwner,
         })
       }
     }
     setIsLoading(false)
-    onCloseCb()
-    onClose()
+
+    if (response?.error) {
+      setError(response.error)
+    } else {
+      onCloseCb()
+      onClose()
+    }
   }
   return (
     <Modal
@@ -174,6 +179,17 @@ export const EmployeeModal = ({
           <>
             <ModalHeader className="flex flex-col gap-1">{label}</ModalHeader>
             <ModalBody>
+              {error && (
+                <Card className="bg-danger w-full text-white p-4">
+                  <p className="whitespace-pre-line">{error}</p>
+                </Card>
+              )}
+              <Switch
+                isSelected={isOrgOwner}
+                onValueChange={(value) => setIsOrgOwner(value)}
+              >
+                Has Admin Rights
+              </Switch>
               {/* if we are editing we can't change the email */}
               {!employee && (
                 <Input

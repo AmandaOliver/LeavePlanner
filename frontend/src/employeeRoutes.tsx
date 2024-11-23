@@ -44,10 +44,12 @@ export const EmployeeRoutes = () => {
             path="/requests/:id"
             element={<AuthenticationGuard component={Requests} />}
           />
-          <Route
-            path="/setup-organization"
-            element={<AuthenticationGuard component={SetupOrganization} />}
-          />
+          {currentEmployee.isOrgOwner && (
+            <Route
+              path="/setup-organization"
+              element={<AuthenticationGuard component={SetupOrganization} />}
+            />
+          )}
 
           <Route path="/callback" element={<CallbackPage />} />
           <Route path="*" element={<NotFoundPage />} />

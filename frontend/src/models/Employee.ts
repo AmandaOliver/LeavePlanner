@@ -24,6 +24,7 @@ export type CreateEmployeeParamType = {
   managedBy: string | null // null if it's the head
   organization: number
   title: string
+  isOrgOwner: boolean
 }
 
 export type UpdateEmployeeParamType = {
@@ -32,6 +33,7 @@ export type UpdateEmployeeParamType = {
   country: string
   paidTimeOff: number
   title: string
+  isOrgOwner: boolean
 }
 export type DeleteEmployeeParamType = {
   email: string
@@ -76,6 +78,7 @@ export const useEmployeeModel = () => {
       organization,
       title,
       name,
+      isOrgOwner,
     }: CreateEmployeeParamType) => {
       const accessToken = await getAccessTokenSilently()
       const response = await fetch(
@@ -94,9 +97,13 @@ export const useEmployeeModel = () => {
             name,
             managedBy: managedBy || null,
             organization: organization,
+            isOrgOwner,
           }),
         }
       )
+      if (!response.ok) {
+        return { error: await response.json() }
+      }
       return await response.json()
     },
     onSuccess: () => {
@@ -120,7 +127,7 @@ export const useEmployeeModel = () => {
         }
       )
       if (!response.ok) {
-        throw new Error('Failed to update employee')
+        return { error: await response.json() }
       }
       return await response.json()
     },
@@ -144,7 +151,7 @@ export const useEmployeeModel = () => {
         }
       )
       if (!response.ok) {
-        throw new Error('Failed to delete employee')
+        return { error: await response.json() }
       }
       return await response.json()
     },

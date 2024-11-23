@@ -7,7 +7,7 @@ namespace LeavePlanner.Models
 		public string? Country { get; set; }
 		public int? Organization { get; set; }
 		public string? ManagedBy { get; set; }
-		public bool IsOrgOwner { get; set; } = false;
+		public bool IsOrgOwner { get; set; }
 		public int PaidTimeOff { get; set; }
 		public int PaidTimeOffLeft { get; set; }
 		public int PaidTimeOffLeftNextYear { get; set; }
