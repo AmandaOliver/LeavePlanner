@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
   useDisclosure,
+  Pagination,
 } from '@nextui-org/react'
 import { LeaveType } from '../models/Leaves'
 import { RequestIcon } from '../icons/request'
@@ -20,7 +21,20 @@ import { RequestReviewModal } from '../components/requestReviewModal'
 import { PartyIcon } from '../icons/party'
 import { BussinessWatchIcon } from '../icons/bussinesswatch'
 export const Requests = () => {
-  const { requests, isLoading, reviewedRequests } = useRequestsModel()
+  const { usePaginatedRequests, usePaginatedReviewedRequests } =
+    useRequestsModel()
+  const [requestsPage, setRequestsPage] = useState(1)
+  const [reviewedRequestsPage, setReviewedRequestsPage] = useState(1)
+
+  const pageSize = 5
+
+  const { data: paginatedRequests, isLoading: isLoadingRequests } =
+    usePaginatedRequests(requestsPage, pageSize)
+
+  const {
+    data: paginatedReviewedRequests,
+    isLoading: isLoadingReviewedRequests,
+  } = usePaginatedReviewedRequests(reviewedRequestsPage, pageSize)
   const {
     isOpen: isOpenReviewModal,
     onOpen: onOpenReviewModal,
@@ -34,7 +48,8 @@ export const Requests = () => {
     onOpenReviewModal()
   }
 
-  if (isLoading) return <LoadingComponent />
+  if (isLoadingRequests || isLoadingReviewedRequests)
+    return <LoadingComponent />
   return (
     <>
       {request?.id && (
@@ -51,7 +66,27 @@ export const Requests = () => {
           <h1 className=" text-[32px]">Requests to review</h1>
         </div>
         <Divider />
-        <Table aria-label="list" className="mt-8">
+        <Table
+          aria-label="list"
+          className="mt-8"
+          bottomContent={
+            paginatedRequests?.requests?.length ? (
+              <div className="flex w-full justify-center">
+                <Pagination
+                  isCompact
+                  showControls
+                  showShadow
+                  color="secondary"
+                  page={requestsPage}
+                  total={Math.ceil(
+                    (paginatedRequests?.totalCount || 1) / pageSize
+                  )}
+                  onChange={(newPage) => setRequestsPage(newPage)}
+                />
+              </div>
+            ) : undefined
+          }
+        >
           <TableHeader>
             <TableColumn>TYPE</TableColumn>
             <TableColumn>OWNER</TableColumn>
@@ -60,7 +95,7 @@ export const Requests = () => {
             <TableColumn>ACTIONS</TableColumn>
           </TableHeader>
           <TableBody emptyContent={'No pending requests to review.'}>
-            {requests.map((request) => (
+            {(paginatedRequests?.requests || []).map((request) => (
               <TableRow key={request.id}>
                 <TableCell>
                   <div className="flex flex-wrap flex-row items-center gap-4">
@@ -105,7 +140,27 @@ export const Requests = () => {
           <h1 className=" text-[32px]">Reviewed requests</h1>
         </div>
         <Divider />
-        <Table aria-label="list" className="mt-8">
+        <Table
+          aria-label="list"
+          className="mt-8"
+          bottomContent={
+            paginatedReviewedRequests?.requests?.length ? (
+              <div className="flex w-full justify-center">
+                <Pagination
+                  isCompact
+                  showControls
+                  showShadow
+                  color="secondary"
+                  page={reviewedRequestsPage}
+                  total={Math.ceil(
+                    (paginatedReviewedRequests?.totalCount || 1) / pageSize
+                  )}
+                  onChange={(newPage) => setReviewedRequestsPage(newPage)}
+                />
+              </div>
+            ) : undefined
+          }
+        >
           <TableHeader>
             <TableColumn>TYPE</TableColumn>
             <TableColumn>OWNER</TableColumn>
@@ -114,7 +169,7 @@ export const Requests = () => {
             <TableColumn>STATUS</TableColumn>
           </TableHeader>
           <TableBody emptyContent={'No reviewed requests.'}>
-            {reviewedRequests.map((request) => (
+            {(paginatedReviewedRequests?.requests || []).map((request) => (
               <TableRow key={request.id}>
                 <TableCell>
                   <div className="flex flex-wrap flex-row items-center gap-4">

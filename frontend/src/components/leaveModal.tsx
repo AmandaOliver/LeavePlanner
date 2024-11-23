@@ -12,12 +12,7 @@ import {
   Select,
   SelectItem,
 } from '@nextui-org/react'
-import {
-  ConflictType,
-  LeaveType,
-  LeaveTypes,
-  useLeavesModel,
-} from '../models/Leaves'
+import { LeaveType, LeaveTypes, useLeavesModel } from '../models/Leaves'
 import { useCallback, useEffect, useState } from 'react'
 import { CalendarDate, parseDate } from '@internationalized/date'
 import { useEmployeeModel } from '../models/Employee'
@@ -26,13 +21,11 @@ export const LeaveModal = ({
   isOpen,
   onOpenChange,
   leave,
-  leaves,
   onCloseCb,
 }: {
   isOpen: boolean
   onOpenChange: () => void
   leave?: LeaveType
-  leaves: LeaveType[]
   onCloseCb: () => void
 }) => {
   const [dateStart, setDateStart] = useState(
@@ -180,13 +173,6 @@ export const LeaveModal = ({
               <DateRangePicker
                 allowsNonContiguousRanges
                 visibleMonths={window.innerWidth > 640 ? 2 : 1}
-                isDateUnavailable={(date) =>
-                  leaves.some(
-                    (leave) =>
-                      new Date(leave.dateStart) <= new Date(date.toString()) &&
-                      new Date(leave.dateEnd) > new Date(date.toString())
-                  )
-                }
                 size="md"
                 value={{
                   start: parseDate(dateStart),

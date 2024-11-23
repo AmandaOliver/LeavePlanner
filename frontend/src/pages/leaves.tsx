@@ -14,6 +14,7 @@ import {
   TableRow,
   useDisclosure,
   Tooltip,
+  Pagination,
 } from '@nextui-org/react'
 import { WatchIcon } from '../icons/watch'
 import { BussinessWatchIcon } from '../icons/bussinesswatch'
@@ -28,8 +29,14 @@ import { LeaveDeleteModal } from '../components/leaveDeleteModal'
 import { LoadingComponent } from '../components/loading'
 
 export const Leaves = () => {
-  const { leaves, isLoading } = useLeavesModel()
+  const { usePaginatedLeaves } = useLeavesModel()
+  const [page, setPage] = useState(1)
+  const pageSize = 5
   const { currentEmployee, isLoading: isLoadingEmployee } = useEmployeeModel()
+  const { data: paginatedLeaves, isLoading } = usePaginatedLeaves(
+    page,
+    pageSize
+  )
   const {
     isOpen: isOpenInfoModal,
     onOpen: onOpenInfoModal,
@@ -75,11 +82,6 @@ export const Leaves = () => {
           isOpen={isOpenUpdateModal}
           onOpenChange={onOpenChangeUpdateModal}
           leave={updateLeave}
-          leaves={leaves.filter(
-            (leave) =>
-              new Date(leave.dateStart) >= new Date() &&
-              leave.id !== updateLeave.id
-          )}
           onCloseCb={() => setUpdateLeave({} as LeaveType)}
         />
       )}
@@ -129,87 +131,102 @@ export const Leaves = () => {
           <h1 className=" text-[32px]">Upcomming leaves</h1>
         </div>
         <Divider />
-        <Table aria-label="list" className="mt-8">
+        <Table
+          aria-label="list"
+          className="mt-8"
+          bottomContent={
+            paginatedLeaves?.leaves?.length ? (
+              <div className="flex w-full justify-center">
+                <Pagination
+                  total={Math.ceil(paginatedLeaves.totalCount / pageSize)}
+                  page={page}
+                  onChange={(page) => setPage(page)}
+                  isCompact
+                  showControls
+                  showShadow
+                  color="secondary"
+                />
+              </div>
+            ) : undefined
+          }
+        >
           <TableHeader>
             <TableColumn>TYPE</TableColumn>
             <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
             <TableColumn>DESCRIPTION</TableColumn>
             <TableColumn>ACTIONS</TableColumn>
           </TableHeader>
-          <TableBody emptyContent={'No leaves in the next 6 months.'}>
-            {leaves
-              .filter((leave) => new Date(leave.dateStart) >= new Date())
-              .sort((a, b) => (a.dateStart < b.dateStart ? -1 : 1))
-              .map((leave) => (
-                <TableRow key={leave.id}>
-                  <TableCell>
-                    <div className="flex flex-wrap flex-row items-center gap-4">
-                      {leave.type === 'bankHoliday' ? (
-                        <PartyIcon />
-                      ) : (
-                        <BussinessWatchIcon />
-                      )}
-                      <p className="hidden lg:block">
-                        {leave.type === 'bankHoliday'
-                          ? 'Bank Holiday'
-                          : 'Paid Time Off'}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {new Date(leave.dateStart).toDateString()} to{' '}
-                    {new Date(leave.dateEnd).toDateString()}
-                  </TableCell>
-                  <TableCell>{leave.description}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap flex-row ">
-                      <Tooltip content="See leave info">
+          <TableBody emptyContent={'No upcomming leaves'}>
+            {(paginatedLeaves?.leaves || []).map((leave) => (
+              <TableRow key={leave.id}>
+                <TableCell>
+                  <div className="flex flex-wrap flex-row items-center gap-4">
+                    {leave.type === 'bankHoliday' ? (
+                      <PartyIcon />
+                    ) : (
+                      <BussinessWatchIcon />
+                    )}
+                    <p className="hidden lg:block">
+                      {leave.type === 'bankHoliday'
+                        ? 'Bank Holiday'
+                        : 'Paid Time Off'}
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  {new Date(leave.dateStart).toDateString()} to{' '}
+                  {new Date(leave.dateEnd).toDateString()}
+                </TableCell>
+                <TableCell>{leave.description}</TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap flex-row ">
+                    <Tooltip content="See leave info">
+                      <Button
+                        isIconOnly
+                        color="default"
+                        variant="light"
+                        aria-label="edit"
+                        size="sm"
+                        onPress={() => handleInfoModalOpen(leave)}
+                      >
+                        <EyeIcon />
+                      </Button>
+                    </Tooltip>
+
+                    <>
+                      <Tooltip content="Edit leave">
                         <Button
                           isIconOnly
                           color="default"
                           variant="light"
                           aria-label="edit"
                           size="sm"
-                          onPress={() => handleInfoModalOpen(leave)}
+                          onPress={() => handleUpdateModalOpen(leave)}
                         >
-                          <EyeIcon />
+                          <PencilIcon />
                         </Button>
                       </Tooltip>
-
-                      <>
-                        <Tooltip content="Edit leave">
-                          <Button
-                            isIconOnly
-                            color="default"
-                            variant="light"
-                            aria-label="edit"
-                            size="sm"
-                            onPress={() => handleUpdateModalOpen(leave)}
-                          >
-                            <PencilIcon />
-                          </Button>
-                        </Tooltip>
-                        <Tooltip content="Delete leave">
-                          <Button
-                            isIconOnly
-                            color="default"
-                            variant="light"
-                            aria-label="edit"
-                            size="sm"
-                            onPress={() => handleDeleteModalOpen(leave)}
-                          >
-                            <TrashIcon />
-                          </Button>
-                        </Tooltip>
-                      </>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      <Tooltip content="Delete leave">
+                        <Button
+                          isIconOnly
+                          color="default"
+                          variant="light"
+                          aria-label="edit"
+                          size="sm"
+                          onPress={() => handleDeleteModalOpen(leave)}
+                        >
+                          <TrashIcon />
+                        </Button>
+                      </Tooltip>
+                    </>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </div>
-      <div className="m-8">
+      {/* <div className="m-8">
         <div className="flex flex-wrap flex-row items-center gap-4">
           <HistoryIcon />
           <h1 className=" text-[32px]">History</h1>
@@ -251,7 +268,7 @@ export const Leaves = () => {
               ))}
           </TableBody>
         </Table>
-      </div>
+      </div> */}
     </>
   )
 }

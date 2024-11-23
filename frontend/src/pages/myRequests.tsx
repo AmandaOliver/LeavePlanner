@@ -9,6 +9,7 @@ import {
   TableRow,
   useDisclosure,
   Tooltip,
+  Pagination,
 } from '@nextui-org/react'
 import { LeaveType, useLeavesModel } from '../models/Leaves'
 import { RequestIcon } from '../icons/request'
@@ -24,8 +25,16 @@ import { BanIcon } from '../icons/ban'
 import { BussinessWatchIcon } from '../icons/bussinesswatch'
 import { PartyIcon } from '../icons/party'
 export const MyRequests = () => {
-  const { leaves, leavesAwaitingApproval, leavesRejected, isLoading } =
+  const { usePaginatedLeavesAwaitingApproval, usePaginatedLeavesRejected } =
     useLeavesModel()
+  const [pagePending, setPagePending] = useState(1)
+  const [pageRejected, setPageRejected] = useState(1)
+  const pageSize = 5
+  const { data: pendingLeavesData, isLoading: isLoadingPending } =
+    usePaginatedLeavesAwaitingApproval(pagePending, pageSize)
+
+  const { data: rejectedLeavesData, isLoading: isLoadingRejected } =
+    usePaginatedLeavesRejected(pageRejected, pageSize)
   const {
     isOpen: isOpenInfoModal,
     onOpen: onOpenInfoModal,
@@ -60,7 +69,7 @@ export const MyRequests = () => {
     setUpdateLeave(leave)
     onOpenUpdateModal()
   }
-  if (isLoading) return <LoadingComponent />
+  if (isLoadingPending || isLoadingRejected) return <LoadingComponent />
   return (
     <>
       {infoLeave?.id && (
@@ -75,9 +84,6 @@ export const MyRequests = () => {
           isOpen={isOpenUpdateModal}
           onOpenChange={onOpenChangeUpdateModal}
           leave={updateLeave}
-          leaves={leaves.filter(
-            (leave) => new Date(leave.dateStart) >= new Date()
-          )}
           onCloseCb={() => setUpdateLeave({} as LeaveType)}
         />
       )}
@@ -94,7 +100,25 @@ export const MyRequests = () => {
           <h1 className=" text-[32px]">Pending requests</h1>
         </div>
         <Divider />
-        <Table aria-label="list" className="mt-8">
+        <Table
+          aria-label="list"
+          className="mt-8"
+          bottomContent={
+            pendingLeavesData?.leaves?.length ? (
+              <div className="flex w-full justify-center">
+                <Pagination
+                  total={Math.ceil(pendingLeavesData.totalCount / pageSize)}
+                  page={pagePending}
+                  onChange={(page) => setPagePending(page)}
+                  isCompact
+                  showControls
+                  showShadow
+                  color="secondary"
+                />
+              </div>
+            ) : undefined
+          }
+        >
           <TableHeader>
             <TableColumn>TYPE</TableColumn>
             <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
@@ -102,7 +126,7 @@ export const MyRequests = () => {
             <TableColumn>ACTIONS</TableColumn>
           </TableHeader>
           <TableBody emptyContent={'No pending requests.'}>
-            {leavesAwaitingApproval.map((leave) => (
+            {(pendingLeavesData?.leaves || []).map((leave) => (
               <TableRow key={leave.id}>
                 <TableCell>
                   <div className="flex flex-wrap flex-row items-center gap-4">
@@ -174,7 +198,25 @@ export const MyRequests = () => {
           <h1 className=" text-[32px]">Rejected requests</h1>
         </div>
         <Divider />
-        <Table aria-label="list" className="mt-8">
+        <Table
+          aria-label="list"
+          className="mt-8"
+          bottomContent={
+            rejectedLeavesData?.leaves?.length ? (
+              <div className="flex w-full justify-center">
+                <Pagination
+                  total={Math.ceil(rejectedLeavesData.totalCount / pageSize)}
+                  page={pageRejected}
+                  onChange={(page) => setPageRejected(page)}
+                  isCompact
+                  showControls
+                  showShadow
+                  color="secondary"
+                />
+              </div>
+            ) : undefined
+          }
+        >
           <TableHeader>
             <TableColumn>TYPE</TableColumn>
             <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
@@ -182,7 +224,7 @@ export const MyRequests = () => {
             <TableColumn>ACTIONS</TableColumn>
           </TableHeader>
           <TableBody emptyContent={'No rejected requests.'}>
-            {leavesRejected.map((leave) => (
+            {(rejectedLeavesData?.leaves || []).map((leave) => (
               <TableRow key={leave.id}>
                 <TableCell>
                   <div className="flex flex-wrap flex-row items-center gap-4">

@@ -12,11 +12,14 @@ export const useRequestsModel = () => {
   const { currentEmployee } = useEmployeeModel()
   const queryClient = useQueryClient()
 
-  const fetchRequests = async (): Promise<LeaveType[]> => {
+  const fetchRequests = async (
+    page: number,
+    pageSize: number
+  ): Promise<{ requests: LeaveType[]; totalCount: number }> => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/requests/${currentEmployee?.email}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/requests/${currentEmployee?.email}?page=${page}&pageSize=${pageSize}`,
       {
         method: 'GET',
         headers: {
@@ -28,28 +31,34 @@ export const useRequestsModel = () => {
 
     if (response.ok) {
       const responseJson = await response.json()
-      return responseJson.map((request: LeaveType) => ({
-        ...request,
-        dateStart: request.dateStart.split('T')[0],
-        dateEnd: request.dateEnd.split('T')[0],
-        conflicts: request.conflicts?.map((conflict) => ({
-          ...conflict,
-          conflictingLeaves: conflict.conflictingLeaves?.map((leave) => ({
-            ...leave,
-            dateStart: leave.dateStart.split('T')[0],
-            dateEnd: leave.dateEnd.split('T')[0],
+      return {
+        requests: responseJson.requests.map((request: LeaveType) => ({
+          ...request,
+          dateStart: request.dateStart.split('T')[0],
+          dateEnd: request.dateEnd.split('T')[0],
+          conflicts: request.conflicts?.map((conflict) => ({
+            ...conflict,
+            conflictingLeaves: conflict.conflictingLeaves?.map((leave) => ({
+              ...leave,
+              dateStart: leave.dateStart.split('T')[0],
+              dateEnd: leave.dateEnd.split('T')[0],
+            })),
           })),
         })),
-      }))
+        totalCount: responseJson.totalCount,
+      }
     } else {
       throw new Error('Failed to fetch requests')
     }
   }
-  const fetchReviewedRequests = async (): Promise<LeaveType[]> => {
+  const fetchReviewedRequests = async (
+    page: number,
+    pageSize: number
+  ): Promise<{ requests: LeaveType[]; totalCount: number }> => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/requests/reviewed/${currentEmployee?.email}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/requests/reviewed/${currentEmployee?.email}?page=${page}&pageSize=${pageSize}`,
       {
         method: 'GET',
         headers: {
@@ -61,23 +70,31 @@ export const useRequestsModel = () => {
 
     if (response.ok) {
       const responseJson = await response.json()
-      return responseJson.map((request: LeaveType) => ({
-        ...request,
-        dateStart: request.dateStart.split('T')[0],
-        dateEnd: request.dateEnd.split('T')[0],
-      }))
+
+      return {
+        requests: responseJson.requests.map((request: LeaveType) => ({
+          ...request,
+          dateStart: request.dateStart.split('T')[0],
+          dateEnd: request.dateEnd.split('T')[0],
+        })),
+        totalCount: responseJson.totalCount,
+      }
     } else {
       throw new Error('Failed to fetch reviewed requests')
     }
   }
-  const requestsQuery = useQuery({
-    queryKey: ['requests', currentEmployee?.email],
-    queryFn: fetchRequests,
-  })
-  const reviewedRequestsQuery = useQuery({
-    queryKey: ['reviewedRequests', currentEmployee?.email],
-    queryFn: fetchReviewedRequests,
-  })
+  const usePaginatedRequests = (page: number, pageSize: number) =>
+    useQuery({
+      queryKey: ['requests', currentEmployee?.email, page, pageSize],
+      queryFn: () => fetchRequests(page, pageSize),
+      placeholderData: (prevData) => prevData,
+    })
+  const usePaginatedReviewedRequests = (page: number, pageSize: number) =>
+    useQuery({
+      queryKey: ['reviewedRequests', currentEmployee?.email, page, pageSize],
+      queryFn: () => fetchReviewedRequests(page, pageSize),
+      placeholderData: (prevData) => prevData,
+    })
   const approveRequestMutation = useMutation({
     mutationFn: async ({ requestId }: ApproveRequestParams) => {
       const accessToken = await getAccessTokenSilently()
@@ -139,9 +156,8 @@ export const useRequestsModel = () => {
     },
   })
   return {
-    requests: requestsQuery.data ?? [],
-    reviewedRequests: reviewedRequestsQuery.data ?? [],
-    isLoading: requestsQuery.isLoading || reviewedRequestsQuery.isLoading,
+    usePaginatedRequests,
+    usePaginatedReviewedRequests,
     approveRequest: approveRequestMutation.mutateAsync,
     rejectRequest: rejectRequestMutation.mutateAsync,
   }

@@ -5,12 +5,10 @@ import { Header } from '../stories/Header/Header'
 import { useAuth0 } from '@auth0/auth0-react'
 import { Skeleton, useDisclosure } from '@nextui-org/react'
 import { LeaveModal } from './leaveModal'
-import { useLeavesModel } from '../models/Leaves'
 import { useState } from 'react'
 
 export const Navigation = () => {
   const { user } = useAuth0()
-  const { leaves, isLoading } = useLeavesModel()
 
   const { currentEmployee, isLoading: isLoadingEmployee } = useEmployeeModel()
   const { currentOrganization, isLoading: isLoadingOrg } =
@@ -73,13 +71,12 @@ export const Navigation = () => {
     avatarMenuItems.push(menuItemOrgOwner)
     mobileMenuItems.push(menuItemOrgOwner)
   }
-  if (isLoading || isLoadingEmployee || isLoadingOrg || isLoadingUser)
+  if (isLoadingEmployee || isLoadingOrg || isLoadingUser)
     return <Skeleton className="w-full h-16" />
   return (
     <>
       {isLeaveModalOpen && (
         <LeaveModal
-          leaves={leaves}
           isOpen={isOpen}
           onOpenChange={onOpenChange}
           onCloseCb={() => setIsLeaveModalOpen(false)}

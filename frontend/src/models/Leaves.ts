@@ -51,11 +51,14 @@ export const useLeavesModel = () => {
   const queryClient = useQueryClient()
   const { currentEmployee } = useEmployeeModel()
   const navigate = useNavigate()
-  const fetchLeaves = async (): Promise<LeaveType[]> => {
+  const fetchLeaves = async (
+    page: number,
+    pageSize: number
+  ): Promise<{ leaves: LeaveType[]; totalCount: number }> => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves/${currentEmployee?.email}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/${currentEmployee?.email}?page=${page}&pageSize=${pageSize}`,
       {
         method: 'GET',
         headers: {
@@ -67,20 +70,26 @@ export const useLeavesModel = () => {
 
     if (response.ok) {
       const responseJson = await response.json()
-      return responseJson?.map((leave: LeaveType) => ({
-        ...leave,
-        dateStart: leave.dateStart.split('T')[0],
-        dateEnd: leave.dateEnd.split('T')[0],
-      }))
+      return {
+        leaves: responseJson.leaves.map((leave: LeaveType) => ({
+          ...leave,
+          dateStart: leave.dateStart.split('T')[0],
+          dateEnd: leave.dateEnd.split('T')[0],
+        })),
+        totalCount: responseJson.totalCount,
+      }
     } else {
-      throw new Error('Failed to fetch approved leaves')
+      throw new Error('Failed to fetch leaves')
     }
   }
-  const fetchLeavesAwaitingApproval = async (): Promise<LeaveType[]> => {
+  const fetchLeavesAwaitingApproval = async (
+    page: number,
+    pageSize: number
+  ): Promise<{ leaves: LeaveType[]; totalCount: number }> => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves/pending/${currentEmployee?.email}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/pending/${currentEmployee?.email}?page=${page}&pageSize=${pageSize}`,
       {
         method: 'GET',
         headers: {
@@ -92,20 +101,27 @@ export const useLeavesModel = () => {
 
     if (response.ok) {
       const responseJson = await response.json()
-      return responseJson.map((leave: LeaveType) => ({
-        ...leave,
-        dateStart: leave.dateStart.split('T')[0],
-        dateEnd: leave.dateEnd.split('T')[0],
-      }))
+      return {
+        leaves: responseJson.leaves.map((leave: LeaveType) => ({
+          ...leave,
+          dateStart: leave.dateStart.split('T')[0],
+          dateEnd: leave.dateEnd.split('T')[0],
+        })),
+        totalCount: responseJson.totalCount,
+      }
     } else {
-      throw new Error('Failed to fetch pending approval leaves')
+      throw new Error('Failed to fetch pending leaves')
     }
   }
-  const fetchLeavesRejected = async (): Promise<LeaveType[]> => {
+
+  const fetchLeavesRejected = async (
+    page: number,
+    pageSize: number
+  ): Promise<{ leaves: LeaveType[]; totalCount: number }> => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves/rejected/${currentEmployee?.email}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/rejected/${currentEmployee?.email}?page=${page}&pageSize=${pageSize}`,
       {
         method: 'GET',
         headers: {
@@ -117,28 +133,44 @@ export const useLeavesModel = () => {
 
     if (response.ok) {
       const responseJson = await response.json()
-      return responseJson?.map((leave: LeaveType) => ({
-        ...leave,
-        dateStart: leave.dateStart.split('T')[0],
-        dateEnd: leave.dateEnd.split('T')[0],
-      }))
+      return {
+        leaves: responseJson.leaves.map((leave: LeaveType) => ({
+          ...leave,
+          dateStart: leave.dateStart.split('T')[0],
+          dateEnd: leave.dateEnd.split('T')[0],
+        })),
+        totalCount: responseJson.totalCount,
+      }
     } else {
       throw new Error('Failed to fetch rejected leaves')
     }
   }
 
-  const leavesQuery = useQuery({
-    queryKey: ['leaves', currentEmployee?.email],
-    queryFn: fetchLeaves,
-  })
-  const leavesAwaitingApprovalQuery = useQuery({
-    queryKey: ['leavesAwaitingApproval', currentEmployee?.email],
-    queryFn: fetchLeavesAwaitingApproval,
-  })
-  const leavesRejectedQuery = useQuery({
-    queryKey: ['leavesRejected', currentEmployee?.email],
-    queryFn: fetchLeavesRejected,
-  })
+  const usePaginatedLeaves = (page: number, pageSize: number) =>
+    useQuery({
+      queryKey: ['leaves', currentEmployee?.email, page, pageSize],
+      queryFn: () => fetchLeaves(page, pageSize),
+      placeholderData: (prevData) => prevData,
+    })
+
+  const usePaginatedLeavesAwaitingApproval = (page: number, pageSize: number) =>
+    useQuery({
+      queryKey: [
+        'leavesAwaitingApproval',
+        currentEmployee?.email,
+        page,
+        pageSize,
+      ],
+      queryFn: () => fetchLeavesAwaitingApproval(page, pageSize),
+      placeholderData: (prevData) => prevData,
+    })
+
+  const usePaginatedLeavesRejected = (page: number, pageSize: number) =>
+    useQuery({
+      queryKey: ['leavesRejected', currentEmployee?.email, page, pageSize],
+      queryFn: () => fetchLeavesRejected(page, pageSize),
+      placeholderData: (prevData) => prevData,
+    })
   const createLeaveMutation = useMutation({
     mutationFn: async (createData: CreateLeaveParamType) => {
       const accessToken = await getAccessTokenSilently()
@@ -269,16 +301,12 @@ export const useLeavesModel = () => {
     },
   })
   return {
-    leaves: leavesQuery.data ?? [],
-    leavesAwaitingApproval: leavesAwaitingApprovalQuery.data ?? [],
-    leavesRejected: leavesRejectedQuery.data ?? [],
+    usePaginatedLeaves,
+    usePaginatedLeavesAwaitingApproval,
+    usePaginatedLeavesRejected,
     createLeave: createLeaveMutation.mutateAsync,
     updateLeave: updateLeaveMutation.mutateAsync,
     deleteLeave: deleteLeaveMutation.mutateAsync,
     validateLeave: validateLeaveMutation.mutateAsync,
-    isLoading:
-      leavesQuery.isLoading ||
-      leavesAwaitingApprovalQuery.isLoading ||
-      leavesRejectedQuery.isLoading,
   }
 }

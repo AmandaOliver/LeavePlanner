@@ -1,5 +1,6 @@
 using LeavePlanner.Data;
 using LeavePlanner.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
 
@@ -9,8 +10,8 @@ public static class RequestsEndpointsExtensions
 	public static void MapRequestsEndpoints(this IEndpointRouteBuilder endpoints)
 	{
 
-		endpoints.MapGet("/requests/{email}", async (RequestsController controller, string email) => await controller.GetRequestsOfAManager(email)).RequireAuthorization();
-		endpoints.MapGet("/requests/reviewed/{email}", async (RequestsController controller, string email) => await controller.GetReviewedRequestsOfAManager(email)).RequireAuthorization();
+		endpoints.MapGet("/requests/{email}", async (RequestsController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetRequestsOfAManager(email, page, pageSize)).RequireAuthorization();
+		endpoints.MapGet("/requests/reviewed/{email}", async (RequestsController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetReviewedRequestsOfAManager(email, page, pageSize)).RequireAuthorization();
 		endpoints.MapPost("/requests/{email}/approve/{id}", async (RequestsController controller, string email, string id) => await controller.ApproveRequest(id, email)).RequireAuthorization();
 		endpoints.MapPost("/requests/{email}/reject/{id}", async (RequestsController controller, string email, string id) => await controller.RejectRequest(id, email)).RequireAuthorization();
 
@@ -31,7 +32,7 @@ public class RequestsController
 		_leavesService = leavesService;
 		_emailService = emailService;
 	}
-	public async Task<IResult> GetRequestsOfAManager(string email)
+	public async Task<IResult> GetRequestsOfAManager(string email, int page, int pageSize)
 	{
 		var manager = await _context.Employees.FindAsync(email);
 		if (manager == null)
@@ -50,9 +51,19 @@ public class RequestsController
 			requests.AddRange(subordinateRequests);
 		}
 
-		return Results.Ok(requests);
+		// Apply pagination
+		var paginatedRequests = requests
+			.Skip((page - 1) * pageSize)
+			.Take(pageSize)
+			.ToList();
+
+		return Results.Ok(new
+		{
+			TotalCount = requests.Count,
+			Requests = paginatedRequests
+		});
 	}
-	public async Task<IResult> GetReviewedRequestsOfAManager(string email)
+	public async Task<IResult> GetReviewedRequestsOfAManager(string email, int page, int pageSize)
 	{
 		var manager = await _context.Employees.FindAsync(email);
 		if (manager == null)
@@ -71,7 +82,17 @@ public class RequestsController
 			requests.AddRange(subordinateRequests);
 		}
 
-		return Results.Ok(requests);
+		// Apply pagination
+		var paginatedRequests = requests
+			.Skip((page - 1) * pageSize)
+			.Take(pageSize)
+			.ToList();
+
+		return Results.Ok(new
+		{
+			TotalCount = requests.Count,
+			Requests = paginatedRequests
+		});
 	}
 
 	public async Task<IResult> ApproveRequest(string id, string email)

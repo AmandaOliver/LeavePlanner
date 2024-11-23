@@ -15,9 +15,9 @@ public static class LeavesEndpointsExtensions
 		endpoints.MapGet("/myleaves/{email}", async (LeavesController controller, string email, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyLeaves(email, start, end)).RequireAuthorization();
 		endpoints.MapGet("/mycircleleaves/{email}", async (LeavesController controller, string email, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyCircleLeaves(email, start, end)).RequireAuthorization();
 		endpoints.MapGet("/allleaves", async (LeavesController controller, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetAllLeaves(start, end)).RequireAuthorization();
-		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email) => await controller.GetLeavesApproved(email)).RequireAuthorization();
-		endpoints.MapGet("/leaves/pending/{email}", async (LeavesController controller, string email) => await controller.GetLeavesAwaitingApproval(email)).RequireAuthorization();
-		endpoints.MapGet("/leaves/rejected/{email}", async (LeavesController controller, string email) => await controller.GetLeavesRejected(email)).RequireAuthorization();
+		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesApproved(email, page, pageSize)).RequireAuthorization();
+		endpoints.MapGet("/leaves/pending/{email}", async (LeavesController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesAwaitingApproval(email, page, pageSize)).RequireAuthorization();
+		endpoints.MapGet("/leaves/rejected/{email}", async (LeavesController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesRejected(email, page, pageSize)).RequireAuthorization();
 		endpoints.MapPost("/leaves/validate", async (LeavesController controller, LeaveValidateDTO model) => await controller.ValidateLeaveRequest(model)).RequireAuthorization();
 		endpoints.MapPost("/leaves", async (LeavesController controller, LeaveCreateDTO model) => await controller.CreateLeave(model)).RequireAuthorization();
 		endpoints.MapPut("/leaves/{leaveId}", async (LeavesController controller, int leaveId, LeaveUpdateDTO leaveUpdate) => await controller.UpdateLeave(leaveId, leaveUpdate)).RequireAuthorization();
@@ -249,24 +249,37 @@ public class LeavesController
 		}
 	}
 
-	public async Task<IResult> GetLeavesApproved(string email)
+	public async Task<IResult> GetLeavesApproved(string email, int page, int pageSize)
 	{
 		var leaves = await _context.Leaves
-						   .Where(leave => leave.Owner == email &&
-										   (leave.ApprovedBy != null))
-						   .ToListAsync();
+						   	.Where(leave => leave.Owner == email &&
+									leave.ApprovedBy != null &&
+									leave.DateStart >= DateTime.UtcNow)
+							.OrderBy(leave => leave.DateStart)
+						   	.ToListAsync();
 
 		if (leaves == null || leaves.Count == 0)
 		{
-			return Results.Ok(new List<Leave>());
+			return Results.Ok(new
+			{
+				TotalCount = 0,
+				Leaves = new List<Leave>()
+			});
 		}
 
+		// Apply pagination
+		var paginatedLeaves = leaves
+			.Skip((page - 1) * pageSize)
+			.Take(pageSize)
+			.ToList();
 
-		return Results.Ok(leaves);
-
-
+		return Results.Ok(new
+		{
+			TotalCount = leaves.Count,
+			Leaves = paginatedLeaves
+		});
 	}
-	public async Task<IResult> GetLeavesRejected(string email)
+	public async Task<IResult> GetLeavesRejected(string email, int page, int pageSize)
 	{
 		var leaves = await _context.Leaves
 						   .Where(leave => leave.Owner == email &&
@@ -275,13 +288,26 @@ public class LeavesController
 
 		if (leaves == null || leaves.Count == 0)
 		{
-			return Results.Ok(new List<Leave>());
+			return Results.Ok(new
+			{
+				TotalCount = 0,
+				Leaves = new List<Leave>()
+			});
 		}
 		var leaveRequests = await _leavesService.GetLeavesDynamicInfo(leaves);
+		// Apply pagination
+		var paginatedLeaves = leaveRequests
+			.Skip((page - 1) * pageSize)
+			.Take(pageSize)
+			.ToList();
 
-		return Results.Ok(leaveRequests);
+		return Results.Ok(new
+		{
+			TotalCount = leaveRequests.Count,
+			Leaves = paginatedLeaves
+		});
 	}
-	public async Task<IResult> GetLeavesAwaitingApproval(string email)
+	public async Task<IResult> GetLeavesAwaitingApproval(string email, int page, int pageSize)
 	{
 		var leaves = await _context.Leaves
 					   .Where(leave => leave.Owner == email &&
@@ -290,11 +316,25 @@ public class LeavesController
 
 		if (leaves == null || leaves.Count == 0)
 		{
-			return Results.Ok(new List<LeaveDTO>());
+			return Results.Ok(new
+			{
+				TotalCount = 0,
+				Leaves = new List<Leave>()
+			});
 		}
 		var leaveRequests = await _leavesService.GetLeavesDynamicInfo(leaves);
 
-		return Results.Ok(leaveRequests);
+		// Apply pagination
+		var paginatedLeaves = leaveRequests
+			.Skip((page - 1) * pageSize)
+			.Take(pageSize)
+			.ToList();
+
+		return Results.Ok(new
+		{
+			TotalCount = leaveRequests.Count,
+			Leaves = paginatedLeaves
+		});
 	}
 	public async Task<IResult> ValidateLeaveRequest(LeaveValidateDTO leaveToValidate)
 	{
