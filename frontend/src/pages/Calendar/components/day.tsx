@@ -38,12 +38,11 @@ export const Day = ({ dayDate }: DayProps) => {
       )
       .sort((a, b) => (a.dateStart < b.dateStart ? -1 : 1))
     const leavesElements = leavesToShow?.map((leave) => {
-      const background =
-        leave.type === 'bankHoliday'
+      const background = leave.approvedBy
+        ? leave.type === 'bankHoliday'
           ? 'bg-secondary'
-          : leave.approvedBy
-            ? 'bg-default-500'
-            : 'bg-default-200'
+          : 'bg-default-500'
+        : 'bg-default-200'
       let processedLeaves: LeaveType[] = []
 
       const spaces = getSpaces(leave, leaves || [], dayDate, processedLeaves)

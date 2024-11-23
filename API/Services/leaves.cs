@@ -7,7 +7,7 @@ public interface ILeavesService
 	Task<List<LeaveDTO>> GetLeaveRequests(EmployeeWithSubordinatesDTO employee);
 	Task<LeaveDTO> GetLeaveDynamicInfo(Leave leave, bool withConflicts);
 	Task<List<LeaveDTO>> GetLeavesDynamicInfo(List<Leave> leaves, bool withConflicts);
-	Task<string> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId);
+	Task<string> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId, string type);
 	Task<List<ConflictDTO>> GetConflicts(Leave leaveRequest);
 }
 
@@ -27,7 +27,7 @@ public class LeavesService : ILeavesService
 	{
 		var leaves = await _context.Leaves
 					   .Where(leave => leave.Owner == employee.Email &&
-									   leave.ApprovedBy == null && leave.RejectedBy == null && leave.Type != "bankHoliday")
+									   leave.ApprovedBy == null && leave.RejectedBy == null)
 					   .ToListAsync();
 
 		if (leaves == null || leaves.Count == 0)
@@ -72,35 +72,12 @@ public class LeavesService : ILeavesService
 		var leaveDTOs = new List<LeaveDTO>();
 		foreach (var leave in leaves)
 		{
-			if (leave.Type == "bankHoliday")
-			{
-				var employee = await _context.Employees.FindAsync(leave.Owner);
-				if (employee == null)
-				{
-					throw new Exception("employee not found");
-				}
-				leaveDTOs.Add(new LeaveDTO
-				{
-					Id = leave.Id,
-					Type = leave.Type,
-					Owner = leave.Owner,
-					OwnerName = employee.Name,
-					DateStart = leave.DateStart,
-					DateEnd = leave.DateEnd,
-					Description = leave.Description,
-					ApprovedBy = leave.ApprovedBy,
-					RejectedBy = leave.RejectedBy,
-				});
-			}
-			else
-			{
-				leaveDTOs.Add(await GetLeaveDynamicInfo(leave, withConflicts));
-			}
+			leaveDTOs.Add(await GetLeaveDynamicInfo(leave, withConflicts));
 		}
 
 		return leaveDTOs;
 	}
-	public async Task<string> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId)
+	public async Task<string> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId, string type)
 	{
 		// Leave update validation checks
 		if (leaveId != null)
@@ -110,16 +87,20 @@ public class LeavesService : ILeavesService
 			{
 				return "Leave not found.";
 			}
-			if (leave.Type == "bankHoliday")
-			{
-				return "You cannot update bank holidays.";
-			}
+
 			if (leave.ApprovedBy != null && dateStart < DateTime.UtcNow.Date)
 			{
 				return "You cannot update an already taken leave";
 			}
 		}
-
+		if (type == "bankHoliday")
+		{
+			var days = (dateEnd - dateStart).Days;
+			if (days > 1)
+			{
+				return "You cannot request more than 1 day of bank holidays";
+			}
+		}
 		// Date validation checks
 		if (dateStart < DateTime.UtcNow.Date || dateEnd < DateTime.UtcNow.Date)
 		{
@@ -201,7 +182,7 @@ public class LeavesService : ILeavesService
 				var conflictingLeaves = await _context.Leaves
 					.Where(leave =>
 						leave.Owner == subordinate.Email && // is a leave of this employee
-						(leave.Type == "bankHoliday" || leave.ApprovedBy != null) &&
+						(leave.ApprovedBy != null) &&
 						(
 							(leaveRequest.DateStart >= leave.DateStart && leaveRequest.DateStart < leave.DateEnd) ||   // Start date is within an existing leave (excluding an exact match on end date)
 							(leaveRequest.DateEnd > leave.DateStart && leaveRequest.DateEnd <= leave.DateEnd) ||       // End date is within an existing leave (excluding an exact match on start date)

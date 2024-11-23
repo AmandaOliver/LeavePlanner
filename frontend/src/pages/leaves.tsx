@@ -176,34 +176,32 @@ export const Leaves = () => {
                         </Button>
                       </Tooltip>
 
-                      {leave.type !== 'bankHoliday' && (
-                        <>
-                          <Tooltip content="Edit leave">
-                            <Button
-                              isIconOnly
-                              color="default"
-                              variant="light"
-                              aria-label="edit"
-                              size="sm"
-                              onPress={() => handleUpdateModalOpen(leave)}
-                            >
-                              <PencilIcon />
-                            </Button>
-                          </Tooltip>
-                          <Tooltip content="Delete leave">
-                            <Button
-                              isIconOnly
-                              color="default"
-                              variant="light"
-                              aria-label="edit"
-                              size="sm"
-                              onPress={() => handleDeleteModalOpen(leave)}
-                            >
-                              <TrashIcon />
-                            </Button>
-                          </Tooltip>
-                        </>
-                      )}
+                      <>
+                        <Tooltip content="Edit leave">
+                          <Button
+                            isIconOnly
+                            color="default"
+                            variant="light"
+                            aria-label="edit"
+                            size="sm"
+                            onPress={() => handleUpdateModalOpen(leave)}
+                          >
+                            <PencilIcon />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Delete leave">
+                          <Button
+                            isIconOnly
+                            color="default"
+                            variant="light"
+                            aria-label="edit"
+                            size="sm"
+                            onPress={() => handleDeleteModalOpen(leave)}
+                          >
+                            <TrashIcon />
+                          </Button>
+                        </Tooltip>
+                      </>
                     </div>
                   </TableCell>
                 </TableRow>

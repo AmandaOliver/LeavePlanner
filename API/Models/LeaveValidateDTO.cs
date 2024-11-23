@@ -7,6 +7,7 @@ namespace LeavePlanner.Models
 		public DateTime DateEnd { get; set; }
 		public required string Owner { get; set; }
 		public int? Id { get; set; }
+		public required string Type { get; set; }
 
 	}
 }

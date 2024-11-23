@@ -33,7 +33,7 @@ export const LeaveInfoModal = ({
         {(onClose) => (
           <>
             <ModalHeader className="flex flex-col gap-1">
-              {leave.type === 'bankHoliday' || leave.approvedBy
+              {leave.approvedBy
                 ? 'Leave'
                 : leave.rejectedBy
                   ? 'Request'
@@ -50,7 +50,7 @@ export const LeaveInfoModal = ({
                   <Card className="shadow-none bg-default-100 w-full text-default-600 p-4">
                     <p>
                       Status:{' '}
-                      {leave.type === 'bankHoliday' || leave.approvedBy
+                      {leave.approvedBy
                         ? 'Approved'
                         : leave.rejectedBy
                           ? 'Rejected'
@@ -60,7 +60,7 @@ export const LeaveInfoModal = ({
                   <Card className="shadow-none bg-default-100 w-full text-default-600 p-4">
                     <p>
                       Type:{' '}
-                      {leave.type == 'bankHoliday'
+                      {leave.type === 'bankHoliday'
                         ? 'Bank Holiday'
                         : 'Paid Time Off'}
                     </p>

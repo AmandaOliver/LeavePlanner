@@ -94,7 +94,7 @@ public class EmployeesService : IEmployeesService
 			{
 				pendingRequests += await _context.Leaves
 					  .Where(leave => leave.Owner == subordinate.Email &&
-									  leave.ApprovedBy == null && leave.RejectedBy == null && leave.Type != "bankHoliday")
+									  leave.ApprovedBy == null && leave.RejectedBy == null)
 					  .CountAsync();
 				var subordinateWithSubordinates = await GetEmployeeWithSubordinates(subordinate);
 				employeeWithSubordinates.Subordinates.Add(subordinateWithSubordinates);

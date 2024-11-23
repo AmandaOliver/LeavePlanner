@@ -3,11 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEmployeeModel } from './Employee'
 import { useNavigate } from 'react-router-dom'
 
-export type LeaveTypes =
-  | 'sickLeave'
-  | 'paidTimeOff'
-  | 'unpaidTimeOff'
-  | 'bankHoliday'
+export type LeaveTypes = 'paidTimeOff' | 'bankHoliday'
 
 export type ConflictType = {
   employeeName: string
@@ -44,6 +40,7 @@ export type ValidateLeaveParamType = {
   dateStart: string
   dateEnd: string
   id?: string
+  type: LeaveTypes
 }
 export type DeleteLeaveParamType = {
   id: string
@@ -213,6 +210,9 @@ export const useLeavesModel = () => {
       })
       await queryClient.invalidateQueries({
         queryKey: ['employee', currentEmployee?.email],
+      })
+      await queryClient.invalidateQueries({
+        queryKey: ['leavesRejected', currentEmployee?.email],
       })
       navigate('/requests')
     },

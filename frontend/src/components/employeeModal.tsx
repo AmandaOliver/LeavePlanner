@@ -58,7 +58,6 @@ export const EmployeeModal = ({
   const titleRef = useRef<HTMLInputElement>(null)
   const nameRef = useRef<HTMLInputElement>(null)
 
-  if (isLoadingCountries || isLoadingOrganization) return <LoadingComponent />
   const handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
     setEmployeeEmail(event.target.value)
     setEmailError(null)

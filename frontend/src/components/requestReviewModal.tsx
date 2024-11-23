@@ -36,6 +36,14 @@ export const RequestReviewModal = ({
             </ModalHeader>
             <ModalBody>
               <>
+                <Card className="shadow-none bg-default-100 w-full text-default-600  p-4">
+                  <p>
+                    Type:{' '}
+                    {request.type === 'bankHoliday'
+                      ? 'Bank Holiday'
+                      : 'Paid Time Off'}
+                  </p>
+                </Card>
                 <Card className="shadow-none bg-default-100 w-full text-default-600 p-4">
                   <p>Owner: {request.ownerName}</p>
                 </Card>

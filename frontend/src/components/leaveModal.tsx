@@ -9,8 +9,15 @@ import {
   Button,
   Textarea,
   Skeleton,
+  Select,
+  SelectItem,
 } from '@nextui-org/react'
-import { ConflictType, LeaveType, useLeavesModel } from '../models/Leaves'
+import {
+  ConflictType,
+  LeaveType,
+  LeaveTypes,
+  useLeavesModel,
+} from '../models/Leaves'
 import { useCallback, useEffect, useState } from 'react'
 import { CalendarDate, parseDate } from '@internationalized/date'
 import { useEmployeeModel } from '../models/Employee'
@@ -41,6 +48,7 @@ export const LeaveModal = ({
         .split('T')[0]
   )
   const [description, setDescription] = useState(leave?.description || '')
+  const [type, setType] = useState(leave?.type || 'paidTimeOff')
 
   const { createLeave, updateLeave, validateLeave } = useLeavesModel()
   const { currentEmployee } = useEmployeeModel()
@@ -86,6 +94,7 @@ export const LeaveModal = ({
           dateStart: start.toString(),
           dateEnd: end.add({ days: 1 }).toString(),
           id: leave?.id,
+          type,
         })
       )
 
@@ -98,6 +107,7 @@ export const LeaveModal = ({
       setIsLoadingInfo,
       leave?.id,
       validateLeave,
+      type,
     ]
   )
   useEffect(() => {
@@ -108,12 +118,13 @@ export const LeaveModal = ({
           dateStart: parseDate(dateStart).toString(),
           dateEnd: parseDate(dateEnd).toString(),
           id: leave?.id,
+          type,
         })
       )
       setIsLoadingInfo(false)
     }
     getFeedback()
-  }, [dateEnd, dateStart, leave, validateLeave])
+  }, [dateEnd, dateStart, leave, validateLeave, type])
   return (
     <Modal
       isOpen={isOpen}
@@ -128,51 +139,63 @@ export const LeaveModal = ({
               {leave ? 'Update leave' : 'Request a leave'}
             </ModalHeader>
             <ModalBody>
-              {isLoadingInfo ? (
-                <Skeleton className="rounded-lg">
-                  <div className="h-14 rounded-lg bg-default-300"></div>
-                </Skeleton>
-              ) : (
-                <>
-                  {feedback?.error && (
-                    <Card className="bg-danger w-full text-white p-4">
-                      <p className="whitespace-pre-line">{feedback.error}</p>
-                    </Card>
-                  )}
-
-                  {feedback?.conflicts && feedback?.conflicts.length > 0 && (
-                    <Card className="bg-warning w-full text-white p-4">
-                      {feedback.conflicts?.map((conflict) => (
-                        <details key={conflict.employeeName}>
-                          <summary>{conflict.employeeName} is on leave</summary>
-                          {conflict.conflictingLeaves?.map((leave) => (
-                            <p>
-                              - from {new Date(leave.dateStart).toDateString()}{' '}
-                              until {new Date(leave.dateEnd).toDateString()}
-                            </p>
-                          ))}
-                        </details>
-                      ))}
-                    </Card>
-                  )}
-                  {feedback?.daysRequested !== undefined &&
-                    currentEmployee?.paidTimeOffLeft && (
-                      <Card className="bg-primary w-full text-white p-4">
-                        <p>Days Requested: {feedback.daysRequested}</p>
-
-                        {new Date(dateStart).getFullYear() ===
-                          new Date(dateEnd).getFullYear() && (
-                          <p>
-                            If approved, you'll have{' '}
-                            {currentEmployee.paidTimeOffLeft -
-                              feedback.daysRequested}{' '}
-                            days left in {new Date(dateStart).getFullYear()}.
-                          </p>
-                        )}
+              {feedback?.error && (
+                <Card className="bg-danger w-full text-white p-4">
+                  <p className="whitespace-pre-line">{feedback.error}</p>
+                </Card>
+              )}
+              {type !== 'bankHoliday' &&
+                (isLoadingInfo ? (
+                  <Skeleton className="rounded-lg">
+                    <div className="h-14 rounded-lg bg-default-300"></div>
+                  </Skeleton>
+                ) : (
+                  <>
+                    {feedback?.conflicts && feedback?.conflicts.length > 0 && (
+                      <Card className="bg-warning w-full text-white p-4">
+                        {feedback.conflicts?.map((conflict) => (
+                          <details key={conflict.employeeName}>
+                            <summary>
+                              {conflict.employeeName} is on leave
+                            </summary>
+                            {conflict.conflictingLeaves?.map((leave) => (
+                              <p>
+                                - from{' '}
+                                {new Date(leave.dateStart).toDateString()} until{' '}
+                                {new Date(leave.dateEnd).toDateString()}
+                              </p>
+                            ))}
+                          </details>
+                        ))}
                       </Card>
                     )}
-                </>
-              )}
+                    {feedback?.daysRequested !== undefined &&
+                      currentEmployee?.paidTimeOffLeft && (
+                        <Card className="bg-primary w-full text-white p-4">
+                          <p>Days Requested: {feedback.daysRequested}</p>
+
+                          {new Date(dateStart).getFullYear() ===
+                            new Date(dateEnd).getFullYear() && (
+                            <p>
+                              If approved, you'll have{' '}
+                              {currentEmployee.paidTimeOffLeft -
+                                feedback.daysRequested}{' '}
+                              days left in {new Date(dateStart).getFullYear()}.
+                            </p>
+                          )}
+                        </Card>
+                      )}
+                  </>
+                ))}
+              <Select
+                label="Type"
+                className=""
+                onChange={(event) => setType(event.target.value as LeaveTypes)}
+                defaultSelectedKeys={[type]}
+              >
+                <SelectItem key="bankHoliday">Bank Holiday</SelectItem>
+                <SelectItem key="paidTimeOff">Paid Time Off</SelectItem>
+              </Select>
               <DateRangePicker
                 allowsNonContiguousRanges
                 visibleMonths={window.innerWidth > 640 ? 2 : 1}

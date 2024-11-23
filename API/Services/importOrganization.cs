@@ -84,8 +84,6 @@ public class OrganizationImportService
 						Organization = int.Parse(organizationId)
 					};
 					_context.Employees.Add(newEmployee);
-					await _bankholidayService.GenerateEmployeeBankHolidays(newEmployee);
-
 				}
 				else
 				{
@@ -96,25 +94,26 @@ public class OrganizationImportService
 					existingEmployee.Name = employee.Name;
 
 					_context.Employees.Update(existingEmployee);
-					await _bankholidayService.GenerateEmployeeBankHolidays(existingEmployee);
-
 				}
 			}
 			await _context.SaveChangesAsync();
 
-			// Step 2: Update managedBy relationships
+			// Step 2: Update managedBy relationships and bankHolidays
 			foreach (var employee in employees)
 			{
-
-				if (!string.IsNullOrEmpty(employee.ManagerEmail))
+				var employeeToUpdate = await _context.Employees.FindAsync(employee.Email);
+				if (employeeToUpdate != null)
 				{
-					var employeeToUpdate = await _context.Employees.FindAsync(employee.Email);
-					if (employeeToUpdate != null)
+					if (!string.IsNullOrEmpty(employee.ManagerEmail))
 					{
+
 						employeeToUpdate.ManagedBy = employee.ManagerEmail;
 						_context.Employees.Update(employeeToUpdate);
+
 					}
+					await _bankholidayService.GenerateEmployeeBankHolidays(employeeToUpdate);
 				}
+
 			}
 			await _context.SaveChangesAsync();
 			await transaction.CommitAsync();

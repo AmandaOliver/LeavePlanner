@@ -21,6 +21,8 @@ import { LoadingComponent } from '../components/loading'
 import { LeaveModal } from '../components/leaveModal'
 import { PencilIcon } from '../icons/pencil'
 import { BanIcon } from '../icons/ban'
+import { BussinessWatchIcon } from '../icons/bussinesswatch'
+import { PartyIcon } from '../icons/party'
 export const MyRequests = () => {
   const { leaves, leavesAwaitingApproval, leavesRejected, isLoading } =
     useLeavesModel()
@@ -94,6 +96,7 @@ export const MyRequests = () => {
         <Divider />
         <Table aria-label="list" className="mt-8">
           <TableHeader>
+            <TableColumn>TYPE</TableColumn>
             <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
             <TableColumn>DESCRIPTION</TableColumn>
             <TableColumn>ACTIONS</TableColumn>
@@ -101,6 +104,20 @@ export const MyRequests = () => {
           <TableBody emptyContent={'No pending requests.'}>
             {leavesAwaitingApproval.map((leave) => (
               <TableRow key={leave.id}>
+                <TableCell>
+                  <div className="flex flex-wrap flex-row items-center gap-4">
+                    {leave.type === 'bankHoliday' ? (
+                      <PartyIcon />
+                    ) : (
+                      <BussinessWatchIcon />
+                    )}
+                    <p className="hidden md:block">
+                      {leave.type === 'bankHoliday'
+                        ? 'Bank Holiday'
+                        : 'Paid Time Off'}
+                    </p>
+                  </div>
+                </TableCell>
                 <TableCell className="hidden sm:table-cell">
                   {new Date(leave.dateStart).toDateString()} to{' '}
                   {new Date(leave.dateEnd).toDateString()}
@@ -159,6 +176,7 @@ export const MyRequests = () => {
         <Divider />
         <Table aria-label="list" className="mt-8">
           <TableHeader>
+            <TableColumn>TYPE</TableColumn>
             <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
             <TableColumn>DESCRIPTION</TableColumn>
             <TableColumn>ACTIONS</TableColumn>
@@ -166,6 +184,20 @@ export const MyRequests = () => {
           <TableBody emptyContent={'No rejected requests.'}>
             {leavesRejected.map((leave) => (
               <TableRow key={leave.id}>
+                <TableCell>
+                  <div className="flex flex-wrap flex-row items-center gap-4">
+                    {leave.type === 'bankHoliday' ? (
+                      <PartyIcon />
+                    ) : (
+                      <BussinessWatchIcon />
+                    )}
+                    <p className="hidden md:block">
+                      {leave.type === 'bankHoliday'
+                        ? 'Bank Holiday'
+                        : 'Paid Time Off'}
+                    </p>
+                  </div>
+                </TableCell>
                 <TableCell className="hidden sm:table-cell">
                   {new Date(leave.dateStart).toDateString()} to{' '}
                   {new Date(leave.dateEnd).toDateString()}

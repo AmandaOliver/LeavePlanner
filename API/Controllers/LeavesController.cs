@@ -121,7 +121,7 @@ public class LeavesController
 				// it's head, we don't check teammates
 				var employeeLeaves = await _context.Leaves
 							   .Where(leave => leave.Owner == email &&
-											   (leave.Type == "bankHoliday" || leave.ApprovedBy != null))
+											   (leave.ApprovedBy != null))
 							   .ToListAsync();
 				allLeaves.AddRange(employeeLeaves);
 			}
@@ -130,7 +130,7 @@ public class LeavesController
 				// get leaves from the manager
 				var managerLeaves = await _context.Leaves
 					   .Where(leave => leave.Owner == employee.ManagedBy &&
-									   (leave.Type == "bankHoliday" || leave.ApprovedBy != null))
+									   (leave.ApprovedBy != null))
 					   .ToListAsync();
 				allLeaves.AddRange(managerLeaves);
 				// has a team, get leaves from the team
@@ -140,7 +140,7 @@ public class LeavesController
 				{
 					var subordinateLeaves = await _context.Leaves
 								   .Where(leave => leave.Owner == subordinate.Email &&
-												   (leave.Type == "bankHoliday" || leave.ApprovedBy != null))
+												   (leave.ApprovedBy != null))
 								   .ToListAsync();
 					allLeaves.AddRange(subordinateLeaves);
 				}
@@ -157,7 +157,7 @@ public class LeavesController
 			{
 				var subordinateLeaves = await _context.Leaves
 							   .Where(leave => leave.Owner == subordinate.Email &&
-											   (leave.Type == "bankHoliday" || leave.ApprovedBy != null))
+											   (leave.ApprovedBy != null))
 							   .ToListAsync();
 				allLeaves.AddRange(subordinateLeaves);
 			}
@@ -203,7 +203,7 @@ public class LeavesController
 	public async Task<IResult> GetAllLeaves([FromQuery] string? start, [FromQuery] string? end)
 	{
 		var leaves = await _context.Leaves
-						   .Where(leave => leave.Type == "bankHoliday" || leave.ApprovedBy != null)
+						   .Where(leave => leave.ApprovedBy != null)
 						   .ToListAsync();
 
 		if (leaves == null || leaves.Count == 0)
@@ -253,7 +253,7 @@ public class LeavesController
 	{
 		var leaves = await _context.Leaves
 						   .Where(leave => leave.Owner == email &&
-										   (leave.ApprovedBy != null || leave.Type == "bankHoliday"))
+										   (leave.ApprovedBy != null))
 						   .ToListAsync();
 
 		if (leaves == null || leaves.Count == 0)
@@ -261,15 +261,8 @@ public class LeavesController
 			return Results.Ok(new List<Leave>());
 		}
 
-		var leavesWithinNext6Months = leaves.Where(leave =>
-		{
-			if (leave.Type == "bankHoliday")
-			{
-				return leave.DateStart < DateTime.UtcNow.Date.AddMonths(6);
-			}
-			return true;
-		}).ToList();
-		return Results.Ok(leavesWithinNext6Months);
+
+		return Results.Ok(leaves);
 
 
 	}
@@ -277,7 +270,7 @@ public class LeavesController
 	{
 		var leaves = await _context.Leaves
 						   .Where(leave => leave.Owner == email &&
-										   leave.RejectedBy != null && leave.Type != "bankHoliday")
+										   leave.RejectedBy != null)
 						   .ToListAsync();
 
 		if (leaves == null || leaves.Count == 0)
@@ -292,7 +285,7 @@ public class LeavesController
 	{
 		var leaves = await _context.Leaves
 					   .Where(leave => leave.Owner == email &&
-									   leave.ApprovedBy == null && leave.RejectedBy == null && leave.Type != "bankHoliday")
+									   leave.ApprovedBy == null && leave.RejectedBy == null)
 					   .ToListAsync();
 
 		if (leaves == null || leaves.Count == 0)
@@ -305,7 +298,7 @@ public class LeavesController
 	}
 	public async Task<IResult> ValidateLeaveRequest(LeaveValidateDTO leaveToValidate)
 	{
-		var validationResult = await _leavesService.ValidateLeave(leaveToValidate.DateStart, leaveToValidate.DateEnd, leaveToValidate.Owner, leaveToValidate.Id);
+		var validationResult = await _leavesService.ValidateLeave(leaveToValidate.DateStart, leaveToValidate.DateEnd, leaveToValidate.Owner, leaveToValidate.Id, leaveToValidate.Type);
 		if (validationResult != "success")
 		{
 			return Results.BadRequest(validationResult);
@@ -330,7 +323,7 @@ public class LeavesController
 	}
 	public async Task<IResult> CreateLeave(LeaveCreateDTO model)
 	{
-		var validationResult = await _leavesService.ValidateLeave(model.DateStart, model.DateEnd, model.Owner, null);
+		var validationResult = await _leavesService.ValidateLeave(model.DateStart, model.DateEnd, model.Owner, null, model.Type);
 		if (validationResult != "success")
 		{
 			return Results.BadRequest(validationResult);
@@ -413,7 +406,7 @@ Hello {manager.Name},
 	}
 	public async Task<IResult> UpdateLeave(int leaveId, LeaveUpdateDTO leaveUpdate)
 	{
-		var validationResult = await _leavesService.ValidateLeave(leaveUpdate.DateStart, leaveUpdate.DateEnd, leaveUpdate.Owner, leaveUpdate.Id);
+		var validationResult = await _leavesService.ValidateLeave(leaveUpdate.DateStart, leaveUpdate.DateEnd, leaveUpdate.Owner, leaveUpdate.Id, leaveUpdate.Type);
 		if (validationResult != "success")
 		{
 			return Results.BadRequest(validationResult);
@@ -431,8 +424,8 @@ Hello {manager.Name},
 			leave.Description = leaveUpdate.Description;
 			leave.DateStart = leaveUpdate.DateStart;
 			leave.DateEnd = leaveUpdate.DateEnd;
-			leave.Type = leaveUpdate.Type;
 			leave.CreatedAt = DateTime.UtcNow;
+			leave.Type = leaveUpdate.Type;
 			leave.ApprovedBy = null;
 			leave.RejectedBy = null;
 
@@ -500,10 +493,7 @@ Hello {manager.Name},
 		{
 			return Results.NotFound("Leave not found");
 		}
-		if (leave.Type == "bankHoliday")
-		{
-			return Results.BadRequest("You cannot delete bank holidays.");
-		}
+
 		if (leave.ApprovedBy != null && (leave.DateStart < DateTime.UtcNow || leave.DateEnd < DateTime.UtcNow))
 		{
 			return Results.BadRequest("You cannot delete leaves in the past.");

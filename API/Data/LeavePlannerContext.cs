@@ -113,7 +113,7 @@ public partial class LeavePlannerContext : DbContext
             entity.Property(e => e.Owner).HasColumnName("owner");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.Type)
-                .HasColumnType("enum('sickLeave','paidTimeOff','unpaidTimeOff','bankHoliday')")
+                .HasColumnType("enum('paidTimeOff','bankHoliday')")
                 .HasColumnName("type");
 
             entity.HasOne(d => d.ApprovedByNavigation).WithMany(p => p.LeaveApprovedByNavigations)

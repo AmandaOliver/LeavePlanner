@@ -25,7 +25,7 @@ export const LeaveStartDay = ({
     .toDuration('days')
     ?.toObject().days
 
-  const text = 'ml-1 text-white'
+  const text = 'text-white'
   const name = <p className="pl-2 inline">{leave.ownerName}</p>
   const textConfig =
     leaveDuration && leaveDuration < 2
@@ -34,11 +34,11 @@ export const LeaveStartDay = ({
   const TooltipElement = ({ children }: { children: ReactNode }) => (
     <Tooltip
       content={
-        leave.type === 'bankHoliday'
-          ? 'Bank Holiday'
-          : leave.approvedBy
-            ? 'Paid Time Off'
-            : 'Request'
+        leave.approvedBy
+          ? leave.type === 'bankHoliday'
+            ? 'Bank Holiday'
+            : 'Paid Time Off'
+          : 'Request'
       }
     >
       {children}
