@@ -36,14 +36,6 @@ export const useRequestsModel = () => {
           ...request,
           dateStart: request.dateStart.split('T')[0],
           dateEnd: request.dateEnd.split('T')[0],
-          conflicts: request.conflicts?.map((conflict) => ({
-            ...conflict,
-            conflictingLeaves: conflict.conflictingLeaves?.map((leave) => ({
-              ...leave,
-              dateStart: leave.dateStart.split('T')[0],
-              dateEnd: leave.dateEnd.split('T')[0],
-            })),
-          })),
         })),
         totalCount: responseJson.totalCount,
       }
@@ -83,6 +75,31 @@ export const useRequestsModel = () => {
       throw new Error('Failed to fetch reviewed requests')
     }
   }
+  const fetchRequestInfo = async (requestId: string): Promise<LeaveType> => {
+    const accessToken = await getAccessTokenSilently()
+
+    const response = await fetch(
+      `${process.env.REACT_APP_API_SERVER_URL}/request/${requestId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    if (response.ok) {
+      return await response.json()
+    } else {
+      throw new Error('Failed to fetch request info')
+    }
+  }
+  const useRequestInfo = (requestId: string) =>
+    useQuery({
+      queryKey: ['requestInfo', requestId],
+      queryFn: () => fetchRequestInfo(requestId),
+    })
   const usePaginatedRequests = (page: number, pageSize: number) =>
     useQuery({
       queryKey: ['requests', currentEmployee?.email, page, pageSize],
@@ -158,6 +175,7 @@ export const useRequestsModel = () => {
   return {
     usePaginatedRequests,
     usePaginatedReviewedRequests,
+    useRequestInfo,
     approveRequest: approveRequestMutation.mutateAsync,
     rejectRequest: rejectRequestMutation.mutateAsync,
   }

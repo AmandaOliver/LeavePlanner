@@ -11,6 +11,7 @@ public static class RequestsEndpointsExtensions
 	{
 
 		endpoints.MapGet("/requests/{email}", async (RequestsController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetRequestsOfAManager(email, page, pageSize)).RequireAuthorization();
+		endpoints.MapGet("/request/{id}", async (RequestsController controller, string id) => await controller.GetRequestConflicts(id)).RequireAuthorization();
 		endpoints.MapGet("/requests/reviewed/{email}", async (RequestsController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetReviewedRequestsOfAManager(email, page, pageSize)).RequireAuthorization();
 		endpoints.MapPost("/requests/{email}/approve/{id}", async (RequestsController controller, string email, string id) => await controller.ApproveRequest(id, email)).RequireAuthorization();
 		endpoints.MapPost("/requests/{email}/reject/{id}", async (RequestsController controller, string email, string id) => await controller.RejectRequest(id, email)).RequireAuthorization();
@@ -31,6 +32,16 @@ public class RequestsController
 		_employeesService = employeesService;
 		_leavesService = leavesService;
 		_emailService = emailService;
+	}
+	public async Task<IResult> GetRequestConflicts(string id)
+	{
+		var leave = await _context.Leaves.FindAsync(int.Parse(id));
+		if (leave == null)
+		{
+			return Results.NotFound("Request not found");
+		}
+		var leaveDTO = await _leavesService.GetLeaveDynamicInfo(leave, true);
+		return Results.Ok(leaveDTO);
 	}
 	public async Task<IResult> GetRequestsOfAManager(string email, int page, int pageSize)
 	{

@@ -15,11 +15,11 @@ import { RequestIcon } from '../icons/request'
 import { EyeIcon } from '../icons/eye'
 import { useState } from 'react'
 import { LoadingComponent } from '../components/loading'
-
 import { useRequestsModel } from '../models/Requests'
 import { RequestReviewModal } from '../components/requestReviewModal'
 import { PartyIcon } from '../icons/party'
 import { BussinessWatchIcon } from '../icons/bussinesswatch'
+
 export const Requests = () => {
   const { usePaginatedRequests, usePaginatedReviewedRequests } =
     useRequestsModel()

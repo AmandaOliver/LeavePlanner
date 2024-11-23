@@ -8,11 +8,12 @@ import {
   Button,
   ModalFooter,
 } from '@nextui-org/react'
-import { ConflictType, LeaveType } from '../models/Leaves'
+import { ConflictType, LeaveType, useLeavesModel } from '../models/Leaves'
 import { parseDate } from '@internationalized/date'
 
 import { useRequestsModel } from '../models/Requests'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { LoadingComponent } from './loading'
 
 export const RequestReviewModal = ({
   isOpen,
@@ -23,9 +24,11 @@ export const RequestReviewModal = ({
   onOpenChange: () => void
   request: LeaveType
 }) => {
-  const { approveRequest, rejectRequest } = useRequestsModel()
+  const { approveRequest, rejectRequest, useRequestInfo } = useRequestsModel()
   const [isLoadingApprove, setIsLoadingApprove] = useState(false)
   const [isLoadingReject, setIsLoadingReject] = useState(false)
+  const { data, isLoading } = useRequestInfo(request.id)
+  if (isLoading) return <LoadingComponent />
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
       <ModalContent>
@@ -47,9 +50,9 @@ export const RequestReviewModal = ({
                 <Card className="shadow-none bg-default-100 w-full text-default-600 p-4">
                   <p>Owner: {request.ownerName}</p>
                 </Card>
-                {request?.conflicts && request?.conflicts.length > 0 && (
+                {data?.conflicts && data?.conflicts.length > 0 && (
                   <Card className="shadow-none bg-warning w-full text-white  p-4">
-                    {request.conflicts?.map((conflict: ConflictType) => (
+                    {data.conflicts?.map((conflict: ConflictType) => (
                       <details key={conflict.employeeName}>
                         <summary>{conflict.employeeName} is on leave</summary>
                         {conflict.conflictingLeaves?.map((leave) => (

@@ -34,7 +34,7 @@ public class LeavesService : ILeavesService
 		{
 			return new List<LeaveDTO>();
 		}
-		var leaveRequests = await GetLeavesDynamicInfo(leaves, true);
+		var leaveRequests = await GetLeavesDynamicInfo(leaves);
 
 		return leaveRequests;
 	}
@@ -49,7 +49,7 @@ public class LeavesService : ILeavesService
 		{
 			return new List<LeaveDTO>();
 		}
-		var leaveRequests = await GetLeavesDynamicInfo(leaves, false);
+		var leaveRequests = await GetLeavesDynamicInfo(leaves);
 
 		return leaveRequests;
 	}
