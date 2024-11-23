@@ -55,7 +55,6 @@ export const LeaveModal = ({
   const [feedback, setFeedback] = useState<{
     error?: string
     daysRequested?: number
-    conflicts: ConflictType[]
   }>()
   const [isLoadingInfo, setIsLoadingInfo] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -151,24 +150,6 @@ export const LeaveModal = ({
                   </Skeleton>
                 ) : (
                   <>
-                    {feedback?.conflicts && feedback?.conflicts.length > 0 && (
-                      <Card className="bg-warning w-full text-white p-4">
-                        {feedback.conflicts?.map((conflict) => (
-                          <details key={conflict.employeeName}>
-                            <summary>
-                              {conflict.employeeName} is on leave
-                            </summary>
-                            {conflict.conflictingLeaves?.map((leave) => (
-                              <p>
-                                - from{' '}
-                                {new Date(leave.dateStart).toDateString()} until{' '}
-                                {new Date(leave.dateEnd).toDateString()}
-                              </p>
-                            ))}
-                          </details>
-                        ))}
-                      </Card>
-                    )}
                     {feedback?.daysRequested !== undefined &&
                       currentEmployee?.paidTimeOffLeft && (
                         <Card className="bg-primary w-full text-white p-4">

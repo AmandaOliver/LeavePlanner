@@ -53,7 +53,7 @@ public class LeavesController
 		{
 			return Results.NotFound("leave not found");
 		}
-		var leaveWithDynamicInfo = await _leavesService.GetLeaveDynamicInfo(leave, true);
+		var leaveWithDynamicInfo = await _leavesService.GetLeaveDynamicInfo(leave, false);
 		return Results.Ok(leaveWithDynamicInfo);
 	}
 	public async Task<IResult> GetMyLeaves(string email, [FromQuery] string? start, [FromQuery] string? end)
@@ -317,7 +317,7 @@ public class LeavesController
 			Owner = leaveToValidate.Owner,
 			OwnerNavigation = employee,
 		};
-		var leave = await _leavesService.GetLeaveDynamicInfo(leaveRequest, true);
+		var leave = await _leavesService.GetLeaveDynamicInfo(leaveRequest, false);
 		return Results.Ok(leave);
 
 	}

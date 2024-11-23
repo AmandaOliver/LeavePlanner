@@ -65,21 +65,6 @@ export const LeaveInfoModal = ({
                         : 'Paid Time Off'}
                     </p>
                   </Card>
-                  {leaveInfo?.conflicts && leaveInfo?.conflicts.length > 0 && (
-                    <Card className="shadow-none bg-default-100 w-full text-default-600  p-4">
-                      {leaveInfo.conflicts?.map((conflict: ConflictType) => (
-                        <details key={conflict.employeeName}>
-                          <summary>{conflict.employeeName} is on leave</summary>
-                          {conflict.conflictingLeaves?.map((leave) => (
-                            <p>
-                              - from {new Date(leave.dateStart).toDateString()}{' '}
-                              until {new Date(leave.dateEnd).toDateString()}
-                            </p>
-                          ))}
-                        </details>
-                      ))}
-                    </Card>
-                  )}
                   {leaveInfo?.daysRequested !== undefined &&
                     leave.type !== 'bankHoliday' &&
                     currentEmployee?.paidTimeOffLeft && (

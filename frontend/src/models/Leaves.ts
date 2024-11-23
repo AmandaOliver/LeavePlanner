@@ -96,14 +96,6 @@ export const useLeavesModel = () => {
         ...leave,
         dateStart: leave.dateStart.split('T')[0],
         dateEnd: leave.dateEnd.split('T')[0],
-        conflicts: leave.conflicts?.map((conflict) => ({
-          ...conflict,
-          conflictingLeaves: conflict.conflictingLeaves?.map((l) => ({
-            ...l,
-            dateStart: l.dateStart.split('T')[0],
-            dateEnd: l.dateEnd.split('T')[0],
-          })),
-        })),
       }))
     } else {
       throw new Error('Failed to fetch pending approval leaves')
@@ -240,14 +232,6 @@ export const useLeavesModel = () => {
           ...responseJson,
           dateStart: responseJson.dateStart.split('T')[0],
           dateEnd: responseJson.dateEnd.split('T')[0],
-          conflicts: responseJson.conflicts?.map((conflict: ConflictType) => ({
-            ...conflict,
-            conflictingLeaves: conflict.conflictingLeaves?.map((l) => ({
-              ...l,
-              dateStart: l.dateStart.split('T')[0],
-              dateEnd: l.dateEnd.split('T')[0],
-            })),
-          })),
         }
       }
 
