@@ -60,14 +60,14 @@ export const LeaveModal = ({
         description,
         dateStart,
         dateEnd,
-        type: 'paidTimeOff',
+        type,
       })
     } else {
       await createLeave({
         description,
         dateStart,
         dateEnd,
-        type: 'paidTimeOff',
+        type,
       })
     }
     setIsLoading(false)
