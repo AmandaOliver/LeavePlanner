@@ -225,7 +225,7 @@ export const ImportModal = ({
                     <TableCell>name@email.com</TableCell>
                     <TableCell>Name</TableCell>
                     <TableCell>CEO</TableCell>
-                    <TableCell>boss@email.com</TableCell>
+                    <TableCell>manager@email.com</TableCell>
                     <TableCell>Spain</TableCell>
                     <TableCell>30</TableCell>
                     <TableCell>false</TableCell>

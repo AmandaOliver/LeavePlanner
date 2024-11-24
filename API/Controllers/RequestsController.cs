@@ -10,11 +10,11 @@ public static class RequestsEndpointsExtensions
 	public static void MapRequestsEndpoints(this IEndpointRouteBuilder endpoints)
 	{
 
-		endpoints.MapGet("/requests/{email}", async (RequestsController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetRequestsOfAManager(email, page, pageSize)).RequireAuthorization();
+		endpoints.MapGet("/requests/{id}", async (RequestsController controller, string id, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetRequestsOfAManager(id, page, pageSize)).RequireAuthorization();
 		endpoints.MapGet("/request/{id}", async (RequestsController controller, string id) => await controller.GetRequestConflicts(id)).RequireAuthorization();
-		endpoints.MapGet("/requests/reviewed/{email}", async (RequestsController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetReviewedRequestsOfAManager(email, page, pageSize)).RequireAuthorization();
-		endpoints.MapPost("/requests/{email}/approve/{id}", async (RequestsController controller, string email, string id) => await controller.ApproveRequest(id, email)).RequireAuthorization();
-		endpoints.MapPost("/requests/{email}/reject/{id}", async (RequestsController controller, string email, string id) => await controller.RejectRequest(id, email)).RequireAuthorization();
+		endpoints.MapGet("/requests/reviewed/{id}", async (RequestsController controller, string id, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetReviewedRequestsOfAManager(id, page, pageSize)).RequireAuthorization();
+		endpoints.MapPost("/requests/{employeeId}/approve/{id}", async (RequestsController controller, string employeeId, string id) => await controller.ApproveRequest(id, employeeId)).RequireAuthorization();
+		endpoints.MapPost("/requests/{employeeId}/reject/{id}", async (RequestsController controller, string employeeId, string id) => await controller.RejectRequest(id, employeeId)).RequireAuthorization();
 
 	}
 }
@@ -43,9 +43,9 @@ public class RequestsController
 		var leaveDTO = await _leavesService.GetLeaveDynamicInfo(leave, true);
 		return Results.Ok(leaveDTO);
 	}
-	public async Task<IResult> GetRequestsOfAManager(string email, int page, int pageSize)
+	public async Task<IResult> GetRequestsOfAManager(string id, int page, int pageSize)
 	{
-		var manager = await _context.Employees.FindAsync(email);
+		var manager = await _context.Employees.FindAsync(int.Parse(id));
 		if (manager == null)
 		{
 			return Results.NotFound("employee not found");
@@ -74,9 +74,9 @@ public class RequestsController
 			Requests = paginatedRequests
 		});
 	}
-	public async Task<IResult> GetReviewedRequestsOfAManager(string email, int page, int pageSize)
+	public async Task<IResult> GetReviewedRequestsOfAManager(string id, int page, int pageSize)
 	{
-		var manager = await _context.Employees.FindAsync(email);
+		var manager = await _context.Employees.FindAsync(int.Parse(id));
 		if (manager == null)
 		{
 			return Results.NotFound("employee not found");
@@ -106,11 +106,11 @@ public class RequestsController
 		});
 	}
 
-	public async Task<IResult> ApproveRequest(string id, string email)
+	public async Task<IResult> ApproveRequest(string id, string employeeId)
 	{
-		if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(email))
+		if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(employeeId))
 		{
-			return Results.BadRequest("email and request id can't be empty");
+			return Results.BadRequest("employee and request id can't be empty");
 		}
 		using var transaction = await _context.Database.BeginTransactionAsync();
 		try
@@ -121,7 +121,7 @@ public class RequestsController
 				return Results.NotFound("request not found");
 
 			}
-			request.ApprovedBy = email;
+			request.ApprovedBy = int.Parse(employeeId);
 			await _context.SaveChangesAsync();
 			await transaction.CommitAsync();
 			var employee = await _context.Employees.FindAsync(request.Owner);
@@ -142,11 +142,11 @@ Hello {employee.Name},
 			return Results.Problem(ex.Message);
 		}
 	}
-	public async Task<IResult> RejectRequest(string id, string email)
+	public async Task<IResult> RejectRequest(string id, string employeeId)
 	{
-		if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(email))
+		if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(employeeId))
 		{
-			return Results.BadRequest("email and request id can't be empty");
+			return Results.BadRequest("Employee and request id can't be empty");
 		}
 		using var transaction = await _context.Database.BeginTransactionAsync();
 		try
@@ -157,7 +157,7 @@ Hello {employee.Name},
 				return Results.NotFound("request not found");
 
 			}
-			request.RejectedBy = email;
+			request.RejectedBy = int.Parse(employeeId);
 			await _context.SaveChangesAsync();
 			await transaction.CommitAsync();
 			var employee = await _context.Employees.FindAsync(request.Owner);

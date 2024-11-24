@@ -19,14 +19,14 @@ export const EmployeeModal = ({
   onOpenChange,
   employee,
   onCloseCb,
-  managerEmail,
+  managerId,
   label,
 }: {
   isOpen: boolean
   onOpenChange: () => void
   employee?: EmployeeType
   onCloseCb: () => void
-  managerEmail?: string
+  managerId?: string
   label: string
 }) => {
   const { countries } = useCountriesModel()
@@ -47,12 +47,12 @@ export const EmployeeModal = ({
   const [titleError, setTitleError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(false)
-
   const emailRef = useRef<HTMLInputElement>(null)
   const ptoRef = useRef<HTMLInputElement>(null)
   const countryRef = useRef<HTMLInputElement>(null)
   const titleRef = useRef<HTMLInputElement>(null)
   const nameRef = useRef<HTMLInputElement>(null)
+  if (!currentOrganization) return null
 
   const handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
     setEmployeeEmail(event.target.value)
@@ -124,6 +124,7 @@ export const EmployeeModal = ({
     if (employee) {
       // we are updating an employee
       response = await updateEmployee({
+        id: employee.id,
         name: employeeName,
         email: employeeEmail,
         country: selectedCountry,
@@ -132,15 +133,15 @@ export const EmployeeModal = ({
         isOrgOwner,
       })
     } else {
-      if (managerEmail) {
+      if (managerId) {
         // we are creating an employee
         response = await createEmployee({
           name: employeeName,
           email: employeeEmail,
           country: selectedCountry,
           paidTimeOff: ptoDays,
-          managedBy: managerEmail,
-          organization: currentOrganization.id,
+          managedBy: managerId,
+          organization: currentOrganization?.id,
           title: employeeTitle,
           isOrgOwner,
         })
@@ -152,7 +153,7 @@ export const EmployeeModal = ({
           country: selectedCountry,
           paidTimeOff: ptoDays,
           managedBy: null,
-          organization: currentOrganization.id,
+          organization: currentOrganization?.id,
           title: employeeTitle,
           isOrgOwner,
         })

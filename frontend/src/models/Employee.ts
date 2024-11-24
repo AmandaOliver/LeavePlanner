@@ -2,6 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 export type EmployeeType = {
+  id: string
   email: string
   name: string
   organization: number
@@ -9,6 +10,7 @@ export type EmployeeType = {
   country: string
   isOrgOwner: boolean
   paidTimeOff: number
+  managerName: string
   title: string
   subordinates?: Array<EmployeeType>
   paidTimeOffLeft: number
@@ -28,6 +30,7 @@ export type CreateEmployeeParamType = {
 }
 
 export type UpdateEmployeeParamType = {
+  id: string
   email: string
   name: string
   country: string
@@ -36,7 +39,7 @@ export type UpdateEmployeeParamType = {
   isOrgOwner: boolean
 }
 export type DeleteEmployeeParamType = {
-  email: string
+  id: string
 }
 export const useEmployeeModel = () => {
   const { user, getAccessTokenSilently } = useAuth0()
@@ -66,7 +69,7 @@ export const useEmployeeModel = () => {
   const employeeQuery = useQuery({
     queryKey: ['employee', user?.email],
     queryFn: fetchEmployee,
-    enabled: !!user?.email, // Only run the query if the email is available
+    enabled: !!user?.email,
   })
 
   const createEmployeeMutation = useMutation({
@@ -116,7 +119,7 @@ export const useEmployeeModel = () => {
     mutationFn: async (updateData: UpdateEmployeeParamType) => {
       const accessToken = await getAccessTokenSilently()
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/employee/${updateData.email}`,
+        `${process.env.REACT_APP_API_SERVER_URL}/employee/${updateData.id}`,
         {
           method: 'PUT',
           headers: {
@@ -141,7 +144,7 @@ export const useEmployeeModel = () => {
     mutationFn: async (deleteData: DeleteEmployeeParamType) => {
       const accessToken = await getAccessTokenSilently()
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/employee/${deleteData.email}`,
+        `${process.env.REACT_APP_API_SERVER_URL}/employee/${deleteData.id}`,
         {
           method: 'DELETE',
           headers: {

@@ -186,7 +186,7 @@ export const LeaveModal = ({
                     .split('T')[0]
                 )} // Tomorrow's date
                 maxValue={parseDate(
-                  new Date(new Date().getFullYear() + 2, 0, 2)
+                  new Date(new Date().getFullYear() + 2, 0, 1)
                     .toISOString()
                     .split('T')[0]
                 )}

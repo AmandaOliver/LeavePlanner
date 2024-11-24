@@ -2,7 +2,7 @@ namespace LeavePlanner.Models
 {
 	public class OrganizationUpdateDTO
 	{
-		public required string Name { get; set; }
-
+		public string? Name { get; set; }
+		public int[]? WorkingDays { get; set; }
 	}
 }

@@ -19,7 +19,7 @@ export const useRequestsModel = () => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/requests/${currentEmployee?.email}?page=${page}&pageSize=${pageSize}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/requests/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
       {
         method: 'GET',
         headers: {
@@ -50,7 +50,7 @@ export const useRequestsModel = () => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/requests/reviewed/${currentEmployee?.email}?page=${page}&pageSize=${pageSize}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/requests/reviewed/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
       {
         method: 'GET',
         headers: {
@@ -102,13 +102,13 @@ export const useRequestsModel = () => {
     })
   const usePaginatedRequests = (page: number, pageSize: number) =>
     useQuery({
-      queryKey: ['requests', currentEmployee?.email, page, pageSize],
+      queryKey: ['requests', currentEmployee?.id, page, pageSize],
       queryFn: () => fetchRequests(page, pageSize),
       placeholderData: (prevData) => prevData,
     })
   const usePaginatedReviewedRequests = (page: number, pageSize: number) =>
     useQuery({
-      queryKey: ['reviewedRequests', currentEmployee?.email, page, pageSize],
+      queryKey: ['reviewedRequests', currentEmployee?.id, page, pageSize],
       queryFn: () => fetchReviewedRequests(page, pageSize),
       placeholderData: (prevData) => prevData,
     })
@@ -116,7 +116,7 @@ export const useRequestsModel = () => {
     mutationFn: async ({ requestId }: ApproveRequestParams) => {
       const accessToken = await getAccessTokenSilently()
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/requests/${currentEmployee?.email}/approve/${requestId}`,
+        `${process.env.REACT_APP_API_SERVER_URL}/requests/${currentEmployee?.id}/approve/${requestId}`,
         {
           method: 'POST',
           headers: {
@@ -132,13 +132,13 @@ export const useRequestsModel = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['requests', currentEmployee?.email],
+        queryKey: ['requests', currentEmployee?.id],
       })
       queryClient.invalidateQueries({
-        queryKey: ['reviewedRequests', currentEmployee?.email],
+        queryKey: ['reviewedRequests', currentEmployee?.id],
       })
       queryClient.invalidateQueries({
-        queryKey: ['employee', currentEmployee?.email],
+        queryKey: ['employee', currentEmployee?.id],
       })
     },
   })
@@ -146,7 +146,7 @@ export const useRequestsModel = () => {
     mutationFn: async ({ requestId }: ApproveRequestParams) => {
       const accessToken = await getAccessTokenSilently()
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/requests/${currentEmployee?.email}/reject/${requestId}`,
+        `${process.env.REACT_APP_API_SERVER_URL}/requests/${currentEmployee?.id}/reject/${requestId}`,
         {
           method: 'POST',
           headers: {
@@ -162,13 +162,13 @@ export const useRequestsModel = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['requests', currentEmployee?.email],
+        queryKey: ['requests', currentEmployee?.id],
       })
       queryClient.invalidateQueries({
-        queryKey: ['reviewedRequests', currentEmployee?.email],
+        queryKey: ['reviewedRequests', currentEmployee?.id],
       })
       queryClient.invalidateQueries({
-        queryKey: ['employee', currentEmployee?.email],
+        queryKey: ['employee', currentEmployee?.id],
       })
     },
   })

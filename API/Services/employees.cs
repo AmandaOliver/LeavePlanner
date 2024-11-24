@@ -25,6 +25,7 @@ public class EmployeesService : IEmployeesService
 
 	public async Task<string> ValidateEmployee(EmployeeCreateDTO employee)
 	{
+		var existingEmployee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == employee.Email);
 		var emailRegex = new Regex(
 	  @"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$",
 	  RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -43,9 +44,17 @@ public class EmployeesService : IEmployeesService
 		{
 			return "Title can't be empty";
 		}
-		if (!string.IsNullOrWhiteSpace(employee.ManagedBy) && !_emailRegex.IsMatch(employee.ManagedBy))
+		if (employee.ManagedBy != null)
 		{
-			return "ManagerEmail must be valid.";
+			var manager = await _context.Employees.FindAsync(employee.ManagedBy);
+			if (manager == null)
+			{
+				return "Manager must exist.";
+			}
+			if (manager.Email == employee.Email)
+			{
+				return "An employee can't be managed by himself";
+			}
 		}
 		if (string.IsNullOrWhiteSpace(employee.Country))
 		{
@@ -67,14 +76,17 @@ public class EmployeesService : IEmployeesService
 	}
 	public async Task<EmployeeWithSubordinatesDTO> GetEmployeeWithSubordinates(Employee employee)
 	{
-		int paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, DateTime.UtcNow.Year, null);
-		int paidTimeOffLeftNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, DateTime.UtcNow.Year + 1, null);
+		int paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Id, DateTime.UtcNow.Year, null);
+		int paidTimeOffLeftNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Id, DateTime.UtcNow.Year + 1, null);
+		var manager = await _context.Employees.FindAsync(employee.ManagedBy);
 		var employeeWithSubordinates = new EmployeeWithSubordinatesDTO
 		{
+			Id = employee.Id,
 			Email = employee.Email,
 			Name = employee.Name,
 			Country = employee.Country,
 			Organization = employee.Organization,
+			ManagerName = manager != null ? manager.Name : null,
 			ManagedBy = employee.ManagedBy,
 			IsOrgOwner = employee.IsOrgOwner,
 			PaidTimeOff = employee.PaidTimeOff,
@@ -85,7 +97,7 @@ public class EmployeesService : IEmployeesService
 		};
 
 		var subordinates = await _context.Employees
-										.Where(e => e.ManagedBy == employee.Email)
+										.Where(e => e.ManagedBy == employee.Id)
 										.ToListAsync();
 		if (subordinates != null)
 		{
@@ -93,7 +105,7 @@ public class EmployeesService : IEmployeesService
 			foreach (var subordinate in subordinates)
 			{
 				pendingRequests += await _context.Leaves
-					  .Where(leave => leave.Owner == subordinate.Email &&
+					  .Where(leave => leave.Owner == subordinate.Id &&
 									  leave.ApprovedBy == null && leave.RejectedBy == null)
 					  .CountAsync();
 				var subordinateWithSubordinates = await GetEmployeeWithSubordinates(subordinate);

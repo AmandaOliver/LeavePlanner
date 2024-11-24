@@ -9,12 +9,12 @@ namespace LeavePlanner.Models
 		public DateTime DateStart { get; set; }
 
 		public DateTime DateEnd { get; set; }
-		public string? Owner { get; set; }
+		public int? Owner { get; set; }
 		public string? OwnerName { get; set; }
 		public string? Description { get; set; }
 
-		public string? ApprovedBy { get; set; }
-		public string? RejectedBy { get; set; }
+		public int? ApprovedBy { get; set; }
+		public int? RejectedBy { get; set; }
 
 		public int DaysRequested { get; set; }
 		public List<ConflictDTO>? Conflicts { get; set; }

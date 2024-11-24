@@ -56,6 +56,7 @@ public class OrganizationsController
                 {
                     organization.Id,
                     organization.Name,
+                    organization.WorkingDays,
                     Tree = employeeTree
                 };
                 return Results.Ok(result);
@@ -82,8 +83,22 @@ public class OrganizationsController
         }
         try
         {
-
-            organization.Name = organizationUpdate.Name;
+            if (organizationUpdate.Name == null && organizationUpdate.WorkingDays == null)
+            {
+                return Results.BadRequest("name or working days needs to be specified");
+            }
+            if (organizationUpdate.Name != null)
+            {
+                organization.Name = organizationUpdate.Name;
+            }
+            if (organizationUpdate.WorkingDays != null)
+            {
+                if (organizationUpdate.WorkingDays is not IEnumerable<int> || organizationUpdate.WorkingDays.Length < 1 || !organizationUpdate.WorkingDays.All(day => day >= 1 && day <= 7))
+                {
+                    return Results.BadRequest("Working days must be defined.");
+                }
+                organization.WorkingDays = organizationUpdate.WorkingDays;
+            }
 
 
             _context.Organizations.Update(organization);
@@ -118,7 +133,7 @@ public class OrganizationsController
 
             foreach (var employee in employees)
             {
-                await DeleteEmployeeWithSubordinates(employee.Email);
+                await DeleteEmployeeWithSubordinates(employee.Id);
             }
 
             _context.Organizations.Remove(organization);
@@ -135,22 +150,22 @@ public class OrganizationsController
         }
     }
 
-    private async Task DeleteEmployeeWithSubordinates(string email)
+    private async Task DeleteEmployeeWithSubordinates(int id)
     {
-        var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == email);
+        var employee = await _context.Employees.FindAsync(id);
         if (employee == null) return;
 
         var subordinates = await _context.Employees
-            .Where(e => e.ManagedBy == email)
+            .Where(e => e.ManagedBy == id)
             .ToListAsync();
 
         foreach (var subordinate in subordinates)
         {
-            await DeleteEmployeeWithSubordinates(subordinate.Email);
+            await DeleteEmployeeWithSubordinates(subordinate.Id);
         }
 
         var leaves = await _context.Leaves
-            .Where(l => l.Owner == employee.Email)
+            .Where(l => l.Owner == employee.Id)
             .ToListAsync();
 
         _context.Leaves.RemoveRange(leaves);
@@ -166,9 +181,10 @@ public class OrganizationsController
 
         foreach (var manager in managers)
         {
-            var subordinates = allEmployees.Where(e => e.ManagedBy == manager.Email).ToList();
+            var subordinates = allEmployees.Where(e => e.ManagedBy == manager.Id).ToList();
             var employeeDto = new EmployeeWithSubordinatesDTO
             {
+                Id = manager.Id,
                 Name = manager.Name,
                 Email = manager.Email,
                 Country = manager.Country,

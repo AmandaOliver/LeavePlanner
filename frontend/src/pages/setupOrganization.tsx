@@ -16,6 +16,7 @@ import { OrganizationModal } from '../components/organizationModal'
 import { useState } from 'react'
 import { ImportModal } from '../components/importModal'
 import { BussinessWatchIcon } from '../icons/bussinesswatch'
+import { WorkingDaysModal } from '../components/workingDaysModal'
 
 export const SetupOrganization = () => {
   const { isLoading, currentOrganization } = useOrganizationModel()
@@ -39,15 +40,21 @@ export const SetupOrganization = () => {
     onOpen: onOpenImportModal,
     onOpenChange: onOpenChangeImportModal,
   } = useDisclosure()
+  const {
+    isOpen: isOpenWorkingDaysModal,
+    onOpen: onOpenWorkingDaysModal,
+    onOpenChange: onOpenChangeWorkingDaysModal,
+  } = useDisclosure()
 
   const [updateOrganization, setUpdateOrganization] = useState(
     {} as OrganizationType
   )
   const [headOrganization, setHeadOrganization] = useState(false)
   const [importOrganization, setImportOrganization] = useState(false)
+  const [workingDays, setWorkingDays] = useState({} as OrganizationType)
 
   if (isLoading) return <LoadingComponent />
-
+  if (!currentOrganization) return null
   return (
     <>
       <OrganizationDeleteModal
@@ -77,6 +84,13 @@ export const SetupOrganization = () => {
           onCloseCb={() => setImportOrganization(false)}
         />
       )}
+      {workingDays.id && (
+        <WorkingDaysModal
+          isOpen={isOpenWorkingDaysModal}
+          onOpenChange={onOpenChangeWorkingDaysModal}
+          onCloseCb={() => setWorkingDays({} as OrganizationType)}
+        />
+      )}
       <div className="m-8">
         <div className="flex flex-wrap flex-row items-center gap-4">
           <BussinessWatchIcon />
@@ -87,9 +101,43 @@ export const SetupOrganization = () => {
         <Card className="bg-default-200 p-4 m-4">
           <CardBody>
             <h1 className=" text-[24px]">Name: {currentOrganization.name}</h1>
+            <h1 className=" text-[24px]">
+              Working Days:{' '}
+              {currentOrganization.workingDays
+                .map((day) => {
+                  switch (day) {
+                    case 1:
+                      return 'Monday'
+                    case 2:
+                      return 'Tuesday'
+                    case 3:
+                      return 'Wednesday'
+                    case 4:
+                      return 'Thursday'
+                    case 5:
+                      return 'Friday'
+                    case 6:
+                      return 'Saturday'
+                    case 7:
+                      return 'Sunday'
+                    default:
+                      return ''
+                  }
+                })
+                .join(', ')}
+            </h1>
           </CardBody>
           <CardFooter>
             <div className="flex flex-wrap flex-row gap-4 ">
+              <Button
+                color="primary"
+                onPress={() => {
+                  setWorkingDays(currentOrganization)
+                  onOpenWorkingDaysModal()
+                }}
+              >
+                Configure working days
+              </Button>
               <Button
                 color="primary"
                 onPress={() => {

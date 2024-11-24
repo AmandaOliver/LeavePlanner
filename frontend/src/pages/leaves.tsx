@@ -144,7 +144,7 @@ export const Leaves = () => {
                 <Pagination
                   total={Math.ceil(paginatedLeaves.totalCount / pageSize)}
                   page={page}
-                  onChange={(page) => setPastPage(page)}
+                  onChange={(page) => setPage(page)}
                   isCompact
                   showControls
                   showShadow

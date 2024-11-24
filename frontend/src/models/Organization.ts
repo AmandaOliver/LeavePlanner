@@ -1,16 +1,22 @@
 import { useAuth0 } from '@auth0/auth0-react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  UseQueryResult,
+} from '@tanstack/react-query'
 import { EmployeeType, useEmployeeModel } from './Employee'
 
 export type createOrganizationAndEmployeeResponseBodyType = {
   organizationId: number
 }
-
+export type WorkingDaysType = number[]
 export type OrganizationType = {
   id: number
   name: string
   head: string
-  tree: EmployeeType
+  tree: EmployeeType[]
+  workingDays: WorkingDaysType
 }
 
 export const useOrganizationModel = () => {
@@ -38,7 +44,7 @@ export const useOrganizationModel = () => {
     }
   }
 
-  const organizationQuery = useQuery({
+  const organizationQuery: UseQueryResult<OrganizationType, Error> = useQuery({
     queryKey: ['organization', currentEmployee?.organization],
     queryFn: () => {
       if (currentEmployee?.organization) {
@@ -78,7 +84,7 @@ export const useOrganizationModel = () => {
         queryKey: ['organization'],
       })
       queryClient.invalidateQueries({
-        queryKey: ['employee', user?.email],
+        queryKey: ['employee'],
       })
     },
   })
@@ -108,7 +114,7 @@ export const useOrganizationModel = () => {
         queryKey: ['organization'],
       })
       queryClient.invalidateQueries({
-        queryKey: ['employee', user?.email],
+        queryKey: ['employee'],
       })
     },
   })
@@ -116,7 +122,7 @@ export const useOrganizationModel = () => {
     mutationFn: async () => {
       const accessToken = await getAccessTokenSilently()
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/organization/${organizationQuery.data.id}`,
+        `${process.env.REACT_APP_API_SERVER_URL}/organization/${organizationQuery.data?.id}`,
         {
           method: 'DELETE',
           headers: {
@@ -136,7 +142,7 @@ export const useOrganizationModel = () => {
         queryKey: ['organization'],
       })
       queryClient.invalidateQueries({
-        queryKey: ['employee', user?.email],
+        queryKey: ['employee'],
       })
     },
   })
@@ -144,7 +150,7 @@ export const useOrganizationModel = () => {
     mutationFn: async (newName: string) => {
       const accessToken = await getAccessTokenSilently()
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/organization/${organizationQuery.data.id}`,
+        `${process.env.REACT_APP_API_SERVER_URL}/organization/${organizationQuery.data?.id}`,
         {
           method: 'PUT',
           headers: {
@@ -167,7 +173,37 @@ export const useOrganizationModel = () => {
         queryKey: ['organization'],
       })
       queryClient.invalidateQueries({
-        queryKey: ['employee', user?.email],
+        queryKey: ['employee'],
+      })
+    },
+  })
+  const updateWorkingDaysMutation = useMutation({
+    mutationFn: async (workingDays: WorkingDaysType) => {
+      const accessToken = await getAccessTokenSilently()
+      const response = await fetch(
+        `${process.env.REACT_APP_API_SERVER_URL}/organization/${organizationQuery.data?.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            workingDays,
+          }),
+        }
+      )
+      if (!response.ok) {
+        return { error: await response.json() }
+      }
+      return await response.json()
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ['organization'],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['employee'],
       })
     },
   })
@@ -176,6 +212,7 @@ export const useOrganizationModel = () => {
       createOrganizationAndEmployeeMutation.mutateAsync,
     deleteOrganization: deleteOrganizationMutation.mutateAsync,
     renameOrganization: renameOrganizationMutation.mutateAsync,
+    updateWorkingDays: updateWorkingDaysMutation.mutateAsync,
     importOrganization: importOrganizationMutation.mutateAsync,
     currentOrganization: organizationQuery.data,
     isLoading: organizationQuery.isLoading,

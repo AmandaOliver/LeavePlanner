@@ -33,7 +33,7 @@ export const Navigation = () => {
     { link: '/requests', label: 'My Requests' },
   ]
   const menuItemManager = {
-    link: `/requests/${currentEmployee?.email}`,
+    link: `/requests/${currentEmployee?.id}`,
     label: 'Review leave requests',
     badge: currentEmployee?.pendingRequests,
   }
@@ -84,7 +84,7 @@ export const Navigation = () => {
       )}
 
       <Header
-        organizationName={currentOrganization?.name}
+        organizationName={currentOrganization?.name || ''}
         menuItems={menuItems}
         activeMenu={location.pathname}
         handleLogout={handleLogout}

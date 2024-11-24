@@ -11,7 +11,7 @@ export const useGetMyLeaves = (interval: Interval) => {
   const fetchMyLeaves = async (): Promise<LeaveType[]> => {
     const accessToken = await getAccessTokenSilently()
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/myleaves/${currentEmployee?.email}?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/myleaves/${currentEmployee?.id}?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
       {
         method: 'GET',
         headers: {
@@ -69,7 +69,7 @@ export const useGetMyCircleLeaves = (interval: Interval) => {
   const fetchAllLeaves = async (): Promise<LeaveType[]> => {
     const accessToken = await getAccessTokenSilently()
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/mycircleleaves/${currentEmployee?.email}?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/mycircleleaves/${currentEmployee?.id}?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
       {
         method: 'GET',
         headers: {

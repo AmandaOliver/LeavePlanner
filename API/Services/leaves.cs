@@ -7,7 +7,7 @@ public interface ILeavesService
 	Task<List<LeaveDTO>> GetLeaveRequests(EmployeeWithSubordinatesDTO employee);
 	Task<LeaveDTO> GetLeaveDynamicInfo(Leave leave, bool withConflicts);
 	Task<List<LeaveDTO>> GetLeavesDynamicInfo(List<Leave> leaves, bool withConflicts);
-	Task<string> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId, string type);
+	Task<string> ValidateLeave(DateTime dateStart, DateTime dateEnd, int owner, int? leaveId, string type);
 	Task<List<ConflictDTO>> GetConflicts(Leave leaveRequest);
 }
 
@@ -26,7 +26,7 @@ public class LeavesService : ILeavesService
 	public async Task<List<LeaveDTO>> GetLeaveRequests(EmployeeWithSubordinatesDTO employee)
 	{
 		var leaves = await _context.Leaves
-					   .Where(leave => leave.Owner == employee.Email &&
+					   .Where(leave => leave.Owner == employee.Id &&
 									   leave.ApprovedBy == null && leave.RejectedBy == null)
 					   .ToListAsync();
 
@@ -40,9 +40,14 @@ public class LeavesService : ILeavesService
 	}
 	public async Task<List<LeaveDTO>> GetReviewedRequests(EmployeeWithSubordinatesDTO employee)
 	{
+		var systemEmployee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == "system");
+		if (systemEmployee == null)
+		{
+			throw new Exception("System employee not found");
+		}
 		var leaves = await _context.Leaves
-					   .Where(leave => leave.Owner == employee.Email &&
-									   ((leave.ApprovedBy != null && leave.ApprovedBy != "system") || leave.RejectedBy != null))
+					   .Where(leave => leave.Owner == employee.Id &&
+									   ((leave.ApprovedBy != null && leave.ApprovedBy != systemEmployee.Id) || leave.RejectedBy != null))
 					   .ToListAsync();
 
 		if (leaves == null || leaves.Count == 0)
@@ -92,7 +97,7 @@ public class LeavesService : ILeavesService
 
 		return leaveDTOs;
 	}
-	public async Task<string> ValidateLeave(DateTime dateStart, DateTime dateEnd, string owner, int? leaveId, string type)
+	public async Task<string> ValidateLeave(DateTime dateStart, DateTime dateEnd, int owner, int? leaveId, string type)
 	{
 		// Leave update validation checks
 		if (leaveId != null)
@@ -144,14 +149,14 @@ public class LeavesService : ILeavesService
 			var daysInNextYear = await _paidTimeOffLeft.GetDaysRequested(startOfNextYear, dateEnd, owner, dateEnd.Year, leaveId);
 
 			// Check for enough paid time off in current year
-			var paidTimeOffLeftForCurrentYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateStart.Year, leaveId);
+			var paidTimeOffLeftForCurrentYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Id, dateStart.Year, leaveId);
 			if (daysInCurrentYear > paidTimeOffLeftForCurrentYear)
 			{
 				return $"You cannot request more days than you have left.\nDays requested: {daysInCurrentYear}.\nDays left for the year {dateStart.Year}: {paidTimeOffLeftForCurrentYear}.";
 			}
 
 			// Check for enough paid time off in next year
-			var paidTimeOffLeftForNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateEnd.Year, leaveId);
+			var paidTimeOffLeftForNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Id, dateEnd.Year, leaveId);
 			if (daysInNextYear > paidTimeOffLeftForNextYear)
 			{
 				return $"You cannot request more days than you have left.\nDays requested: {daysInNextYear}.\nDays left for the year {dateEnd.Year}: {paidTimeOffLeftForNextYear}.";
@@ -160,7 +165,7 @@ public class LeavesService : ILeavesService
 		else
 		{
 			int totalWeekdaysRequested = await _paidTimeOffLeft.GetDaysRequested(dateStart, dateEnd, owner, dateStart.Year, leaveId);
-			var paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Email, dateStart.Year, leaveId);
+			var paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Id, dateStart.Year, leaveId);
 
 			if (totalWeekdaysRequested > paidTimeOffLeft)
 			{
@@ -192,11 +197,11 @@ public class LeavesService : ILeavesService
 		foreach (var subordinate in employeeWithSubordinates.Subordinates)
 		{
 			// do not take in account leaves of the same employee
-			if (subordinate.Email != leaveRequest.Owner)
+			if (subordinate.Id != leaveRequest.Owner)
 			{
 				var conflictingLeaves = await _context.Leaves
 					.Where(leave =>
-						leave.Owner == subordinate.Email && // is a leave of this employee
+						leave.Owner == subordinate.Id && // is a leave of this employee
 						(leave.ApprovedBy != null) &&
 						(
 							(leaveRequest.DateStart >= leave.DateStart && leaveRequest.DateStart < leave.DateEnd) ||   // Start date is within an existing leave (excluding an exact match on end date)
@@ -208,7 +213,7 @@ public class LeavesService : ILeavesService
 				{
 					conflicts.Add(new ConflictDTO
 					{
-						EmployeeEmail = subordinate.Email,
+						EmployeeId = subordinate.Id,
 						EmployeeName = subordinate.Name,
 						ConflictingLeaves = conflictingLeaves
 					});

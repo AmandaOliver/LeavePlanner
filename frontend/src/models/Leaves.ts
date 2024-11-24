@@ -6,8 +6,8 @@ import { useNavigate } from 'react-router-dom'
 export type LeaveTypes = 'paidTimeOff' | 'bankHoliday'
 
 export type ConflictType = {
+  employeeId: string
   employeeName: string
-  employeeEmail: string
   conflictingLeaves: LeaveType[]
 }
 export type LeaveType = {
@@ -58,7 +58,7 @@ export const useLeavesModel = () => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves/${currentEmployee?.email}?page=${page}&pageSize=${pageSize}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
       {
         method: 'GET',
         headers: {
@@ -89,7 +89,7 @@ export const useLeavesModel = () => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/pastleaves/${currentEmployee?.email}?page=${page}&pageSize=${pageSize}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/pastleaves/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
       {
         method: 'GET',
         headers: {
@@ -120,7 +120,7 @@ export const useLeavesModel = () => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves/pending/${currentEmployee?.email}?page=${page}&pageSize=${pageSize}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/pending/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
       {
         method: 'GET',
         headers: {
@@ -152,7 +152,7 @@ export const useLeavesModel = () => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves/rejected/${currentEmployee?.email}?page=${page}&pageSize=${pageSize}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/rejected/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
       {
         method: 'GET',
         headers: {
@@ -179,31 +179,26 @@ export const useLeavesModel = () => {
 
   const usePaginatedLeaves = (page: number, pageSize: number) =>
     useQuery({
-      queryKey: ['leaves', currentEmployee?.email, page, pageSize],
+      queryKey: ['leaves', currentEmployee?.id, page, pageSize],
       queryFn: () => fetchLeaves(page, pageSize),
       placeholderData: (prevData) => prevData,
     })
   const usePaginatedPastLeaves = (page: number, pageSize: number) =>
     useQuery({
-      queryKey: ['pastLeaves', currentEmployee?.email, page, pageSize],
+      queryKey: ['pastLeaves', currentEmployee?.id, page, pageSize],
       queryFn: () => fetchPastLeaves(page, pageSize),
       placeholderData: (prevData) => prevData,
     })
   const usePaginatedLeavesAwaitingApproval = (page: number, pageSize: number) =>
     useQuery({
-      queryKey: [
-        'leavesAwaitingApproval',
-        currentEmployee?.email,
-        page,
-        pageSize,
-      ],
+      queryKey: ['leavesAwaitingApproval', currentEmployee?.id, page, pageSize],
       queryFn: () => fetchLeavesAwaitingApproval(page, pageSize),
       placeholderData: (prevData) => prevData,
     })
 
   const usePaginatedLeavesRejected = (page: number, pageSize: number) =>
     useQuery({
-      queryKey: ['leavesRejected', currentEmployee?.email, page, pageSize],
+      queryKey: ['leavesRejected', currentEmployee?.id, page, pageSize],
       queryFn: () => fetchLeavesRejected(page, pageSize),
       placeholderData: (prevData) => prevData,
     })
@@ -220,7 +215,7 @@ export const useLeavesModel = () => {
           },
           body: JSON.stringify({
             ...createData,
-            owner: currentEmployee?.email,
+            owner: currentEmployee?.id,
           }),
         }
       )
@@ -231,10 +226,10 @@ export const useLeavesModel = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['leavesAwaitingApproval', currentEmployee?.email],
+        queryKey: ['leavesAwaitingApproval', currentEmployee?.id],
       })
       queryClient.invalidateQueries({
-        queryKey: ['leaves', currentEmployee?.email],
+        queryKey: ['leaves', currentEmployee?.id],
       })
       navigate('/requests')
     },
@@ -252,7 +247,7 @@ export const useLeavesModel = () => {
           },
           body: JSON.stringify({
             ...updateData,
-            owner: currentEmployee?.email,
+            owner: currentEmployee?.id,
           }),
         }
       )
@@ -263,16 +258,16 @@ export const useLeavesModel = () => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['leaves', currentEmployee?.email],
+        queryKey: ['leaves', currentEmployee?.id],
       })
       await queryClient.invalidateQueries({
-        queryKey: ['leavesAwaitingApproval', currentEmployee?.email],
+        queryKey: ['leavesAwaitingApproval', currentEmployee?.id],
       })
       await queryClient.invalidateQueries({
-        queryKey: ['employee', currentEmployee?.email],
+        queryKey: ['employee', currentEmployee?.id],
       })
       await queryClient.invalidateQueries({
-        queryKey: ['leavesRejected', currentEmployee?.email],
+        queryKey: ['leavesRejected', currentEmployee?.id],
       })
       navigate('/requests')
     },
@@ -290,7 +285,7 @@ export const useLeavesModel = () => {
           },
           body: JSON.stringify({
             ...validateData,
-            owner: currentEmployee?.email,
+            owner: currentEmployee?.id,
           }),
         }
       )
@@ -326,13 +321,13 @@ export const useLeavesModel = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['leaves', currentEmployee?.email],
+        queryKey: ['leaves', currentEmployee?.id],
       })
       queryClient.invalidateQueries({
-        queryKey: ['leavesAwaitingApproval', currentEmployee?.email],
+        queryKey: ['leavesAwaitingApproval', currentEmployee?.id],
       })
       queryClient.invalidateQueries({
-        queryKey: ['leavesRejected', currentEmployee?.email],
+        queryKey: ['leavesRejected', currentEmployee?.id],
       })
     },
   })

@@ -12,13 +12,13 @@ public static class LeavesEndpointsExtensions
 	public static void MapLeavesEndpoints(this IEndpointRouteBuilder endpoints)
 	{
 		endpoints.MapGet("/leave/{id}", async (LeavesController controller, string id) => await controller.GetLeaveInfo(id)).RequireAuthorization();
-		endpoints.MapGet("/myleaves/{email}", async (LeavesController controller, string email, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyLeaves(email, start, end)).RequireAuthorization();
-		endpoints.MapGet("/mycircleleaves/{email}", async (LeavesController controller, string email, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyCircleLeaves(email, start, end)).RequireAuthorization();
+		endpoints.MapGet("/myleaves/{id}", async (LeavesController controller, string id, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyLeaves(id, start, end)).RequireAuthorization();
+		endpoints.MapGet("/mycircleleaves/{id}", async (LeavesController controller, string id, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyCircleLeaves(id, start, end)).RequireAuthorization();
 		endpoints.MapGet("/allleaves", async (LeavesController controller, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetAllLeaves(start, end)).RequireAuthorization();
-		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesApproved(email, page, pageSize)).RequireAuthorization();
-		endpoints.MapGet("/pastleaves/{email}", async (LeavesController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetPastLeaves(email, page, pageSize)).RequireAuthorization();
-		endpoints.MapGet("/leaves/pending/{email}", async (LeavesController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesAwaitingApproval(email, page, pageSize)).RequireAuthorization();
-		endpoints.MapGet("/leaves/rejected/{email}", async (LeavesController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesRejected(email, page, pageSize)).RequireAuthorization();
+		endpoints.MapGet("/leaves/{id}", async (LeavesController controller, string id, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesApproved(id, page, pageSize)).RequireAuthorization();
+		endpoints.MapGet("/pastleaves/{id}", async (LeavesController controller, string id, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetPastLeaves(id, page, pageSize)).RequireAuthorization();
+		endpoints.MapGet("/leaves/pending/{id}", async (LeavesController controller, string id, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesAwaitingApproval(id, page, pageSize)).RequireAuthorization();
+		endpoints.MapGet("/leaves/rejected/{id}", async (LeavesController controller, string id, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesRejected(id, page, pageSize)).RequireAuthorization();
 		endpoints.MapPost("/leaves/validate", async (LeavesController controller, LeaveValidateDTO model) => await controller.ValidateLeaveRequest(model)).RequireAuthorization();
 		endpoints.MapPost("/leaves", async (LeavesController controller, LeaveCreateDTO model) => await controller.CreateLeave(model)).RequireAuthorization();
 		endpoints.MapPut("/leaves/{leaveId}", async (LeavesController controller, int leaveId, LeaveUpdateDTO leaveUpdate) => await controller.UpdateLeave(leaveId, leaveUpdate)).RequireAuthorization();
@@ -57,23 +57,23 @@ public class LeavesController
 		var leaveWithDynamicInfo = await _leavesService.GetLeaveDynamicInfo(leave);
 		return Results.Ok(leaveWithDynamicInfo);
 	}
-	public async Task<IResult> GetMyLeaves(string email, [FromQuery] string? start, [FromQuery] string? end)
+	public async Task<IResult> GetMyLeaves(string id, [FromQuery] string? start, [FromQuery] string? end)
 	{
-		var leaves = await _context.Leaves
-						   .Where(leave => leave.Owner == email &&
-										   (leave.RejectedBy == null))
-						   .ToListAsync();
-		if (leaves.IsNullOrEmpty() || leaves == null || leaves.Count == 0)
-		{
-			return Results.Ok(new List<Leave>());
-		}
-		var employee = await _context.Employees.FindAsync(leaves[0].Owner);
-		if (employee == null)
-		{
-			return Results.BadRequest("employee not found");
-		}
 		if (start != null && end != null)
 		{
+			var employee = await _context.Employees.FindAsync(int.Parse(id));
+			if (employee == null)
+			{
+				return Results.BadRequest("employee not found");
+			}
+			var leaves = await _context.Leaves
+							   .Where(leave => leave.Owner == int.Parse(id) &&
+											   (leave.RejectedBy == null))
+							   .ToListAsync();
+			if (leaves.IsNullOrEmpty() || leaves == null || leaves.Count == 0)
+			{
+				return Results.Ok(new List<Leave>());
+			}
 
 			var leavesWithinRange = leaves.Where(leave =>
 				{
@@ -105,11 +105,11 @@ public class LeavesController
 			return Results.BadRequest("You need to specify start and end");
 		}
 	}
-	public async Task<IResult> GetMyCircleLeaves(string email, [FromQuery] string? start, [FromQuery] string? end)
+	public async Task<IResult> GetMyCircleLeaves(string id, [FromQuery] string? start, [FromQuery] string? end)
 	{
 		if (start != null && end != null)
 		{
-			var employee = await _context.Employees.FindAsync(email);
+			var employee = await _context.Employees.FindAsync(int.Parse(id));
 			if (employee == null)
 			{
 				return Results.BadRequest("employee not found");
@@ -121,7 +121,7 @@ public class LeavesController
 			{
 				// it's head, we don't check teammates
 				var employeeLeaves = await _context.Leaves
-							   .Where(leave => leave.Owner == email &&
+							   .Where(leave => leave.Owner == int.Parse(id) &&
 											   (leave.ApprovedBy != null))
 							   .ToListAsync();
 				allLeaves.AddRange(employeeLeaves);
@@ -140,7 +140,7 @@ public class LeavesController
 				foreach (var subordinate in managerWithSubordinates.Subordinates)
 				{
 					var subordinateLeaves = await _context.Leaves
-								   .Where(leave => leave.Owner == subordinate.Email &&
+								   .Where(leave => leave.Owner == subordinate.Id &&
 												   (leave.ApprovedBy != null))
 								   .ToListAsync();
 					allLeaves.AddRange(subordinateLeaves);
@@ -157,7 +157,7 @@ public class LeavesController
 			foreach (var subordinate in employeeWithSubordinates.Subordinates)
 			{
 				var subordinateLeaves = await _context.Leaves
-							   .Where(leave => leave.Owner == subordinate.Email &&
+							   .Where(leave => leave.Owner == subordinate.Id &&
 											   (leave.ApprovedBy != null))
 							   .ToListAsync();
 				allLeaves.AddRange(subordinateLeaves);
@@ -250,10 +250,10 @@ public class LeavesController
 		}
 	}
 
-	public async Task<IResult> GetLeavesApproved(string email, int page, int pageSize)
+	public async Task<IResult> GetLeavesApproved(string id, int page, int pageSize)
 	{
 		var leaves = await _context.Leaves
-						   	.Where(leave => leave.Owner == email &&
+						   	.Where(leave => leave.Owner == int.Parse(id) &&
 									leave.ApprovedBy != null &&
 									leave.DateStart >= DateTime.UtcNow)
 							.OrderBy(leave => leave.DateStart)
@@ -280,10 +280,10 @@ public class LeavesController
 			Leaves = paginatedLeaves
 		});
 	}
-	public async Task<IResult> GetPastLeaves(string email, int page, int pageSize)
+	public async Task<IResult> GetPastLeaves(string id, int page, int pageSize)
 	{
 		var leaves = await _context.Leaves
-						   	.Where(leave => leave.Owner == email &&
+						   	.Where(leave => leave.Owner == int.Parse(id) &&
 									leave.ApprovedBy != null &&
 									leave.DateStart < DateTime.UtcNow)
 							.OrderByDescending(leave => leave.DateStart)
@@ -310,10 +310,10 @@ public class LeavesController
 			Leaves = paginatedLeaves
 		});
 	}
-	public async Task<IResult> GetLeavesRejected(string email, int page, int pageSize)
+	public async Task<IResult> GetLeavesRejected(string id, int page, int pageSize)
 	{
 		var leaves = await _context.Leaves
-						   .Where(leave => leave.Owner == email &&
+						   .Where(leave => leave.Owner == int.Parse(id) &&
 										   leave.RejectedBy != null)
 						   .ToListAsync();
 
@@ -338,10 +338,10 @@ public class LeavesController
 			Leaves = paginatedLeaves
 		});
 	}
-	public async Task<IResult> GetLeavesAwaitingApproval(string email, int page, int pageSize)
+	public async Task<IResult> GetLeavesAwaitingApproval(string id, int page, int pageSize)
 	{
 		var leaves = await _context.Leaves
-					   .Where(leave => leave.Owner == email &&
+					   .Where(leave => leave.Owner == int.Parse(id) &&
 									   leave.ApprovedBy == null && leave.RejectedBy == null)
 					   .ToListAsync();
 
@@ -451,6 +451,8 @@ public class LeavesController
 								}
 							}
 						}
+						var managerEmployee = await _context.Employees.FindAsync(employee.ManagedBy);
+
 						string emailBody = $@"
 Hello {manager.Name}, 
 	You have a new leave request from {employee.Name}.
@@ -462,8 +464,9 @@ Hello {manager.Name},
 	To review go to {_leavePlannerUrl}/requests/{manager.Email}
 
 						";
-						await _emailService.SendEmail(employee.ManagedBy, $"New Leave Request from {employee.Name}", emailBody);
+						await _emailService.SendEmail(manager.Email, $"New Leave Request from {employee.Name}", emailBody);
 					}
+
 				}
 
 			}
@@ -542,7 +545,7 @@ Hello {manager.Name},
 	{conflictsInfo}
 	To review go to {_leavePlannerUrl}/requests/{manager.Email}
 						";
-						await _emailService.SendEmail(employee.ManagedBy, $"Leave Request Updated by {employee.Name}", emailBody);
+						await _emailService.SendEmail(manager.Email, $"Leave Request Updated by {employee.Name}", emailBody);
 					}
 				}
 			}
@@ -594,7 +597,7 @@ Hello {manager.Name},
 	End Date: {leave.DateEnd.ToShortDateString()}
 	Description: {leave.Description}						
 ";
-					await _emailService.SendEmail(employee.ManagedBy, $"Leave Request Deleted by {employee.Name}", emailBody);
+					await _emailService.SendEmail(manager.Email, $"Leave Request Deleted by {employee.Name}", emailBody);
 				}
 			}
 			return Results.Ok(leave);

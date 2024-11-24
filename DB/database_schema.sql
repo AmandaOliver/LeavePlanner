@@ -11,15 +11,17 @@ CREATE TABLE Countries (
 -- Create the Organizations table without foreign keys
 CREATE TABLE Organizations (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL
+    name VARCHAR(255) NOT NULL,
+    workingDays JSON
 );
 
 -- Create the Employees table without foreign keys
 CREATE TABLE Employees (
-    email VARCHAR(255) NOT NULL PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
     name VARCHAR(255) DEFAULT NULL,
     organization INT,
-    managedBy VARCHAR(255),
+    managedBy INT,
     country VARCHAR(50),
     isOrgOwner BOOLEAN DEFAULT FALSE,
     paidTimeOff INT DEFAULT 0,
@@ -32,23 +34,23 @@ CREATE TABLE Leaves (
     type ENUM('paidTimeOff', 'bankHoliday'),
     dateStart DATETIME NOT NULL,
     dateEnd DATETIME NOT NULL,
-    owner VARCHAR(255),
+    owner INT,
     description VARCHAR(255),
-    approvedBy VARCHAR(255), -- NULL if not approved or bank holiday, employee ID if approved
-    rejectedBy VARCHAR(255), -- NULL if not approved or bank holiday, employee ID if approved
+    approvedBy INT, -- NULL if not approved, employee ID if approved
+    rejectedBy INT, -- NULL if not approved, employee ID if approved
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Add foreign key constraints to Employees
 ALTER TABLE Employees
     ADD CONSTRAINT fk_employee_organization FOREIGN KEY (organization) REFERENCES Organizations(id),
-    ADD CONSTRAINT fk_employee_managedBy FOREIGN KEY (managedBy) REFERENCES Employees(email);
+    ADD CONSTRAINT fk_employee_managedBy FOREIGN KEY (managedBy) REFERENCES Employees(id);
 
 -- Add foreign key constraints to Leaves
 ALTER TABLE Leaves
-    ADD CONSTRAINT fk_leave_owner FOREIGN KEY (owner) REFERENCES Employees(email),
-    ADD CONSTRAINT fk_leave_approvedBy FOREIGN KEY (approvedBy) REFERENCES Employees(email),
-    ADD CONSTRAINT fk_leave_rejectedBy FOREIGN KEY (rejectedBy) REFERENCES Employees(email);
+    ADD CONSTRAINT fk_leave_owner FOREIGN KEY (owner) REFERENCES Employees(id),
+    ADD CONSTRAINT fk_leave_approvedBy FOREIGN KEY (approvedBy) REFERENCES Employees(id),
+    ADD CONSTRAINT fk_leave_rejectedBy FOREIGN KEY (rejectedBy) REFERENCES Employees(id);
 
 
 -- Add indexes to commonly queried fields

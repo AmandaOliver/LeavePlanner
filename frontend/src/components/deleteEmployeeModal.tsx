@@ -23,7 +23,7 @@ export const DeleteEmployeeModal = ({
 
   const deleteEmployeeHandler = async (onClose: () => void) => {
     setIsLoading(true)
-    await deleteEmployee({ email: employee.email })
+    await deleteEmployee({ id: employee.id })
     setIsLoading(false)
     onClose()
   }

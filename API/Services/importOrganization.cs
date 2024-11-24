@@ -2,6 +2,7 @@ using CsvHelper;
 using System.Globalization;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
+using Microsoft.EntityFrameworkCore;
 
 public class OrganizationImportService
 {
@@ -63,7 +64,6 @@ public class OrganizationImportService
 					Title = employee.Title,
 					Country = employee.Country,
 					PaidTimeOff = employee.PaidTimeOff,
-					ManagedBy = employee.ManagerEmail,
 					Organization = int.Parse(organizationId),
 					IsOrgOwner = employee.IsAdmin
 				});
@@ -72,7 +72,7 @@ public class OrganizationImportService
 					throw new Exception("Error in Employee " + employee.Email + ": " + validationResult);
 
 				}
-				var existingEmployee = await _context.Employees.FindAsync(employee.Email);
+				var existingEmployee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == employee.Email);
 				if (existingEmployee == null)
 				{
 					var newEmployee = new Employee
@@ -103,13 +103,18 @@ public class OrganizationImportService
 			// Step 2: Update managedBy relationships and bankHolidays
 			foreach (var employee in employees)
 			{
-				var employeeToUpdate = await _context.Employees.FindAsync(employee.Email);
+				var employeeToUpdate = await _context.Employees.FirstOrDefaultAsync(e => e.Email == employee.Email);
 				if (employeeToUpdate != null)
 				{
 					if (!string.IsNullOrEmpty(employee.ManagerEmail))
 					{
+						var manager = await _context.Employees.FirstOrDefaultAsync(e => e.Email == employee.ManagerEmail);
+						if (manager == null)
+						{
+							throw new Exception("Error in Employee " + employee.Email + ": manager not found");
 
-						employeeToUpdate.ManagedBy = employee.ManagerEmail;
+						}
+						employeeToUpdate.ManagedBy = manager.Id;
 						_context.Employees.Update(employeeToUpdate);
 
 					}

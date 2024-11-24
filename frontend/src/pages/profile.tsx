@@ -42,7 +42,7 @@ export const ProfilePage = () => {
             </h1>
             {currentEmployee?.managedBy && (
               <h1 className="text-[22px] text-white">
-                Manager: {currentEmployee?.managedBy}
+                Manager: {currentEmployee?.managerName}
               </h1>
             )}
           </div>
@@ -81,7 +81,7 @@ export const ProfilePage = () => {
                 Your direct reports:
               </h1>
               {currentEmployee.subordinates.map((employee) => (
-                <h1 className="text-[20px] text-white">- {employee.email}</h1>
+                <h1 className="text-[20px] text-white">- {employee.name}</h1>
               ))}
             </CardBody>
           </Card>

@@ -6,10 +6,11 @@ namespace LeavePlanner.Models;
 
 public partial class Employee
 {
+    public int Id { get; set; }
     public string Email { get; set; } = null!;
     public string? Name { get; set; }
     public int? Organization { get; set; }
-    public string? ManagedBy { get; set; }
+    public int? ManagedBy { get; set; }
     public string? Country { get; set; }
     public bool IsOrgOwner { get; set; }
     public int PaidTimeOff { get; set; }

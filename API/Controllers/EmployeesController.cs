@@ -10,9 +10,9 @@ public static class EmployeesEndpointsExtensions
                  .RequireAuthorization();
         endpoints.MapPost("/employee", async (EmployeesController controller, EmployeeCreateDTO model) => await controller.CreateEmployee(model))
                  .RequireAuthorization();
-        endpoints.MapPut("/employee/{email}", async (EmployeesController controller, string email, EmployeeUpdateDTO model) => await controller.UpdateEmployee(email, model))
+        endpoints.MapPut("/employee/{id}", async (EmployeesController controller, string id, EmployeeUpdateDTO model) => await controller.UpdateEmployee(id, model))
                  .RequireAuthorization();
-        endpoints.MapDelete("/employee/{email}", async (EmployeesController controller, string email) => await controller.DeleteEmployee(email))
+        endpoints.MapDelete("/employee/{id}", async (EmployeesController controller, string id) => await controller.DeleteEmployee(id))
                  .RequireAuthorization();
     }
 }
@@ -51,7 +51,7 @@ public class EmployeesController
         try
         {
             Employee employee;
-            var existingEmployee = await _context.Employees.FindAsync(model.Email);
+            var existingEmployee = await _context.Employees.FirstOrDefaultAsync(employee => employee.Email == model.Email);
             if (existingEmployee != null)
             {
                 existingEmployee.Country = model.Country;
@@ -60,9 +60,10 @@ public class EmployeesController
                 existingEmployee.PaidTimeOff = model.PaidTimeOff;
                 existingEmployee.Title = model.Title;
                 existingEmployee.Name = model.Name;
-                existingEmployee.IsOrgOwner = model.IsOrgOwner;
 
                 _context.Employees.Update(existingEmployee);
+                var leaves = await _context.Leaves.Where(l => l.Owner == existingEmployee.Id && l.Type == "bankHoliday").ToListAsync();
+                _context.Leaves.RemoveRange(leaves);
                 employee = existingEmployee;
             }
             else
@@ -106,7 +107,7 @@ Hello {employee.Name},
     public async Task<IResult> GetEmployee(string email)
     {
         var employee = await _context.Employees
-                                    .FindAsync(email);
+                                    .FirstOrDefaultAsync(e => e.Email == email);
 
         if (employee == null)
         {
@@ -118,12 +119,12 @@ Hello {employee.Name},
         return Results.Ok(employeeWithSubordinates);
     }
 
-    public async Task<IResult> UpdateEmployee(string email, EmployeeUpdateDTO model)
+    public async Task<IResult> UpdateEmployee(string id, EmployeeUpdateDTO model)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var employee = await _context.Employees.FindAsync(email);
+            var employee = await _context.Employees.FindAsync(int.Parse(id));
 
             if (employee == null)
             {
@@ -133,7 +134,7 @@ Hello {employee.Name},
             // if country changes we need to update the leaves
             if (employee.Country != model.Country)
             {
-                var leaves = await _context.Leaves.Where(l => l.Owner == employee.Email && l.Type == "bankHoliday").ToListAsync();
+                var leaves = await _context.Leaves.Where(l => l.Owner == employee.Id && l.Type == "bankHoliday").ToListAsync();
                 _context.Leaves.RemoveRange(leaves);
                 employee.Country = model.Country;
                 await _bankholidayService.GenerateEmployeeBankHolidays(employee);
@@ -162,12 +163,12 @@ Hello {employee.Name},
             return Results.Problem(ex.Message);
         }
     }
-    public async Task<IResult> DeleteEmployee(string email)
+    public async Task<IResult> DeleteEmployee(string id)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var employee = await _context.Employees.FindAsync(email);
+            var employee = await _context.Employees.FindAsync(int.Parse(id));
 
             if (employee == null)
             {
@@ -179,7 +180,7 @@ Hello {employee.Name},
             {
                 // Check if the head manages any subordinates
                 var subordinates = await _context.Employees
-                                                .Where(e => e.ManagedBy == employee.Email)
+                                                .Where(e => e.ManagedBy == employee.Id)
                                                 .ToListAsync();
 
                 if (subordinates.Any())
@@ -192,18 +193,18 @@ Hello {employee.Name},
 
                 // Reassign subordinates to the manager above
                 var subordinates = await _context.Employees
-                                                .Where(e => e.ManagedBy == employee.Email)
+                                                .Where(e => e.ManagedBy == employee.Id)
                                                 .ToListAsync();
 
                 foreach (var subordinate in subordinates)
                 {
-                    subordinate.ManagedBy = employee.ManagedBy; // Reassign to the manager above
+                    subordinate.ManagedBy = employee.ManagedBy;
                 }
 
                 _context.Employees.UpdateRange(subordinates);
             }
             // Remove leaves associated with the employee
-            var leaves = await _context.Leaves.Where(l => l.Owner == employee.Email).ToListAsync();
+            var leaves = await _context.Leaves.Where(l => l.Owner == employee.Id).ToListAsync();
             _context.Leaves.RemoveRange(leaves);
 
             // if employee is org owner, can't be deleted completely

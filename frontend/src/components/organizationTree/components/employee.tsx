@@ -42,7 +42,7 @@ export const Employee = ({ employee }: { employee: EmployeeType }) => {
   }
   return (
     <>
-      {updateEmployee?.email && (
+      {updateEmployee?.id && (
         <EmployeeModal
           isOpen={isOpenUpdateModal}
           employee={updateEmployee}
@@ -51,16 +51,16 @@ export const Employee = ({ employee }: { employee: EmployeeType }) => {
           label={'Update Employee'}
         />
       )}
-      {createEmployee?.email && (
+      {createEmployee?.id && (
         <EmployeeModal
           isOpen={isOpenUpdateModal}
           onOpenChange={onOpenChangeUpdateModal}
           onCloseCb={() => setCreateEmployee({} as EmployeeType)}
-          managerEmail={createEmployee.email}
+          managerId={createEmployee.id}
           label={'Create Employee'}
         />
       )}
-      {deleteEmployee?.email && (
+      {deleteEmployee?.id && (
         <DeleteEmployeeModal
           isOpen={isOpenDeleteModal}
           onOpenChange={onOpenChangeDeleteModal}

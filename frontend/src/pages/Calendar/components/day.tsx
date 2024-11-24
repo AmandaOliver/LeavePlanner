@@ -70,7 +70,7 @@ export const Day = ({ dayDate }: DayProps) => {
             background={background}
             common={common}
             distanceTop={distanceTop}
-            key={`start-${leave.owner}`}
+            key={`start-${leave.id}`}
           />
         )
       } else if (
