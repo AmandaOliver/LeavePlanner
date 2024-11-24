@@ -16,6 +16,7 @@ public static class LeavesEndpointsExtensions
 		endpoints.MapGet("/mycircleleaves/{email}", async (LeavesController controller, string email, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyCircleLeaves(email, start, end)).RequireAuthorization();
 		endpoints.MapGet("/allleaves", async (LeavesController controller, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetAllLeaves(start, end)).RequireAuthorization();
 		endpoints.MapGet("/leaves/{email}", async (LeavesController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesApproved(email, page, pageSize)).RequireAuthorization();
+		endpoints.MapGet("/pastleaves/{email}", async (LeavesController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetPastLeaves(email, page, pageSize)).RequireAuthorization();
 		endpoints.MapGet("/leaves/pending/{email}", async (LeavesController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesAwaitingApproval(email, page, pageSize)).RequireAuthorization();
 		endpoints.MapGet("/leaves/rejected/{email}", async (LeavesController controller, string email, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesRejected(email, page, pageSize)).RequireAuthorization();
 		endpoints.MapPost("/leaves/validate", async (LeavesController controller, LeaveValidateDTO model) => await controller.ValidateLeaveRequest(model)).RequireAuthorization();
@@ -256,6 +257,36 @@ public class LeavesController
 									leave.ApprovedBy != null &&
 									leave.DateStart >= DateTime.UtcNow)
 							.OrderBy(leave => leave.DateStart)
+						   	.ToListAsync();
+
+		if (leaves == null || leaves.Count == 0)
+		{
+			return Results.Ok(new
+			{
+				TotalCount = 0,
+				Leaves = new List<Leave>()
+			});
+		}
+
+		// Apply pagination
+		var paginatedLeaves = leaves
+			.Skip((page - 1) * pageSize)
+			.Take(pageSize)
+			.ToList();
+
+		return Results.Ok(new
+		{
+			TotalCount = leaves.Count,
+			Leaves = paginatedLeaves
+		});
+	}
+	public async Task<IResult> GetPastLeaves(string email, int page, int pageSize)
+	{
+		var leaves = await _context.Leaves
+						   	.Where(leave => leave.Owner == email &&
+									leave.ApprovedBy != null &&
+									leave.DateStart < DateTime.UtcNow)
+							.OrderByDescending(leave => leave.DateStart)
 						   	.ToListAsync();
 
 		if (leaves == null || leaves.Count == 0)

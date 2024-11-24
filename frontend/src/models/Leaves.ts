@@ -82,6 +82,37 @@ export const useLeavesModel = () => {
       throw new Error('Failed to fetch leaves')
     }
   }
+  const fetchPastLeaves = async (
+    page: number,
+    pageSize: number
+  ): Promise<{ leaves: LeaveType[]; totalCount: number }> => {
+    const accessToken = await getAccessTokenSilently()
+
+    const response = await fetch(
+      `${process.env.REACT_APP_API_SERVER_URL}/pastleaves/${currentEmployee?.email}?page=${page}&pageSize=${pageSize}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    if (response.ok) {
+      const responseJson = await response.json()
+      return {
+        leaves: responseJson.leaves.map((leave: LeaveType) => ({
+          ...leave,
+          dateStart: leave.dateStart.split('T')[0],
+          dateEnd: leave.dateEnd.split('T')[0],
+        })),
+        totalCount: responseJson.totalCount,
+      }
+    } else {
+      throw new Error('Failed to fetch past leaves')
+    }
+  }
   const fetchLeavesAwaitingApproval = async (
     page: number,
     pageSize: number
@@ -152,7 +183,12 @@ export const useLeavesModel = () => {
       queryFn: () => fetchLeaves(page, pageSize),
       placeholderData: (prevData) => prevData,
     })
-
+  const usePaginatedPastLeaves = (page: number, pageSize: number) =>
+    useQuery({
+      queryKey: ['pastLeaves', currentEmployee?.email, page, pageSize],
+      queryFn: () => fetchPastLeaves(page, pageSize),
+      placeholderData: (prevData) => prevData,
+    })
   const usePaginatedLeavesAwaitingApproval = (page: number, pageSize: number) =>
     useQuery({
       queryKey: [
@@ -302,6 +338,7 @@ export const useLeavesModel = () => {
   })
   return {
     usePaginatedLeaves,
+    usePaginatedPastLeaves,
     usePaginatedLeavesAwaitingApproval,
     usePaginatedLeavesRejected,
     createLeave: createLeaveMutation.mutateAsync,

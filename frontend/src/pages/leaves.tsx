@@ -29,14 +29,17 @@ import { LeaveDeleteModal } from '../components/leaveDeleteModal'
 import { LoadingComponent } from '../components/loading'
 
 export const Leaves = () => {
-  const { usePaginatedLeaves } = useLeavesModel()
+  const { usePaginatedLeaves, usePaginatedPastLeaves } = useLeavesModel()
   const [page, setPage] = useState(1)
+  const [pastPage, setPastPage] = useState(1)
   const pageSize = 5
   const { currentEmployee, isLoading: isLoadingEmployee } = useEmployeeModel()
   const { data: paginatedLeaves, isLoading } = usePaginatedLeaves(
     page,
     pageSize
   )
+  const { data: paginatedPastLeaves, isLoading: isLoadingPast } =
+    usePaginatedPastLeaves(pastPage, pageSize)
   const {
     isOpen: isOpenInfoModal,
     onOpen: onOpenInfoModal,
@@ -67,7 +70,8 @@ export const Leaves = () => {
     setInfoLeave(leave)
     onOpenInfoModal()
   }
-  if (isLoading || isLoadingEmployee) return <LoadingComponent />
+  if (isLoading || isLoadingEmployee || isLoadingPast)
+    return <LoadingComponent />
   return (
     <>
       {infoLeave?.id && (
@@ -140,7 +144,7 @@ export const Leaves = () => {
                 <Pagination
                   total={Math.ceil(paginatedLeaves.totalCount / pageSize)}
                   page={page}
-                  onChange={(page) => setPage(page)}
+                  onChange={(page) => setPastPage(page)}
                   isCompact
                   showControls
                   showShadow
@@ -226,49 +230,63 @@ export const Leaves = () => {
           </TableBody>
         </Table>
       </div>
-      {/* <div className="m-8">
+      <div className="m-8">
         <div className="flex flex-wrap flex-row items-center gap-4">
           <HistoryIcon />
           <h1 className=" text-[32px]">History</h1>
         </div>
         <Divider />
-        <Table aria-label="list" className="mt-8">
+        <Table
+          aria-label="list"
+          className="mt-8"
+          bottomContent={
+            paginatedPastLeaves?.leaves?.length ? (
+              <div className="flex w-full justify-center">
+                <Pagination
+                  total={Math.ceil(paginatedPastLeaves.totalCount / pageSize)}
+                  page={pastPage}
+                  onChange={(page) => setPastPage(page)}
+                  isCompact
+                  showControls
+                  showShadow
+                  color="secondary"
+                />
+              </div>
+            ) : undefined
+          }
+        >
           <TableHeader>
             <TableColumn>TYPE</TableColumn>
             <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
             <TableColumn>DESCRIPTION</TableColumn>
           </TableHeader>
-
-          <TableBody emptyContent="No history.">
-            {leaves
-              .filter((leave) => new Date(leave.dateStart) < new Date())
-              .sort((a, b) => (a.dateStart < b.dateStart ? -1 : 1))
-              .map((leave) => (
-                <TableRow key={leave.id}>
-                  <TableCell>
-                    <div className="flex flex-wrap flex-row items-center gap-4">
-                      {leave.type === 'bankHoliday' ? (
-                        <PartyIcon />
-                      ) : (
-                        <BussinessWatchIcon />
-                      )}
-                      <p className="hidden md:block">
-                        {leave.type === 'bankHoliday'
-                          ? 'Bank Holiday'
-                          : 'Paid Time Off'}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {new Date(leave.dateStart).toDateString()} to{' '}
-                    {new Date(leave.dateEnd).toDateString()}
-                  </TableCell>
-                  <TableCell>{leave.description}</TableCell>
-                </TableRow>
-              ))}
+          <TableBody emptyContent={'No past leaves'}>
+            {(paginatedPastLeaves?.leaves || []).map((leave) => (
+              <TableRow key={leave.id}>
+                <TableCell>
+                  <div className="flex flex-wrap flex-row items-center gap-4">
+                    {leave.type === 'bankHoliday' ? (
+                      <PartyIcon />
+                    ) : (
+                      <BussinessWatchIcon />
+                    )}
+                    <p className="hidden lg:block">
+                      {leave.type === 'bankHoliday'
+                        ? 'Bank Holiday'
+                        : 'Paid Time Off'}
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  {new Date(leave.dateStart).toDateString()} to{' '}
+                  {new Date(leave.dateEnd).toDateString()}
+                </TableCell>
+                <TableCell>{leave.description}</TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
-      </div> */}
+      </div>
     </>
   )
 }
