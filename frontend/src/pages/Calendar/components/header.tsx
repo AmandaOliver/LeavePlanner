@@ -32,6 +32,7 @@ const Header = () => {
           isIconOnly
           variant="ghost"
           onClick={prevCallback}
+          aria-label="previous month"
         >
           <ChevronLeftIcon />
         </Button>
@@ -45,6 +46,7 @@ const Header = () => {
           isIconOnly
           variant="ghost"
           onClick={nextCallback}
+          aria-label="next month"
         >
           <ChevronRightIcon />
         </Button>
