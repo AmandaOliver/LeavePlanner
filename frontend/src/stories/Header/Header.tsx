@@ -92,9 +92,10 @@ export function Header({
           )
         })}
       </NavbarContent>
+
       <NavbarContent justify="end">
         {buttonLabel && (
-          <Button color="primary" onClick={handleButtonClick}>
+          <Button color="primary" onPress={handleButtonClick}>
             {buttonLabel}
           </Button>
         )}
