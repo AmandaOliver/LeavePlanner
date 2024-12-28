@@ -7,6 +7,7 @@ namespace LeavePlanner.Models
 		public string? Title { get; set; }
 		public string? Name { get; set; }
 		public required bool IsOrgOwner { get; set; }
+		public required string Email { get; set; }
 
 	}
 }

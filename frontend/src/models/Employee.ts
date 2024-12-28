@@ -126,7 +126,7 @@ export const useEmployeeModel = () => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({ ...updateData, email: undefined }),
+          body: JSON.stringify({ ...updateData }),
         }
       )
       if (!response.ok) {

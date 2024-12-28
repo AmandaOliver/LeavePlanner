@@ -42,7 +42,6 @@ export const OrganizationModal = ({
     onCloseCb()
     onClose()
   }
-
   return (
     <Modal
       isOpen={isOpen}
@@ -90,7 +89,7 @@ export const OrganizationModal = ({
                 onPress={() => organizationHandler(onClose)}
                 color="primary"
                 isLoading={isLoading}
-                isDisabled={!!nameError}
+                isDisabled={!orgName || !!nameError}
               >
                 {organization ? 'Update' : 'Next step'}
               </Button>

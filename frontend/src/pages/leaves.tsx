@@ -132,7 +132,7 @@ export const Leaves = () => {
       <div className="m-8">
         <div className="flex flex-wrap flex-row items-center gap-4">
           <WatchIcon />
-          <h1 className=" text-[32px]">Upcomming leaves</h1>
+          <h1 className=" text-[32px]">Upcoming leaves</h1>
         </div>
         <Divider />
         <Table
@@ -160,7 +160,7 @@ export const Leaves = () => {
             <TableColumn>DESCRIPTION</TableColumn>
             <TableColumn>ACTIONS</TableColumn>
           </TableHeader>
-          <TableBody emptyContent={'No upcomming leaves'}>
+          <TableBody emptyContent={'No upcoming leaves'}>
             {(paginatedLeaves?.leaves || []).map((leave) => (
               <TableRow key={leave.id}>
                 <TableCell>

@@ -142,6 +142,7 @@ Hello {employee.Name},
             employee.PaidTimeOff = model.PaidTimeOff != 0 ? model.PaidTimeOff : employee.PaidTimeOff;
             employee.Title = model.Title ?? employee.Title;
             employee.Name = model.Name ?? employee.Name;
+            employee.Email = model.Email ?? employee.Email;
             if (employee.IsOrgOwner == true && model.IsOrgOwner == false)
             {
                 var anotherOwner = await _context.Employees.FirstOrDefaultAsync(e => e.IsOrgOwner == true && employee.Email != e.Email);

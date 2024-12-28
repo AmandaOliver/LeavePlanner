@@ -191,23 +191,21 @@ export const EmployeeModal = ({
               >
                 Has Admin Rights
               </Switch>
-              {/* if we are editing we can't change the email */}
-              {!employee && (
-                <Input
-                  type="email"
-                  name="email"
-                  id="email"
-                  value={employeeEmail}
-                  onChange={handleEmailChange}
-                  onBlur={handleEmailBlur}
-                  placeholder="name@yourorganization.com"
-                  isRequired
-                  ref={emailRef}
-                  errorMessage={emailError}
-                  label="Email"
-                  isInvalid={!!emailError}
-                />
-              )}
+
+              <Input
+                type="email"
+                name="email"
+                id="email"
+                value={employeeEmail}
+                onChange={handleEmailChange}
+                onBlur={handleEmailBlur}
+                placeholder="name@yourorganization.com"
+                isRequired
+                ref={emailRef}
+                errorMessage={emailError}
+                label="Email"
+                isInvalid={!!emailError}
+              />
 
               <Input
                 type="text"
@@ -265,7 +263,7 @@ export const EmployeeModal = ({
                 type="number"
                 name="ptoDays"
                 id="ptoDaysInput"
-                label="days of paid time off per year"
+                label="Days Of Paid Time Off Per Year"
                 value={ptoDays as unknown as string}
                 onChange={handlePtoChange}
                 onBlur={handlePtoBlur}
