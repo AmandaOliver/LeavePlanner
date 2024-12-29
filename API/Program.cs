@@ -14,7 +14,6 @@ builder.Services.AddScoped<LeavesService>();
 builder.Services.AddScoped<EmployeesService>();
 builder.Services.AddScoped<BankHolidayService>();
 builder.Services.AddScoped<EmailService>();
-builder.Services.AddScoped<PaidTimeOffLeft>();
 builder.Services.AddScoped<EmployeesController>();
 builder.Services.AddScoped<OrganizationsController>();
 builder.Services.AddScoped<LeavesController>();

@@ -11,16 +11,14 @@ public class PaginatedLeavesResult
 public class LeavesService
 {
 	private readonly LeavePlannerContext _context;
-	private readonly PaidTimeOffLeft _paidTimeOffLeft;
 	private readonly EmployeesService _employeesService;
 	private readonly EmailService _emailService;
 	private readonly IConfiguration _configuration;
 	private readonly string _leavePlannerUrl;
 
-	public LeavesService(LeavePlannerContext context, PaidTimeOffLeft paidTimeOffLeft, EmployeesService employeesService, EmailService emailService, IConfiguration configuration)
+	public LeavesService(LeavePlannerContext context, EmployeesService employeesService, EmailService emailService, IConfiguration configuration)
 	{
 		_context = context;
-		_paidTimeOffLeft = paidTimeOffLeft;
 		_employeesService = employeesService;
 		_emailService = emailService;
 		_configuration = configuration;
@@ -581,6 +579,7 @@ Hello {manager.Name},
 		return (true, null, leave);
 
 	}
+
 	public async Task<List<LeaveDTO>> GetLeaveRequests(EmployeeWithSubordinatesDTO employee)
 	{
 		var leaves = await _context.Leaves
@@ -618,8 +617,8 @@ Hello {manager.Name},
 	}
 	public async Task<LeaveDTO> GetLeaveDynamicInfo(Leave leave, bool withConflicts = false)
 	{
-		int requestedDaysThisYear = await _paidTimeOffLeft.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year, leave.Id != 0 ? leave.Id : null);
-		int requestedDaysNextYear = await _paidTimeOffLeft.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year + 1, leave.Id != 0 ? leave.Id : null);
+		int requestedDaysThisYear = await _employeesService.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year, leave.Id != 0 ? leave.Id : null);
+		int requestedDaysNextYear = await _employeesService.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year + 1, leave.Id != 0 ? leave.Id : null);
 		var employee = await _context.Employees.FindAsync(leave.Owner);
 		if (employee == null)
 		{
@@ -702,19 +701,19 @@ Hello {manager.Name},
 		if (dateStart.Year != dateEnd.Year)
 		{
 			var endOfYear = new DateTime(dateStart.Year + 1, 1, 1);
-			var daysInCurrentYear = await _paidTimeOffLeft.GetDaysRequested(dateStart, endOfYear, owner, dateStart.Year, leaveId);
+			var daysInCurrentYear = await _employeesService.GetDaysRequested(dateStart, endOfYear, owner, dateStart.Year, leaveId);
 			var startOfNextYear = new DateTime(dateEnd.Year, 1, 1);
-			var daysInNextYear = await _paidTimeOffLeft.GetDaysRequested(startOfNextYear, dateEnd, owner, dateEnd.Year, leaveId);
+			var daysInNextYear = await _employeesService.GetDaysRequested(startOfNextYear, dateEnd, owner, dateEnd.Year, leaveId);
 
 			// Check for enough paid time off in current year
-			var paidTimeOffLeftForCurrentYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Id, dateStart.Year, leaveId);
+			var paidTimeOffLeftForCurrentYear = await _employeesService.GetPaidTimeOffLeft(employee.Id, dateStart.Year, leaveId);
 			if (daysInCurrentYear > paidTimeOffLeftForCurrentYear)
 			{
 				return $"You cannot request more days than you have left.\nDays requested: {daysInCurrentYear}.\nDays left for the year {dateStart.Year}: {paidTimeOffLeftForCurrentYear}.";
 			}
 
 			// Check for enough paid time off in next year
-			var paidTimeOffLeftForNextYear = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Id, dateEnd.Year, leaveId);
+			var paidTimeOffLeftForNextYear = await _employeesService.GetPaidTimeOffLeft(employee.Id, dateEnd.Year, leaveId);
 			if (daysInNextYear > paidTimeOffLeftForNextYear)
 			{
 				return $"You cannot request more days than you have left.\nDays requested: {daysInNextYear}.\nDays left for the year {dateEnd.Year}: {paidTimeOffLeftForNextYear}.";
@@ -722,8 +721,8 @@ Hello {manager.Name},
 		}
 		else
 		{
-			int totalWeekdaysRequested = await _paidTimeOffLeft.GetDaysRequested(dateStart, dateEnd, owner, dateStart.Year, leaveId);
-			var paidTimeOffLeft = await _paidTimeOffLeft.GetPaidTimeOffLeft(employee.Id, dateStart.Year, leaveId);
+			int totalWeekdaysRequested = await _employeesService.GetDaysRequested(dateStart, dateEnd, owner, dateStart.Year, leaveId);
+			var paidTimeOffLeft = await _employeesService.GetPaidTimeOffLeft(employee.Id, dateStart.Year, leaveId);
 
 			if (totalWeekdaysRequested > paidTimeOffLeft)
 			{
