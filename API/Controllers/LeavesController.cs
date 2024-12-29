@@ -1,4 +1,3 @@
-using LeavePlanner.Data;
 using LeavePlanner.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,12 +21,10 @@ public static class LeavesEndpointsExtensions
 }
 public class LeavesController
 {
-	private readonly LeavePlannerContext _context;
 	private readonly LeavesService _leavesService;
 
-	public LeavesController(LeavePlannerContext context, LeavesService leavesService)
+	public LeavesController(LeavesService leavesService)
 	{
-		_context = context;
 		_leavesService = leavesService;
 	}
 	public async Task<IResult> GetLeaveInfo(string id)
@@ -96,28 +93,11 @@ public class LeavesController
 	}
 	public async Task<IResult> ValidateLeaveRequest(LeaveValidateDTO leaveToValidate)
 	{
-		var validationResult = await _leavesService.ValidateLeave(leaveToValidate.DateStart, leaveToValidate.DateEnd, leaveToValidate.Owner, leaveToValidate.Id, leaveToValidate.Type);
-		if (validationResult != "success")
-		{
-			return Results.BadRequest(validationResult);
-		}
-		var employee = await _context.Employees.FindAsync(leaveToValidate.Owner);
-		if (employee == null)
-		{
-			return Results.NotFound("Employee not found.");
-		}
-		Leave leaveRequest = new Leave
-		{
-			Id = leaveToValidate.Id ?? 0,
-			DateStart = leaveToValidate.DateStart,
-			DateEnd = leaveToValidate.DateEnd,
-			Type = "paidTimeOff",
-			Owner = leaveToValidate.Owner,
-			OwnerNavigation = employee,
-		};
-		var leave = await _leavesService.GetLeaveDynamicInfo(leaveRequest);
-		return Results.Ok(leave);
+		var result = await _leavesService.ValidateLeaveRequest(leaveToValidate);
+		if (!result.IsSuccess)
+			return Results.BadRequest(result.ErrorMessage);
 
+		return Results.Ok(result.leave);
 	}
 	public async Task<IResult> CreateLeave(LeaveCreateDTO model)
 	{

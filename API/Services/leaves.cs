@@ -556,6 +556,31 @@ Hello {manager.Name},
 			Leaves = paginatedLeaves
 		});
 	}
+	public async Task<(bool IsSuccess, string? ErrorMessage, LeaveDTO? leave)> ValidateLeaveRequest(LeaveValidateDTO leaveToValidate)
+	{
+		var validationResult = await ValidateLeave(leaveToValidate.DateStart, leaveToValidate.DateEnd, leaveToValidate.Owner, leaveToValidate.Id, leaveToValidate.Type);
+		if (validationResult != "success")
+		{
+			return (false, validationResult, null);
+		}
+		var employee = await _context.Employees.FindAsync(leaveToValidate.Owner);
+		if (employee == null)
+		{
+			return (false, "Employee not found.", null);
+		}
+		Leave leaveRequest = new Leave
+		{
+			Id = leaveToValidate.Id ?? 0,
+			DateStart = leaveToValidate.DateStart,
+			DateEnd = leaveToValidate.DateEnd,
+			Type = "paidTimeOff",
+			Owner = leaveToValidate.Owner,
+			OwnerNavigation = employee,
+		};
+		var leave = await GetLeaveDynamicInfo(leaveRequest);
+		return (true, null, leave);
+
+	}
 	public async Task<List<LeaveDTO>> GetLeaveRequests(EmployeeWithSubordinatesDTO employee)
 	{
 		var leaves = await _context.Leaves
