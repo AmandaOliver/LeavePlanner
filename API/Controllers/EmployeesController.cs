@@ -31,7 +31,6 @@ public class EmployeesController
 
         return Results.Ok(new { OrganizationId = result.OrganizationId });
     }
-
     public async Task<IResult> CreateEmployee(EmployeeCreateDTO model)
     {
 
@@ -41,7 +40,6 @@ public class EmployeesController
 
         return Results.Ok(result.Employee);
     }
-
     public async Task<IResult> GetEmployee(string email)
     {
         var result = await _employeesService.GetEmployeeByEmail(email);
@@ -50,7 +48,6 @@ public class EmployeesController
 
         return Results.Ok(result.Employee);
     }
-
     public async Task<IResult> UpdateEmployee(string id, EmployeeUpdateDTO model)
     {
         var result = await _employeesService.UpdateEmployee(id, model);
