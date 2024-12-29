@@ -1,8 +1,4 @@
-
-using Microsoft.EntityFrameworkCore;
-using LeavePlanner.Data;
 using LeavePlanner.Models;
-using System.Data.Odbc;
 public static class EmployeesEndpointsExtensions
 {
     public static void MapEmployeesEndpoints(this IEndpointRouteBuilder endpoints)
@@ -16,23 +12,14 @@ public static class EmployeesEndpointsExtensions
         endpoints.MapDelete("/employee/{id}", async (EmployeesController controller, string id) => await controller.DeleteEmployee(id))
                  .RequireAuthorization();
         endpoints.MapPost("/create-employee-organization", async (EmployeesController controller, EmployeeOrganizationCreateDTO model) => await controller.CreateEmployeeAndOrganization(model)).RequireAuthorization();
-
     }
 }
 public class EmployeesController
 {
-    private readonly LeavePlannerContext _context;
-    private readonly BankHolidayService _bankholidayService;
-    private readonly EmailService _emailService;
     private readonly EmployeesService _employeesService;
 
-
-
-    public EmployeesController(LeavePlannerContext context, BankHolidayService bankHolidayService, IConfiguration configuration, EmailService emailService, EmployeesService employeesService)
+    public EmployeesController(EmployeesService employeesService)
     {
-        _context = context;
-        _bankholidayService = bankHolidayService;
-        _emailService = emailService;
         _employeesService = employeesService;
 
     }
