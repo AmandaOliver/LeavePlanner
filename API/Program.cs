@@ -101,6 +101,5 @@ app.MapOrganizationEndpoints();
 app.MapEmployeesEndpoints();
 app.MapLeavesEndpoints();
 app.MapRequestsEndpoints();
-app.MapEmployeeOrganizationEndpoints();
 app.MapCountriesEndpoints();
 app.Run();

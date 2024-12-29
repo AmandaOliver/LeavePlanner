@@ -14,6 +14,8 @@ public static class EmployeesEndpointsExtensions
                  .RequireAuthorization();
         endpoints.MapDelete("/employee/{id}", async (EmployeesController controller, string id) => await controller.DeleteEmployee(id))
                  .RequireAuthorization();
+        endpoints.MapPost("/create-employee-organization", async (EmployeesController controller, EmployeeOrganizationCreateDTO model) => await controller.CreateEmployeeAndOrganization(model)).RequireAuthorization();
+
     }
 }
 public class EmployeesController
@@ -38,6 +40,35 @@ public class EmployeesController
         _leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
 
     }
+    public async Task<IResult> CreateEmployeeAndOrganization(EmployeeOrganizationCreateDTO model)
+    {
+        if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.OrganizationName))
+        {
+            return Results.BadRequest("Invalid data.");
+        }
+
+        // Create new organization
+        var organization = new Organization
+        {
+            Name = model.OrganizationName,
+        };
+        _context.Organizations.Add(organization);
+        await _context.SaveChangesAsync();
+
+        // Create new employee and set the IsOrgOwner property to true
+        var employee = new Employee
+        {
+            Email = model.Email,
+            IsOrgOwner = true,
+            Organization = organization.Id,
+        };
+        _context.Employees.Add(employee);
+        await _context.SaveChangesAsync();
+
+        return Results.Ok(new { OrganizationId = organization.Id });
+
+    }
+
     public async Task<IResult> CreateEmployee(EmployeeCreateDTO model)
     {
 
