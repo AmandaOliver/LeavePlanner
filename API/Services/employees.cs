@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 public class EmployeesService
 {
 	private readonly LeavePlannerContext _context;
-	private readonly BankHolidayService _bankHolidayService;
+	private readonly CountriesService _countriesService;
 	private readonly EmailService _emailService;
 	private readonly IConfiguration _configuration;
 	private readonly string _leavePlannerUrl;
@@ -16,10 +16,10 @@ public class EmployeesService
 	private static readonly Regex _emailRegex = new Regex(
 		 @"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$",
 		 RegexOptions.Compiled | RegexOptions.IgnoreCase);
-	public EmployeesService(LeavePlannerContext context, BankHolidayService bankHolidayService, IConfiguration configuration, EmailService emailService)
+	public EmployeesService(LeavePlannerContext context, CountriesService countriesService, IConfiguration configuration, EmailService emailService)
 	{
 		_context = context;
-		_bankHolidayService = bankHolidayService;
+		_countriesService = countriesService;
 		_configuration = configuration;
 		_emailService = emailService;
 		_leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
@@ -195,7 +195,7 @@ public class EmployeesService
 				var leaves = await _context.Leaves.Where(l => l.Owner == employee.Id && l.Type == "bankHoliday").ToListAsync();
 				_context.Leaves.RemoveRange(leaves);
 				employee.Country = model.Country;
-				await _bankHolidayService.GenerateEmployeeBankHolidays(employee);
+				await _countriesService.GenerateEmployeeBankHolidays(employee);
 			}
 			employee.PaidTimeOff = model.PaidTimeOff != 0 ? model.PaidTimeOff : employee.PaidTimeOff;
 			employee.Title = model.Title ?? employee.Title;
@@ -278,7 +278,7 @@ public class EmployeesService
 				_context.Employees.Add(employee);
 			}
 			await _context.SaveChangesAsync();
-			await _bankHolidayService.GenerateEmployeeBankHolidays(employee);
+			await _countriesService.GenerateEmployeeBankHolidays(employee);
 			await transaction.CommitAsync();
 			var organization = await _context.Organizations.FindAsync(employee.Organization);
 			if (organization != null)

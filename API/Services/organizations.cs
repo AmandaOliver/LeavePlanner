@@ -16,17 +16,17 @@ public class OrganizationsService
 {
 	private readonly LeavePlannerContext _context;
 	private readonly EmployeesService _employeesService;
-	private readonly BankHolidayService _bankholidayService;
+	private readonly CountriesService _countriesService;
 	private readonly string _leavePlannerUrl;
 	private readonly EmailService _emailService;
 	private readonly IConfiguration _configuration;
 
 
-	public OrganizationsService(LeavePlannerContext context, EmployeesService employeesService, BankHolidayService bankholidayService, IConfiguration configuration, EmailService emailService)
+	public OrganizationsService(LeavePlannerContext context, EmployeesService employeesService, CountriesService countriesService, IConfiguration configuration, EmailService emailService)
 	{
 		_context = context;
 		_employeesService = employeesService;
-		_bankholidayService = bankholidayService;
+		_countriesService = countriesService;
 		_emailService = emailService;
 		_configuration = configuration;
 
@@ -253,7 +253,7 @@ public class OrganizationsService
 						_context.Employees.Update(employeeToUpdate);
 
 					}
-					await _bankholidayService.GenerateEmployeeBankHolidays(employeeToUpdate);
+					await _countriesService.GenerateEmployeeBankHolidays(employeeToUpdate);
 				}
 
 			}

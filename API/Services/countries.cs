@@ -3,18 +3,25 @@ using LeavePlanner.Data;
 using Newtonsoft.Json;
 using Microsoft.EntityFrameworkCore;
 
-public interface IBankHolidayService
-{
-	Task<List<HolidayModel>> FetchBankHolidays(string countryCode);
-	Task GenerateEmployeeBankHolidays(Employee employee);
-}
 
-public class BankHolidayService : IBankHolidayService
+public class CountriesService
 {
 	private readonly LeavePlannerContext _context;
-	public BankHolidayService(LeavePlannerContext context)
+	public CountriesService(LeavePlannerContext context)
 	{
 		_context = context;
+	}
+	public async Task<(bool IsSuccess, string? ErrorMessage, List<Country>? countries)> GetCountries()
+	{
+		try
+		{
+			var countries = await _context.Countries.ToListAsync();
+			return (true, null, countries);
+		}
+		catch (Exception ex)
+		{
+			return (false, ex.Message, null);
+		}
 	}
 	public async Task<List<HolidayModel>> FetchBankHolidays(string countryCode)
 	{
