@@ -422,4 +422,28 @@ Hello {employee.Name},
 		return employeeWithSubordinates;
 
 	}
+	public async Task DeleteEmployeeWithSubordinates(int id)
+	{
+		var employee = await _context.Employees.FindAsync(id);
+		if (employee == null) return;
+
+		var subordinates = await _context.Employees
+			.Where(e => e.ManagedBy == id)
+			.ToListAsync();
+
+		foreach (var subordinate in subordinates)
+		{
+			await DeleteEmployeeWithSubordinates(subordinate.Id);
+		}
+
+		var leaves = await _context.Leaves
+			.Where(l => l.Owner == employee.Id)
+			.ToListAsync();
+
+		_context.Leaves.RemoveRange(leaves);
+
+		_context.Employees.Remove(employee);
+	}
+
+
 }

@@ -25,6 +25,7 @@ public class LeavesService
 		_leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
 
 	}
+
 	public async Task<(bool IsSuccess, string? ErrorMessage, LeaveDTO? LeaveWithDynamicInfo)> GetLeaveInfo(string id)
 	{
 		var leave = await _context.Leaves.FindAsync(int.Parse(id));

@@ -23,6 +23,7 @@ public class EmployeesController
         _employeesService = employeesService;
 
     }
+
     public async Task<IResult> CreateEmployeeAndOrganization(EmployeeOrganizationCreateDTO model)
     {
         var result = await _employeesService.CreateEmployeeAndOrganization(model);
