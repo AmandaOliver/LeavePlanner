@@ -1,9 +1,7 @@
 import { Tooltip } from '@nextui-org/react'
 import { Interval, DateTime } from 'luxon'
 import { ReactNode } from 'react'
-import { BussinessWatchIcon } from '../../../icons/bussinesswatch'
-import { PartyIcon } from '../../../icons/party'
-import { LeaveType } from '../../../models/Leaves'
+import { LeaveType } from '../../../../models/Leaves'
 
 export const LeaveStartDay = ({
   leave,

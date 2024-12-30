@@ -5,7 +5,7 @@ import {
   CardHeader,
   useDisclosure,
 } from '@nextui-org/react'
-import { OrganizationModal } from '../components/organizationModal'
+import { OrganizationModal } from '../../components/organizationModal'
 
 export const CreateOrganizationAndEmployee = () => {
   const {

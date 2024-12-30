@@ -10,9 +10,9 @@ import {
   Card,
 } from '@nextui-org/react'
 import { ChangeEvent, useRef, useState } from 'react'
-import { EmployeeType, useEmployeeModel } from '../models/Employee'
-import { useCountriesModel } from '../models/Countries'
-import { useOrganizationModel } from '../models/Organization'
+import { EmployeeType, useEmployeeModel } from '../../models/Employee'
+import { useCountriesModel } from '../../models/Countries'
+import { useOrganizationModel } from '../../models/Organization'
 
 export const EmployeeModal = ({
   isOpen,

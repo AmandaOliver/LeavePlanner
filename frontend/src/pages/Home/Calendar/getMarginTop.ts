@@ -1,5 +1,5 @@
 import { DateTime, Interval } from 'luxon'
-import { LeaveType } from '../models/Leaves'
+import { LeaveType } from '../../../models/Leaves'
 
 const leavesOverlaps = (
   leave1: LeaveType,

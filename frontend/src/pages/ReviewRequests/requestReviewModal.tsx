@@ -1,3 +1,4 @@
+import { parseDate } from '@internationalized/date'
 import {
   Modal,
   ModalContent,
@@ -8,12 +9,10 @@ import {
   Button,
   ModalFooter,
 } from '@nextui-org/react'
-import { ConflictType, LeaveType, useLeavesModel } from '../models/Leaves'
-import { parseDate } from '@internationalized/date'
-
-import { useRequestsModel } from '../models/Requests'
-import { useEffect, useState } from 'react'
-import { LoadingComponent } from './loading'
+import { useState } from 'react'
+import { LoadingComponent } from '../../components/loading'
+import { LeaveType, ConflictType } from '../../models/Leaves'
+import { useRequestsModel } from '../../models/Requests'
 
 export const RequestReviewModal = ({
   isOpen,

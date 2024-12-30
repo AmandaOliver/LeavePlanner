@@ -7,7 +7,7 @@ import {
   ModalHeader,
 } from '@nextui-org/react'
 import { useState } from 'react'
-import { useOrganizationModel } from '../models/Organization'
+import { useOrganizationModel } from '../../models/Organization'
 
 export const OrganizationDeleteModal = ({
   isOpen,

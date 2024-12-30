@@ -9,8 +9,8 @@ import {
   Button,
   ModalFooter,
 } from '@nextui-org/react'
-import { ConflictType, LeaveType } from '../models/Leaves'
-import { endOfYear, parseDate } from '@internationalized/date'
+import { LeaveType } from '../models/Leaves'
+import { parseDate } from '@internationalized/date'
 import { useLeaveModel } from '../models/Leave'
 import { useEmployeeModel } from '../models/Employee'
 

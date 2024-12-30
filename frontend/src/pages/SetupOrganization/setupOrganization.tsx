@@ -1,7 +1,10 @@
-import { OrganizationType, useOrganizationModel } from '../models/Organization'
-import { LoadingComponent } from '../components/loading'
-import { OrganizationTree } from '../components/organizationTree'
-import { TreeIcon } from '../icons/tree'
+import {
+  OrganizationType,
+  useOrganizationModel,
+} from '../../models/Organization'
+import { LoadingComponent } from '../../components/loading'
+import { OrganizationTree } from './organizationTree'
+import { TreeIcon } from '../../icons/tree'
 import {
   Button,
   Card,
@@ -10,13 +13,13 @@ import {
   Divider,
   useDisclosure,
 } from '@nextui-org/react'
-import { EmployeeModal } from '../components/employeeModal'
-import { OrganizationDeleteModal } from '../components/organizationDeleteModal'
-import { OrganizationModal } from '../components/organizationModal'
+import { EmployeeModal } from './employeeModal'
+import { OrganizationDeleteModal } from './organizationDeleteModal'
+import { OrganizationModal } from '../../components/organizationModal'
 import { useState } from 'react'
-import { ImportModal } from '../components/importModal'
-import { BussinessWatchIcon } from '../icons/bussinesswatch'
-import { WorkingDaysModal } from '../components/workingDaysModal'
+import { ImportModal } from './importModal'
+import { BussinessWatchIcon } from '../../icons/bussinesswatch'
+import { WorkingDaysModal } from './workingDaysModal'
 
 export const SetupOrganization = () => {
   const { isLoading, currentOrganization } = useOrganizationModel()

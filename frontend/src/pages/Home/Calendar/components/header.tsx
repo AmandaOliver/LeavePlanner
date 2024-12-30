@@ -1,8 +1,8 @@
 import { useCalendarContext } from '../CalendarContext'
 import { CALENDARMODE } from '../constants'
 import { Button, Select, SelectItem } from '@nextui-org/react'
-import { ChevronLeftIcon } from '../../../icons/chevron_left'
-import { ChevronRightIcon } from '../../../icons/chevron_right'
+import { ChevronLeftIcon } from '../../../../icons/chevron_left'
+import { ChevronRightIcon } from '../../../../icons/chevron_right'
 
 const Header = () => {
   const {

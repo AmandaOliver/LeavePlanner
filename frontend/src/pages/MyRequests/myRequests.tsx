@@ -11,19 +11,20 @@ import {
   Tooltip,
   Pagination,
 } from '@nextui-org/react'
-import { LeaveType, useLeavesModel } from '../models/Leaves'
-import { RequestIcon } from '../icons/request'
-import { EyeIcon } from '../icons/eye'
-import { TrashIcon } from '../icons/trash'
-import { LeaveDeleteModal } from '../components/leaveDeleteModal'
-import { LeaveInfoModal } from '../components/leaveInfoModal'
 import { useState } from 'react'
-import { LoadingComponent } from '../components/loading'
-import { LeaveModal } from '../components/leaveModal'
-import { PencilIcon } from '../icons/pencil'
-import { BanIcon } from '../icons/ban'
-import { BussinessWatchIcon } from '../icons/bussinesswatch'
-import { PartyIcon } from '../icons/party'
+import { LeaveDeleteModal } from '../../components/leaveDeleteModal'
+import { LeaveInfoModal } from '../../components/leaveInfoModal'
+import { LeaveModal } from '../../components/leaveModal'
+import { LoadingComponent } from '../../components/loading'
+import { BanIcon } from '../../icons/ban'
+import { BussinessWatchIcon } from '../../icons/bussinesswatch'
+import { EyeIcon } from '../../icons/eye'
+import { PartyIcon } from '../../icons/party'
+import { PencilIcon } from '../../icons/pencil'
+import { RequestIcon } from '../../icons/request'
+import { TrashIcon } from '../../icons/trash'
+import { useLeavesModel, LeaveType } from '../../models/Leaves'
+
 export const MyRequests = () => {
   const { usePaginatedLeavesAwaitingApproval, usePaginatedLeavesRejected } =
     useLeavesModel()

@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { EmployeeType } from '../../../models/Employee'
+import { EmployeeType } from '../../../../models/Employee'
 import { Button, useDisclosure } from '@nextui-org/react'
-import { EmployeeModal } from '../../employeeModal'
 import { DeleteEmployeeModal } from '../../deleteEmployeeModal'
+import { EmployeeModal } from '../../employeeModal'
 
 export const Employee = ({ employee }: { employee: EmployeeType }) => {
   const isHead = !employee.managedBy

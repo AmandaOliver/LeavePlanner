@@ -10,7 +10,10 @@ import {
 } from '@nextui-org/react'
 import { useState } from 'react'
 
-import { useOrganizationModel, WorkingDaysType } from '../models/Organization'
+import {
+  useOrganizationModel,
+  WorkingDaysType,
+} from '../../models/Organization'
 
 export const WorkingDaysModal = ({
   isOpen,

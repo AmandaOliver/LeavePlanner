@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { LeaveType, useLeavesModel } from '../models/Leaves'
-import { useEmployeeModel } from '../models/Employee'
+
 import {
   Card,
   CardBody,
@@ -16,17 +15,19 @@ import {
   Tooltip,
   Pagination,
 } from '@nextui-org/react'
-import { WatchIcon } from '../icons/watch'
-import { BussinessWatchIcon } from '../icons/bussinesswatch'
-import { PartyIcon } from '../icons/party'
-import { HistoryIcon } from '../icons/history'
-import { PencilIcon } from '../icons/pencil'
-import { TrashIcon } from '../icons/trash'
-import { EyeIcon } from '../icons/eye'
-import { LeaveInfoModal } from '../components/leaveInfoModal'
-import { LeaveModal } from '../components/leaveModal'
-import { LeaveDeleteModal } from '../components/leaveDeleteModal'
-import { LoadingComponent } from '../components/loading'
+import { LeaveDeleteModal } from '../../components/leaveDeleteModal'
+import { LeaveInfoModal } from '../../components/leaveInfoModal'
+import { LeaveModal } from '../../components/leaveModal'
+import { LoadingComponent } from '../../components/loading'
+import { BussinessWatchIcon } from '../../icons/bussinesswatch'
+import { EyeIcon } from '../../icons/eye'
+import { HistoryIcon } from '../../icons/history'
+import { PartyIcon } from '../../icons/party'
+import { PencilIcon } from '../../icons/pencil'
+import { TrashIcon } from '../../icons/trash'
+import { WatchIcon } from '../../icons/watch'
+import { useEmployeeModel } from '../../models/Employee'
+import { useLeavesModel, LeaveType } from '../../models/Leaves'
 
 export const Leaves = () => {
   const { usePaginatedLeaves, usePaginatedPastLeaves } = useLeavesModel()

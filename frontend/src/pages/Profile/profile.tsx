@@ -1,9 +1,10 @@
 import { Card, CardBody, Image, Spacer } from '@nextui-org/react'
-import { useEmployeeModel } from '../models/Employee'
 import { useAuth0 } from '@auth0/auth0-react'
-import '../index.css'
-import { LoadingComponent } from '../components/loading'
+import '../../index.css'
 import { useState } from 'react'
+import { LoadingComponent } from '../../components/loading'
+import { useEmployeeModel } from '../../models/Employee'
+
 export const ProfilePage = () => {
   const { currentEmployee, isLoading: isCurrentEmployeeLoading } =
     useEmployeeModel()
