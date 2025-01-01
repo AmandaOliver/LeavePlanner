@@ -76,7 +76,7 @@ export function Header({
       }}
     >
       <NavbarContent>
-        <NavbarBrand>
+        <NavbarBrand aria-hidden>
           <Logo />
           <p className="font-bold text-inherit ml-4">{organizationName}</p>
         </NavbarBrand>
@@ -94,73 +94,76 @@ export function Header({
       </NavbarContent>
 
       <NavbarContent justify="end">
-        {buttonLabel && (
-          <Button color="primary" onPress={handleButtonClick}>
-            {buttonLabel}
-          </Button>
-        )}
-
-        <div className="hidden sm:flex flex-wrap flex-grow-0 w-fit justify-items-end">
-          <Dropdown placement="bottom-end">
-            <Badge
-              content={currentUser.pendingRequests}
-              color="primary"
-              size="lg"
-              isInvisible={!currentUser.pendingRequests}
-            >
-              <DropdownTrigger>
-                <Avatar
-                  isBordered
-                  as="button"
-                  className="transition-transform"
-                  color="primary"
-                  size="sm"
-                  src={
-                    isImageError ? '/userIcon.svg' : currentUser.avatarPicture
-                  }
-                  onError={() => setIsImageError(true)}
-                />
-              </DropdownTrigger>
-            </Badge>
-
-            <DropdownMenu aria-label="Profile Actions" variant="flat">
-              <DropdownItem key="profile" className="h-14 gap-2" showDivider>
-                <p className="font-semibold">Signed in as</p>
-                <p className="font-bold">{currentUser.email}</p>
-              </DropdownItem>
-              <>
-                {avatarMenuItems?.length &&
-                  avatarMenuItems.map((menuItem) => (
-                    <DropdownItem key={menuItem.label}>
-                      {menuItem.badge ? (
-                        <Chip
-                          color="primary"
-                          className="mr-1"
-                          size="sm"
-                          radius="full"
-                          variant="shadow"
-                        >
-                          {menuItem.badge}
-                        </Chip>
-                      ) : (
-                        ''
-                      )}
-                      <NavLink to={menuItem.link}>{menuItem.label}</NavLink>
-                    </DropdownItem>
-                  ))}
-              </>
-
-              <DropdownItem
-                key="logout"
-                className="text-danger"
-                color="danger"
-                onClick={handleLogout}
+        <li key="request-leave">
+          {buttonLabel && (
+            <Button color="primary" onPress={handleButtonClick}>
+              {buttonLabel}
+            </Button>
+          )}
+        </li>
+        <li>
+          <div className="hidden sm:flex flex-wrap flex-grow-0 w-fit justify-items-end">
+            <Dropdown placement="bottom-end">
+              <Badge
+                content={currentUser.pendingRequests}
+                color="primary"
+                size="lg"
+                isInvisible={!currentUser.pendingRequests}
               >
-                Log Out
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-        </div>
+                <DropdownTrigger>
+                  <Avatar
+                    isBordered
+                    as="button"
+                    className="transition-transform"
+                    color="primary"
+                    size="sm"
+                    src={
+                      isImageError ? '/userIcon.svg' : currentUser.avatarPicture
+                    }
+                    onError={() => setIsImageError(true)}
+                  />
+                </DropdownTrigger>
+              </Badge>
+
+              <DropdownMenu aria-label="Profile Actions" variant="flat">
+                <DropdownItem key="profile" className="h-14 gap-2" showDivider>
+                  <p className="font-semibold">Signed in as</p>
+                  <p className="font-bold">{currentUser.email}</p>
+                </DropdownItem>
+                <>
+                  {avatarMenuItems?.length &&
+                    avatarMenuItems.map((menuItem) => (
+                      <DropdownItem key={menuItem.label}>
+                        {menuItem.badge ? (
+                          <Chip
+                            color="primary"
+                            className="mr-1"
+                            size="sm"
+                            radius="full"
+                            variant="shadow"
+                          >
+                            {menuItem.badge}
+                          </Chip>
+                        ) : (
+                          ''
+                        )}
+                        <NavLink to={menuItem.link}>{menuItem.label}</NavLink>
+                      </DropdownItem>
+                    ))}
+                </>
+
+                <DropdownItem
+                  key="logout"
+                  className="text-danger"
+                  color="danger"
+                  onClick={handleLogout}
+                >
+                  Log Out
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        </li>
       </NavbarContent>
       <Badge
         content={currentUser.pendingRequests}

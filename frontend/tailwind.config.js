@@ -30,10 +30,10 @@ module.exports = {
         light: {
           colors: {
             primary: {
-              DEFAULT: '#1e81b0',
+              DEFAULT: '#063646',
             },
             secondary: {
-              DEFAULT: '#e28743',
+              DEFAULT: '#7459DE',
             },
           },
         },
