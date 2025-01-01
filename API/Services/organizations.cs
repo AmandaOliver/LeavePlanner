@@ -154,7 +154,37 @@ public class OrganizationsService
 			await _context.SaveChangesAsync();
 			await transaction.CommitAsync();
 
-			return (false, "Organization and related data deleted successfully.", null);
+			return (true, null, organization);
+		}
+		catch (Exception ex)
+		{
+			await transaction.RollbackAsync();
+			return (false, ex.Message, null);
+		}
+	}
+	public async Task<(bool IsSuccess, string? ErrorMessage, int? OrganizationId)> CreateEmployeeAndOrganization(EmployeeOrganizationCreateDTO model)
+	{
+		if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.OrganizationName))
+			return (false, "Invalid data.", null);
+
+		using var transaction = await _context.Database.BeginTransactionAsync();
+		try
+		{
+			var organization = new Organization { Name = model.OrganizationName };
+			_context.Organizations.Add(organization);
+			await _context.SaveChangesAsync();
+
+			var employee = new Employee
+			{
+				Email = model.Email,
+				IsOrgOwner = true,
+				Organization = organization.Id
+			};
+
+			_context.Employees.Add(employee);
+			await transaction.CommitAsync();
+			await _context.SaveChangesAsync();
+			return (true, null, organization.Id);
 		}
 		catch (Exception ex)
 		{

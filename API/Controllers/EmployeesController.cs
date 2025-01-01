@@ -1,20 +1,11 @@
 using LeavePlanner.Models;
-public static class EmployeesEndpointsExtensions
-{
-    public static void MapEmployeesEndpoints(this IEndpointRouteBuilder endpoints)
-    {
-        endpoints.MapGet("/employee/{email}", async (EmployeesController controller, string email) => await controller.GetEmployee(email))
-                 .RequireAuthorization();
-        endpoints.MapPost("/employee", async (EmployeesController controller, EmployeeCreateDTO model) => await controller.CreateEmployee(model))
-                 .RequireAuthorization();
-        endpoints.MapPut("/employee/{id}", async (EmployeesController controller, string id, EmployeeUpdateDTO model) => await controller.UpdateEmployee(id, model))
-                 .RequireAuthorization();
-        endpoints.MapDelete("/employee/{id}", async (EmployeesController controller, string id) => await controller.DeleteEmployee(id))
-                 .RequireAuthorization();
-        endpoints.MapPost("/create-employee-organization", async (EmployeesController controller, EmployeeOrganizationCreateDTO model) => await controller.CreateEmployeeAndOrganization(model)).RequireAuthorization();
-    }
-}
-public class EmployeesController
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+
+[ApiController]
+[Route("employee")]
+public class EmployeesController : ControllerBase
 {
     private readonly EmployeesService _employeesService;
 
@@ -24,15 +15,9 @@ public class EmployeesController
 
     }
 
-    public async Task<IResult> CreateEmployeeAndOrganization(EmployeeOrganizationCreateDTO model)
-    {
-        var result = await _employeesService.CreateEmployeeAndOrganization(model);
-        if (!result.IsSuccess)
-            return Results.BadRequest(result.ErrorMessage);
-
-        return Results.Ok(new { OrganizationId = result.OrganizationId });
-    }
-    public async Task<IResult> CreateEmployee(EmployeeCreateDTO model)
+    [HttpPost]
+    [Authorize]
+    public async Task<IResult> CreateEmployee([FromBody] EmployeeCreateDTO model)
     {
 
         var result = await _employeesService.CreateEmployee(model);
@@ -41,6 +26,9 @@ public class EmployeesController
 
         return Results.Ok(result.Employee);
     }
+
+    [HttpGet("{email}")]
+    [Authorize]
     public async Task<IResult> GetEmployee(string email)
     {
         var result = await _employeesService.GetEmployeeByEmail(email);
@@ -49,7 +37,9 @@ public class EmployeesController
 
         return Results.Ok(result.Employee);
     }
-    public async Task<IResult> UpdateEmployee(string id, EmployeeUpdateDTO model)
+    [HttpPut("{id}")]
+    [Authorize]
+    public async Task<IResult> UpdateEmployee(string id, [FromBody] EmployeeUpdateDTO model)
     {
         var result = await _employeesService.UpdateEmployee(id, model);
         if (!result.IsSuccess)
@@ -57,6 +47,9 @@ public class EmployeesController
 
         return Results.Ok(result.Employee);
     }
+
+    [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IResult> DeleteEmployee(string id)
     {
         var result = await _employeesService.DeleteEmployee(id);

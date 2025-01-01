@@ -15,11 +15,6 @@ builder.Services.AddScoped<RequestsService>();
 builder.Services.AddScoped<EmployeesService>();
 builder.Services.AddScoped<CountriesService>();
 builder.Services.AddScoped<EmailService>();
-builder.Services.AddScoped<CountriesController>();
-builder.Services.AddScoped<EmployeesController>();
-builder.Services.AddScoped<OrganizationsController>();
-builder.Services.AddScoped<LeavesController>();
-builder.Services.AddScoped<RequestsController>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -95,12 +90,8 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowSpecificOrigin");
 app.UseHttpsRedirection();
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapOrganizationEndpoints();
-app.MapEmployeesEndpoints();
-app.MapLeavesEndpoints();
-app.MapRequestsEndpoints();
-app.MapCountriesEndpoints();
 app.Run();

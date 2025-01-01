@@ -19,7 +19,7 @@ export const useRequestsModel = () => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/requests/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/requests/review/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
       {
         method: 'GET',
         headers: {
@@ -79,7 +79,7 @@ export const useRequestsModel = () => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/request/${requestId}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/requests/${requestId}`,
       {
         method: 'GET',
         headers: {

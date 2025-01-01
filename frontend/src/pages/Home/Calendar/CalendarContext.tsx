@@ -7,7 +7,7 @@ import {
   useGetAllLeaves,
   useGetMyCircleLeaves,
   useGetMyLeaves,
-} from '../../../models/Calendar'
+} from '../../../models/Leaves'
 
 export const statusFiltersOptions = ['draft', 'scheduled', 'failed', 'sent']
 

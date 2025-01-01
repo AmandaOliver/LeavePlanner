@@ -26,13 +26,13 @@ import { TrashIcon } from '../../icons/trash'
 import { useLeavesModel, LeaveType } from '../../models/Leaves'
 
 export const MyRequests = () => {
-  const { usePaginatedLeavesAwaitingApproval, usePaginatedLeavesRejected } =
+  const { usePaginatedLeavesPending, usePaginatedLeavesRejected } =
     useLeavesModel()
   const [pagePending, setPagePending] = useState(1)
   const [pageRejected, setPageRejected] = useState(1)
   const pageSize = 5
   const { data: pendingLeavesData, isLoading: isLoadingPending } =
-    usePaginatedLeavesAwaitingApproval(pagePending, pageSize)
+    usePaginatedLeavesPending(pagePending, pageSize)
 
   const { data: rejectedLeavesData, isLoading: isLoadingRejected } =
     usePaginatedLeavesRejected(pageRejected, pageSize)

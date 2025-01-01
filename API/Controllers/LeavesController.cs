@@ -1,25 +1,10 @@
 using LeavePlanner.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-public static class LeavesEndpointsExtensions
-{
-	public static void MapLeavesEndpoints(this IEndpointRouteBuilder endpoints)
-	{
-		endpoints.MapGet("/leave/{id}", async (LeavesController controller, string id) => await controller.GetLeaveInfo(id)).RequireAuthorization();
-		endpoints.MapGet("/myleaves/{id}", async (LeavesController controller, string id, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyLeaves(id, start, end)).RequireAuthorization();
-		endpoints.MapGet("/mycircleleaves/{id}", async (LeavesController controller, string id, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetMyCircleLeaves(id, start, end)).RequireAuthorization();
-		endpoints.MapGet("/allleaves", async (LeavesController controller, [FromQuery] string? start, [FromQuery] string? end) => await controller.GetAllLeaves(start, end)).RequireAuthorization();
-		endpoints.MapGet("/leaves/{id}", async (LeavesController controller, string id, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesApproved(id, page, pageSize)).RequireAuthorization();
-		endpoints.MapGet("/pastleaves/{id}", async (LeavesController controller, string id, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetPastLeaves(id, page, pageSize)).RequireAuthorization();
-		endpoints.MapGet("/leaves/pending/{id}", async (LeavesController controller, string id, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesAwaitingApproval(id, page, pageSize)).RequireAuthorization();
-		endpoints.MapGet("/leaves/rejected/{id}", async (LeavesController controller, string id, [FromQuery] int page, [FromQuery] int pageSize) => await controller.GetLeavesRejected(id, page, pageSize)).RequireAuthorization();
-		endpoints.MapPost("/leaves/validate", async (LeavesController controller, LeaveValidateDTO model) => await controller.ValidateLeaveRequest(model)).RequireAuthorization();
-		endpoints.MapPost("/leaves", async (LeavesController controller, LeaveCreateDTO model) => await controller.CreateLeave(model)).RequireAuthorization();
-		endpoints.MapPut("/leaves/{leaveId}", async (LeavesController controller, int leaveId, LeaveUpdateDTO leaveUpdate) => await controller.UpdateLeave(leaveId, leaveUpdate)).RequireAuthorization();
-		endpoints.MapDelete("/leaves/{leaveId}", async (LeavesController controller, int leaveId) => await controller.DeleteLeave(leaveId)).RequireAuthorization();
-	}
-}
-public class LeavesController
+[ApiController]
+[Route("leaves")]
+public class LeavesController : ControllerBase
 {
 	private readonly LeavesService _leavesService;
 
@@ -27,14 +12,20 @@ public class LeavesController
 	{
 		_leavesService = leavesService;
 	}
-	public async Task<IResult> GetLeaveInfo(string id)
+
+	[HttpGet("{leaveId}")]
+	[Authorize]
+	public async Task<IResult> GetLeaveInfo(string leaveId)
 	{
-		var result = await _leavesService.GetLeaveInfo(id);
+		var result = await _leavesService.GetLeaveInfo(leaveId);
 		if (!result.IsSuccess)
 			return Results.NotFound(result.ErrorMessage);
 
 		return Results.Ok(result.LeaveWithDynamicInfo);
 	}
+
+	[HttpGet("myleaves/{employeeId}")]
+	[Authorize]
 	public async Task<IResult> GetMyLeaves(string employeeId, [FromQuery] string? start, [FromQuery] string? end)
 	{
 		var result = await _leavesService.GetMyLeaves(employeeId, start, end);
@@ -43,6 +34,9 @@ public class LeavesController
 
 		return Results.Ok(result.leaves);
 	}
+
+	[HttpGet("circle/{employeeId}")]
+	[Authorize]
 	public async Task<IResult> GetMyCircleLeaves(string employeeId, [FromQuery] string? start, [FromQuery] string? end)
 	{
 		var result = await _leavesService.GetMyCircleLeaves(employeeId, start, end);
@@ -51,6 +45,9 @@ public class LeavesController
 
 		return Results.Ok(result.leaves);
 	}
+
+	[HttpGet]
+	[Authorize]
 	public async Task<IResult> GetAllLeaves([FromQuery] string? start, [FromQuery] string? end)
 	{
 		var result = await _leavesService.GetAllLeaves(start, end);
@@ -59,39 +56,54 @@ public class LeavesController
 
 		return Results.Ok(result.leaves);
 	}
-	public async Task<IResult> GetLeavesApproved(string id, int page, int pageSize)
+
+	[HttpGet("approved/{employeeId}")]
+	[Authorize]
+	public async Task<IResult> GetLeavesApproved(string employeeId, [FromQuery] int page, [FromQuery] int pageSize)
 	{
-		var result = await _leavesService.GetLeavesApproved(id, page, pageSize);
+		var result = await _leavesService.GetLeavesApproved(employeeId, page, pageSize);
 		if (!result.IsSuccess)
 			return Results.BadRequest(result.ErrorMessage);
 
 		return Results.Ok(result.leaves);
 	}
-	public async Task<IResult> GetPastLeaves(string id, int page, int pageSize)
+
+	[HttpGet("past/{employeeId}")]
+	[Authorize]
+	public async Task<IResult> GetPastLeaves(string employeeId, [FromQuery] int page, [FromQuery] int pageSize)
 	{
-		var result = await _leavesService.GetPastLeaves(id, page, pageSize);
+		var result = await _leavesService.GetPastLeaves(employeeId, page, pageSize);
 		if (!result.IsSuccess)
 			return Results.BadRequest(result.ErrorMessage);
 
 		return Results.Ok(result.leaves);
 	}
-	public async Task<IResult> GetLeavesRejected(string id, int page, int pageSize)
+
+	[HttpGet("rejected/{employeeId}")]
+	[Authorize]
+	public async Task<IResult> GetLeavesRejected(string employeeId, [FromQuery] int page, [FromQuery] int pageSize)
 	{
-		var result = await _leavesService.GetLeavesRejected(id, page, pageSize);
+		var result = await _leavesService.GetLeavesRejected(employeeId, page, pageSize);
 		if (!result.IsSuccess)
 			return Results.BadRequest(result.ErrorMessage);
 
 		return Results.Ok(result.leaves);
 	}
-	public async Task<IResult> GetLeavesAwaitingApproval(string id, int page, int pageSize)
+
+	[HttpGet("pending/{employeeId}")]
+	[Authorize]
+	public async Task<IResult> GetLeavesPending(string employeeId, [FromQuery] int page, [FromQuery] int pageSize)
 	{
-		var result = await _leavesService.GetLeavesAwaitingApproval(id, page, pageSize);
+		var result = await _leavesService.GetLeavesPending(employeeId, page, pageSize);
 		if (!result.IsSuccess)
 			return Results.BadRequest(result.ErrorMessage);
 
 		return Results.Ok(result.leaves);
 	}
-	public async Task<IResult> ValidateLeaveRequest(LeaveValidateDTO leaveToValidate)
+
+	[HttpPost("validate")]
+	[Authorize]
+	public async Task<IResult> ValidateLeaveRequest([FromBody] LeaveValidateDTO leaveToValidate)
 	{
 		var result = await _leavesService.ValidateLeaveRequest(leaveToValidate);
 		if (!result.IsSuccess)
@@ -99,7 +111,10 @@ public class LeavesController
 
 		return Results.Ok(result.leave);
 	}
-	public async Task<IResult> CreateLeave(LeaveCreateDTO model)
+
+	[HttpPost]
+	[Authorize]
+	public async Task<IResult> CreateLeave([FromBody] LeaveCreateDTO model)
 	{
 		var result = await _leavesService.CreateLeave(model);
 		if (!result.IsSuccess)
@@ -107,6 +122,9 @@ public class LeavesController
 
 		return Results.Ok(result.leave);
 	}
+
+	[HttpPut("{leaveId}")]
+	[Authorize]
 	public async Task<IResult> UpdateLeave(int leaveId, LeaveUpdateDTO leaveUpdate)
 	{
 		var result = await _leavesService.UpdateLeave(leaveId, leaveUpdate);
@@ -115,6 +133,9 @@ public class LeavesController
 
 		return Results.Ok(result.leave);
 	}
+
+	[HttpDelete("{leaveId}")]
+	[Authorize]
 	public async Task<IResult> DeleteLeave(int leaveId)
 	{
 		var result = await _leavesService.DeleteLeave(leaveId);

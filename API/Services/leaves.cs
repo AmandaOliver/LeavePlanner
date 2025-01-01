@@ -527,7 +527,7 @@ Hello {manager.Name},
 			return (false, ex.Message, null);
 		}
 	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, PaginatedLeavesResult? leaves)> GetLeavesAwaitingApproval(string id, int page, int pageSize)
+	public async Task<(bool IsSuccess, string? ErrorMessage, PaginatedLeavesResult? leaves)> GetLeavesPending(string id, int page, int pageSize)
 	{
 		var leaves = await _context.Leaves
 					   .Where(leave => leave.Owner == int.Parse(id) &&

@@ -2,6 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEmployeeModel } from './Employee'
 import { useNavigate } from 'react-router-dom'
+import { Interval } from 'luxon'
 
 export type LeaveTypes = 'paidTimeOff' | 'bankHoliday'
 
@@ -45,161 +46,240 @@ export type ValidateLeaveParamType = {
 export type DeleteLeaveParamType = {
   id: string
 }
+export const useGetMyLeaves = (interval: Interval) => {
+  const { getAccessTokenSilently } = useAuth0()
+  const { currentEmployee } = useEmployeeModel()
 
+  const fetchMyLeaves = async (): Promise<LeaveType[]> => {
+    const accessToken = await getAccessTokenSilently()
+    const response = await fetch(
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/myleaves/${currentEmployee?.id}?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    if (response.status === 200) {
+      return response.json()
+    } else {
+      throw new Error('Error fetching my leaves')
+    }
+  }
+
+  return useQuery({
+    queryKey: ['myleaves', interval],
+    queryFn: fetchMyLeaves,
+  })
+}
+export const useGetAllLeaves = (interval: Interval) => {
+  const { getAccessTokenSilently } = useAuth0()
+
+  const fetchAllLeaves = async (): Promise<LeaveType[]> => {
+    const accessToken = await getAccessTokenSilently()
+    const response = await fetch(
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    if (response.status === 200) {
+      return response.json()
+    } else {
+      throw new Error('Error fetching my leaves')
+    }
+  }
+
+  return useQuery({
+    queryKey: ['allleaves', interval],
+    queryFn: fetchAllLeaves,
+  })
+}
+
+export const useGetMyCircleLeaves = (interval: Interval) => {
+  const { getAccessTokenSilently } = useAuth0()
+  const { currentEmployee } = useEmployeeModel()
+
+  const fetchAllLeaves = async (): Promise<LeaveType[]> => {
+    const accessToken = await getAccessTokenSilently()
+    const response = await fetch(
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/circle/${currentEmployee?.id}?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    if (response.status === 200) {
+      return response.json()
+    } else {
+      throw new Error('Error fetching my leaves')
+    }
+  }
+
+  return useQuery({
+    queryKey: ['mycircleleaves', interval],
+    queryFn: fetchAllLeaves,
+  })
+}
 export const useLeavesModel = () => {
   const { getAccessTokenSilently } = useAuth0()
   const queryClient = useQueryClient()
   const { currentEmployee } = useEmployeeModel()
   const navigate = useNavigate()
-  const fetchLeaves = async (
-    page: number,
-    pageSize: number
-  ): Promise<{ leaves: LeaveType[]; totalCount: number }> => {
-    const accessToken = await getAccessTokenSilently()
-
-    const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    )
-
-    if (response.ok) {
-      const responseJson = await response.json()
-      return {
-        leaves: responseJson.leaves.map((leave: LeaveType) => ({
-          ...leave,
-          dateStart: leave.dateStart.split('T')[0],
-          dateEnd: leave.dateEnd.split('T')[0],
-        })),
-        totalCount: responseJson.totalCount,
-      }
-    } else {
-      throw new Error('Failed to fetch leaves')
-    }
-  }
-  const fetchPastLeaves = async (
-    page: number,
-    pageSize: number
-  ): Promise<{ leaves: LeaveType[]; totalCount: number }> => {
-    const accessToken = await getAccessTokenSilently()
-
-    const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/pastleaves/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    )
-
-    if (response.ok) {
-      const responseJson = await response.json()
-      return {
-        leaves: responseJson.leaves.map((leave: LeaveType) => ({
-          ...leave,
-          dateStart: leave.dateStart.split('T')[0],
-          dateEnd: leave.dateEnd.split('T')[0],
-        })),
-        totalCount: responseJson.totalCount,
-      }
-    } else {
-      throw new Error('Failed to fetch past leaves')
-    }
-  }
-  const fetchLeavesAwaitingApproval = async (
-    page: number,
-    pageSize: number
-  ): Promise<{ leaves: LeaveType[]; totalCount: number }> => {
-    const accessToken = await getAccessTokenSilently()
-
-    const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves/pending/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    )
-
-    if (response.ok) {
-      const responseJson = await response.json()
-      return {
-        leaves: responseJson.leaves.map((leave: LeaveType) => ({
-          ...leave,
-          dateStart: leave.dateStart.split('T')[0],
-          dateEnd: leave.dateEnd.split('T')[0],
-        })),
-        totalCount: responseJson.totalCount,
-      }
-    } else {
-      throw new Error('Failed to fetch pending leaves')
-    }
-  }
-
-  const fetchLeavesRejected = async (
-    page: number,
-    pageSize: number
-  ): Promise<{ leaves: LeaveType[]; totalCount: number }> => {
-    const accessToken = await getAccessTokenSilently()
-
-    const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves/rejected/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    )
-
-    if (response.ok) {
-      const responseJson = await response.json()
-      return {
-        leaves: responseJson.leaves.map((leave: LeaveType) => ({
-          ...leave,
-          dateStart: leave.dateStart.split('T')[0],
-          dateEnd: leave.dateEnd.split('T')[0],
-        })),
-        totalCount: responseJson.totalCount,
-      }
-    } else {
-      throw new Error('Failed to fetch rejected leaves')
-    }
-  }
-
   const usePaginatedLeaves = (page: number, pageSize: number) =>
     useQuery({
       queryKey: ['leaves', currentEmployee?.id, page, pageSize],
-      queryFn: () => fetchLeaves(page, pageSize),
+      queryFn: async (): Promise<{
+        leaves: LeaveType[]
+        totalCount: number
+      }> => {
+        const accessToken = await getAccessTokenSilently()
+
+        const response = await fetch(
+          `${process.env.REACT_APP_API_SERVER_URL}/leaves/approved/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        )
+
+        if (response.ok) {
+          const responseJson = await response.json()
+          return {
+            leaves: responseJson.leaves.map((leave: LeaveType) => ({
+              ...leave,
+              dateStart: leave.dateStart.split('T')[0],
+              dateEnd: leave.dateEnd.split('T')[0],
+            })),
+            totalCount: responseJson.totalCount,
+          }
+        } else {
+          throw new Error('Failed to fetch leaves')
+        }
+      },
       placeholderData: (prevData) => prevData,
     })
   const usePaginatedPastLeaves = (page: number, pageSize: number) =>
     useQuery({
       queryKey: ['pastLeaves', currentEmployee?.id, page, pageSize],
-      queryFn: () => fetchPastLeaves(page, pageSize),
+      queryFn: async (): Promise<{
+        leaves: LeaveType[]
+        totalCount: number
+      }> => {
+        const accessToken = await getAccessTokenSilently()
+
+        const response = await fetch(
+          `${process.env.REACT_APP_API_SERVER_URL}/leaves/past/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        )
+
+        if (response.ok) {
+          const responseJson = await response.json()
+          return {
+            leaves: responseJson.leaves.map((leave: LeaveType) => ({
+              ...leave,
+              dateStart: leave.dateStart.split('T')[0],
+              dateEnd: leave.dateEnd.split('T')[0],
+            })),
+            totalCount: responseJson.totalCount,
+          }
+        } else {
+          throw new Error('Failed to fetch past leaves')
+        }
+      },
       placeholderData: (prevData) => prevData,
     })
-  const usePaginatedLeavesAwaitingApproval = (page: number, pageSize: number) =>
+  const usePaginatedLeavesPending = (page: number, pageSize: number) =>
     useQuery({
       queryKey: ['leavesAwaitingApproval', currentEmployee?.id, page, pageSize],
-      queryFn: () => fetchLeavesAwaitingApproval(page, pageSize),
+      queryFn: async (): Promise<{
+        leaves: LeaveType[]
+        totalCount: number
+      }> => {
+        const accessToken = await getAccessTokenSilently()
+
+        const response = await fetch(
+          `${process.env.REACT_APP_API_SERVER_URL}/leaves/pending/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        )
+
+        if (response.ok) {
+          const responseJson = await response.json()
+          return {
+            leaves: responseJson.leaves.map((leave: LeaveType) => ({
+              ...leave,
+              dateStart: leave.dateStart.split('T')[0],
+              dateEnd: leave.dateEnd.split('T')[0],
+            })),
+            totalCount: responseJson.totalCount,
+          }
+        } else {
+          throw new Error('Failed to fetch pending leaves')
+        }
+      },
       placeholderData: (prevData) => prevData,
     })
-
   const usePaginatedLeavesRejected = (page: number, pageSize: number) =>
     useQuery({
       queryKey: ['leavesRejected', currentEmployee?.id, page, pageSize],
-      queryFn: () => fetchLeavesRejected(page, pageSize),
+      queryFn: async (): Promise<{
+        leaves: LeaveType[]
+        totalCount: number
+      }> => {
+        const accessToken = await getAccessTokenSilently()
+
+        const response = await fetch(
+          `${process.env.REACT_APP_API_SERVER_URL}/leaves/rejected/${currentEmployee?.id}?page=${page}&pageSize=${pageSize}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        )
+
+        if (response.ok) {
+          const responseJson = await response.json()
+          return {
+            leaves: responseJson.leaves.map((leave: LeaveType) => ({
+              ...leave,
+              dateStart: leave.dateStart.split('T')[0],
+              dateEnd: leave.dateEnd.split('T')[0],
+            })),
+            totalCount: responseJson.totalCount,
+          }
+        } else {
+          throw new Error('Failed to fetch rejected leaves')
+        }
+      },
       placeholderData: (prevData) => prevData,
     })
   const createLeaveMutation = useMutation({
@@ -334,7 +414,7 @@ export const useLeavesModel = () => {
   return {
     usePaginatedLeaves,
     usePaginatedPastLeaves,
-    usePaginatedLeavesAwaitingApproval,
+    usePaginatedLeavesPending,
     usePaginatedLeavesRejected,
     createLeave: createLeaveMutation.mutateAsync,
     updateLeave: updateLeaveMutation.mutateAsync,

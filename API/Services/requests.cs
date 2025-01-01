@@ -159,7 +159,7 @@ Hello {employee.Name},
 			Requests = paginatedRequests
 		});
 	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, LeaveDTO? LeaveWithDynamicInfo)> GetRequestConflicts(string id)
+	public async Task<(bool IsSuccess, string? ErrorMessage, LeaveDTO? RequestWithDynamicInfo)> GetRequest(string id)
 	{
 		var leave = await _context.Leaves.FindAsync(int.Parse(id));
 		if (leave == null)

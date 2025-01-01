@@ -1,11 +1,9 @@
 // https://www.googleapis.com/calendar/v3/calendars/en.italian%23holiday%40group.v.calendar.google.com/events?key=AIzaSyD8hdrcLyIKD6lXD-0nGAPWJerZz1c3n5c
-public static class CountriesEndpointsExtensions
-{
-	public static void MapCountriesEndpoints(this IEndpointRouteBuilder endpoints)
-	{
-		endpoints.MapGet("/countries", async (CountriesController controller) => await controller.GetCountries()).RequireAuthorization();
-	}
-}
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("countries")]
 public class CountriesController
 {
 	private readonly CountriesService _countriesService;
@@ -14,7 +12,8 @@ public class CountriesController
 	{
 		_countriesService = countriesService;
 	}
-
+	[HttpGet]
+	[Authorize]
 	public async Task<IResult> GetCountries()
 	{
 		var result = await _countriesService.GetCountries();

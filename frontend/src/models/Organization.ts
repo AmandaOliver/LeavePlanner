@@ -60,7 +60,7 @@ export const useOrganizationModel = () => {
       const accessToken = await getAccessTokenSilently()
       if (!user) return false
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/create-employee-organization`,
+        `${process.env.REACT_APP_API_SERVER_URL}/organization`,
         {
           method: 'POST',
           headers: {
