@@ -14,6 +14,7 @@ builder.Services.AddScoped<LeavesService>();
 builder.Services.AddScoped<RequestsService>();
 builder.Services.AddScoped<EmployeesService>();
 builder.Services.AddScoped<CountriesService>();
+builder.Services.AddHttpClient<CountriesService>();
 builder.Services.AddScoped<EmailService>();
 
 builder.Services.AddEndpointsApiExplorer();

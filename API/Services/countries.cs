@@ -7,9 +7,13 @@ using Microsoft.EntityFrameworkCore;
 public class CountriesService
 {
 	private readonly LeavePlannerContext _context;
-	public CountriesService(LeavePlannerContext context)
+	private readonly HttpClient _httpClient;
+
+	public CountriesService(LeavePlannerContext context, HttpClient httpClient)
 	{
 		_context = context;
+		_httpClient = httpClient;
+
 	}
 	public async Task<(bool IsSuccess, string? ErrorMessage, List<Country>? countries)> GetCountries()
 	{
@@ -28,43 +32,42 @@ public class CountriesService
 		var holidays = new List<HolidayModel>();
 		try
 		{
-			using (var httpClient = new HttpClient())
+
+			var url = $"https://www.googleapis.com/calendar/v3/calendars/en.{countryCode}.official%23holiday%40group.v.calendar.google.com/events?key=AIzaSyD8hdrcLyIKD6lXD-0nGAPWJerZz1c3n5c";
+			var response = await _httpClient.GetAsync(url);
+			if (response.IsSuccessStatusCode)
 			{
-				var url = $"https://www.googleapis.com/calendar/v3/calendars/en.{countryCode}.official%23holiday%40group.v.calendar.google.com/events?key=AIzaSyD8hdrcLyIKD6lXD-0nGAPWJerZz1c3n5c";
-				var response = await httpClient.GetAsync(url);
-				if (response.IsSuccessStatusCode)
+				var data = await response.Content.ReadAsStringAsync();
+				var json = JsonConvert.DeserializeObject<GoogleCalendarResponse>(data);
+				if (json != null && json.Items != null)
 				{
-					var data = await response.Content.ReadAsStringAsync();
-					var json = JsonConvert.DeserializeObject<GoogleCalendarResponse>(data);
-					if (json != null && json.Items != null)
+					foreach (var item in json.Items)
 					{
-						foreach (var item in json.Items)
+						if (item.Start != null && item.Start.Date != null
+						&& item.End != null && item.End.Date != null)
 						{
-							if (item.Start != null && item.Start.Date != null
-							&& item.End != null && item.End.Date != null)
+							if (DateTime.Parse(item.Start.Date) > DateTime.UtcNow)
 							{
-								if (DateTime.Parse(item.Start.Date) > DateTime.UtcNow)
+								holidays.Add(new HolidayModel
 								{
-									holidays.Add(new HolidayModel
-									{
-										StartDate = DateTime.Parse(item.Start.Date),
-										EndDate = DateTime.Parse(item.End.Date),
-										Summary = item.Summary
-									});
-								}
-							}
-							else
-							{
-								throw new Exception("holiday returned by google is missing date");
+									StartDate = DateTime.Parse(item.Start.Date),
+									EndDate = DateTime.Parse(item.End.Date),
+									Summary = item.Summary
+								});
 							}
 						}
-					}
-					else
-					{
-						throw new Exception("response from google doesn't contain items");
+						else
+						{
+							throw new Exception("holiday returned by google is missing date");
+						}
 					}
 				}
+				else
+				{
+					throw new Exception("response from google doesn't contain items");
+				}
 			}
+
 		}
 		catch (Exception ex)
 		{
