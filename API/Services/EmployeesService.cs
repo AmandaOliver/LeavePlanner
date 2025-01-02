@@ -34,7 +34,7 @@ public class EmployeesService
 			throw new Exception("Employee not found.");
 		}
 
-		// Fetch paidTimeOff leaves for the current year excluding the leave being updated/created
+		// Fetch paidTimeOff leaves for the desired year excluding the leave being updated
 		var leavesThisYear = await _context.Leaves
 			.Where(l => l.Owner == employeeId && l.Id != leaveId && l.Type == "paidTimeOff" && l.ApprovedBy != null && (l.DateStart.Year == year || l.DateEnd.Year == year))
 			.ToListAsync();

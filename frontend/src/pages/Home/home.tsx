@@ -1,4 +1,4 @@
-import { useEmployeeModel } from '../../models/Employee'
+import { useEmployeeModel } from '../../models/Employees'
 import { LoadingComponent } from '../../components/loading'
 import { CalendarContextProvider } from './Calendar/CalendarContext'
 

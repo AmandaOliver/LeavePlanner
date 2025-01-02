@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useEmployeeModel } from './Employee'
+import { useEmployeeModel } from './Employees'
 import { useQueryClient } from '@tanstack/react-query'
 import { LeaveType } from './Leaves'
 

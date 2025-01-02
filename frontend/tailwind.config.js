@@ -33,7 +33,7 @@ module.exports = {
               DEFAULT: '#063646',
             },
             secondary: {
-              DEFAULT: '#7459DE',
+              DEFAULT: '#FC8A14',
             },
           },
         },

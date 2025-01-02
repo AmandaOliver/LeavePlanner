@@ -5,7 +5,7 @@ import {
   useQueryClient,
   UseQueryResult,
 } from '@tanstack/react-query'
-import { EmployeeType, useEmployeeModel } from './Employee'
+import { EmployeeType, useEmployeeModel } from './Employees'
 
 export type createOrganizationAndEmployeeResponseBodyType = {
   organizationId: number

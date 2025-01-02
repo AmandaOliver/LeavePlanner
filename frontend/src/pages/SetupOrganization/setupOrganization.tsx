@@ -95,9 +95,9 @@ export const SetupOrganization = () => {
         />
       )}
       <div className="m-8">
-        <div className="flex flex-wrap flex-row items-center gap-4">
+        <div className="hidden sm:flex flex-wrap flex-row items-center gap-4">
           <BussinessWatchIcon />
-          <h1 className=" text-[32px]">Organization info</h1>
+          <h1 className="text-[32px]">Organization info</h1>
 
           <Divider />
         </div>
@@ -158,7 +158,7 @@ export const SetupOrganization = () => {
         </Card>
       </div>
       <div className="m-8">
-        <div className="flex flex-wrap flex-row items-center gap-4">
+        <div className="hidden sm:flex flex-wrap flex-row items-center gap-4">
           <TreeIcon />
           <h1 className=" text-[32px]">Organization tree</h1>
 
@@ -177,7 +177,7 @@ export const SetupOrganization = () => {
               >
                 Import Full Tree From CSV
               </Button>
-              <p className="self-center">or</p>
+              <p className="hidden sm:flex self-center">or</p>
               <Button
                 color="primary"
                 variant="bordered"

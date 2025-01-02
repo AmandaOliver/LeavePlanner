@@ -15,7 +15,7 @@ public class OrganizationsController : ControllerBase
     }
     [HttpPost]
     [Authorize]
-    public async Task<IResult> CreateOrganization([FromBody] EmployeeOrganizationCreateDTO model)
+    public async Task<IResult> CreateOrganization([FromBody] OrganizationCreateDTO model)
     {
         var result = await _organizationsService.CreateEmployeeAndOrganization(model);
         if (!result.IsSuccess)

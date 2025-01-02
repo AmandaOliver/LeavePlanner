@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom'
-import { useEmployeeModel } from '../models/Employee'
+import { useEmployeeModel } from '../models/Employees'
 import { useOrganizationModel } from '../models/Organization'
 import { Header } from '../stories/Header/Header'
 import { useAuth0 } from '@auth0/auth0-react'

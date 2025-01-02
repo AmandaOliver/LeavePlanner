@@ -3,7 +3,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 import '../../index.css'
 import { useState } from 'react'
 import { LoadingComponent } from '../../components/loading'
-import { useEmployeeModel } from '../../models/Employee'
+import { useEmployeeModel } from '../../models/Employees'
 
 export const ProfilePage = () => {
   const { currentEmployee, isLoading: isCurrentEmployeeLoading } =

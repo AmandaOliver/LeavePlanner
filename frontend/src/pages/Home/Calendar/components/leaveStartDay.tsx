@@ -23,7 +23,10 @@ export const LeaveStartDay = ({
     .toDuration('days')
     ?.toObject().days
 
-  const text = 'text-white'
+  const text =
+    leave.type === 'paidTimeOff' && leave.approvedBy
+      ? 'text-white'
+      : 'text-black'
   const name = <p className="pl-2 inline">{leave.ownerName}</p>
   const textConfig =
     leaveDuration && leaveDuration < 2

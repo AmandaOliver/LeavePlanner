@@ -10,7 +10,7 @@ import {
   Card,
 } from '@nextui-org/react'
 import { ChangeEvent, useRef, useState } from 'react'
-import { EmployeeType, useEmployeeModel } from '../../models/Employee'
+import { EmployeeType, useEmployeeModel } from '../../models/Employees'
 import { useCountriesModel } from '../../models/Countries'
 import { useOrganizationModel } from '../../models/Organization'
 

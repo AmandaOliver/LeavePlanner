@@ -88,7 +88,6 @@ public class CountriesService
 				var holidaysForEmployeeCountry = await FetchBankHolidays(countryCode);
 				foreach (var holiday in holidaysForEmployeeCountry)
 				{
-
 					var systemEmployee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == "system");
 					if (systemEmployee != null)
 					{

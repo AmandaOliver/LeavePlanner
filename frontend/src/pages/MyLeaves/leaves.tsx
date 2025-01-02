@@ -26,7 +26,7 @@ import { PartyIcon } from '../../icons/party'
 import { PencilIcon } from '../../icons/pencil'
 import { TrashIcon } from '../../icons/trash'
 import { WatchIcon } from '../../icons/watch'
-import { useEmployeeModel } from '../../models/Employee'
+import { useEmployeeModel } from '../../models/Employees'
 import { useLeavesModel, LeaveType } from '../../models/Leaves'
 
 export const Leaves = () => {
@@ -100,7 +100,7 @@ export const Leaves = () => {
       )}
 
       <div className="m-8">
-        <div className="flex flex-wrap flex-row items-center gap-4">
+        <div className="hidden sm:flex flex-wrap flex-row items-center gap-4">
           <BussinessWatchIcon />
           <h1 className=" text-[32px]">Available leaves</h1>
         </div>
@@ -131,7 +131,7 @@ export const Leaves = () => {
         </div>
       </div>
       <div className="m-8">
-        <div className="flex flex-wrap flex-row items-center gap-4">
+        <div className="hidden sm:flex flex-wrap flex-row items-center gap-4">
           <WatchIcon />
           <h1 className=" text-[32px]">Upcoming leaves</h1>
         </div>
@@ -232,7 +232,7 @@ export const Leaves = () => {
         </Table>
       </div>
       <div className="m-8">
-        <div className="flex flex-wrap flex-row items-center gap-4">
+        <div className="hidden sm:flex flex-wrap flex-row items-center gap-4">
           <HistoryIcon />
           <h1 className=" text-[32px]">History</h1>
         </div>

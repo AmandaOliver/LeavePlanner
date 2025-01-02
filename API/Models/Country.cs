@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace LeavePlanner.Models;
 
-namespace LeavePlanner.Models;
-
-public partial class Country
+public class Country
 {
     public string Code { get; set; } = null!;
 

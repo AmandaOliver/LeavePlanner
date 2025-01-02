@@ -1,5 +1,5 @@
 import { Card, CardBody, CardHeader } from '@nextui-org/react'
-import { EmployeeType } from '../../../models/Employee'
+import { EmployeeType } from '../../../models/Employees'
 import { useOrganizationModel } from '../../../models/Organization'
 import { Employee } from './components/employee'
 
@@ -9,7 +9,7 @@ export const OrganizationTree = () => {
   const renderSubordinates = (subordinates: Array<EmployeeType>) =>
     subordinates.map((employee) => {
       return (
-        <Card className="bg-default-200 p-4 pr-0 m-4 mr-0" key={employee.id}>
+        <Card className="bg-default-200 p-4 pr-0 mt-4 mr-0" key={employee.id}>
           <CardHeader>
             <Employee employee={employee} />
           </CardHeader>

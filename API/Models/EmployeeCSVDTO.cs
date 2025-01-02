@@ -1,4 +1,4 @@
-public class EmployeeCsvModel
+public class EmployeeCsvDTO
 {
 	public required string Email { get; set; }
 	public required string Name { get; set; }

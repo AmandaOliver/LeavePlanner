@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { AuthenticationGuard } from './authentication-guard'
-import { useEmployeeModel } from './models/Employee'
+import { useEmployeeModel } from './models/Employees'
 import CallbackPage from './pages/callback'
 import { LoadingComponent } from './components/loading'
 import { Navigation } from './components/navigation'

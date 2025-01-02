@@ -9,10 +9,9 @@ import {
   Button,
   ModalFooter,
 } from '@nextui-org/react'
-import { LeaveType } from '../models/Leaves'
+import { LeaveType, useLeaveModel } from '../models/Leaves'
 import { parseDate } from '@internationalized/date'
-import { useLeaveModel } from '../models/Leave'
-import { useEmployeeModel } from '../models/Employee'
+import { useEmployeeModel } from '../models/Employees'
 
 export const LeaveInfoModal = ({
   isOpen,
@@ -25,7 +24,6 @@ export const LeaveInfoModal = ({
 }) => {
   const { leaveInfo, isLoading } = useLeaveModel(leave.id)
   const { currentEmployee } = useEmployeeModel()
-  // TODO fix bug with year, we always show the current year in "If approved" message
 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>

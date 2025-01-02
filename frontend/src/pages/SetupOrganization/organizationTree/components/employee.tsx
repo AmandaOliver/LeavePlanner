@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { EmployeeType } from '../../../../models/Employee'
+import { EmployeeType } from '../../../../models/Employees'
 import { Button, useDisclosure } from '@nextui-org/react'
 import { DeleteEmployeeModal } from '../../deleteEmployeeModal'
 import { EmployeeModal } from '../../employeeModal'

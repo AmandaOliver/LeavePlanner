@@ -162,7 +162,7 @@ public class OrganizationsService
 			return (false, ex.Message, null);
 		}
 	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, int? OrganizationId)> CreateEmployeeAndOrganization(EmployeeOrganizationCreateDTO model)
+	public async Task<(bool IsSuccess, string? ErrorMessage, int? OrganizationId)> CreateEmployeeAndOrganization(OrganizationCreateDTO model)
 	{
 		if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.OrganizationName))
 			return (false, "Invalid data.", null);
@@ -197,13 +197,13 @@ public class OrganizationsService
 		using var transaction = await _context.Database.BeginTransactionAsync();
 		try
 		{
-			var employees = new List<EmployeeCsvModel>();
+			var employees = new List<EmployeeCsvDTO>();
 
 			try
 			{
 				using var reader = new StreamReader(fileStream);
 				using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-				employees = csv.GetRecords<EmployeeCsvModel>().ToList();
+				employees = csv.GetRecords<EmployeeCsvDTO>().ToList();
 			}
 			catch (Exception ex)
 			{
