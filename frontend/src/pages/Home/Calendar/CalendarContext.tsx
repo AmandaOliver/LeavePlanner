@@ -1,15 +1,12 @@
 /* eslint-disable no-nested-ternary */
 import { DateTime, Interval } from 'luxon'
 import { createContext, useContext, useState } from 'react'
-import { CALENDARMODE } from './constants'
-import { WorkspaceCalendar } from '.'
+import { Calendar } from '.'
 import {
   useGetAllLeaves,
   useGetMyCircleLeaves,
   useGetMyLeaves,
 } from '../../../models/Leaves'
-
-export const statusFiltersOptions = ['draft', 'scheduled', 'failed', 'sent']
 
 const CalendarContext = createContext<CalendarStateType>(undefined!)
 
@@ -21,7 +18,6 @@ const InitialInterval = Interval.fromDateTimes(
 const CalendarContextProvider = () => {
   const [interval, setInterval] = useState<Interval>(InitialInterval)
   const [visibleDate, setInternalVisibleDate] = useState(DateTime.now())
-  const [calendarMode, setCalendarMode] = useState(CALENDARMODE.MONTH)
   const [selectedFilter, setSelectedFilter] =
     useState<selectedFilterType>('myleaves')
   const myleaves = useGetMyLeaves(interval)
@@ -82,23 +78,9 @@ const CalendarContextProvider = () => {
     loadPreviousInterval()
   }
 
-  const goToPreviousWeek = () => {
-    setInternalVisibleDate((currentVisibleDate) =>
-      currentVisibleDate.startOf('week').minus({ week: 1 }).plus({ days: 3 })
-    )
-    loadPreviousInterval()
-  }
-
   const goToNextMonth = () => {
     setInternalVisibleDate((currentVisibleDate) =>
       currentVisibleDate.plus({ months: 1 }).startOf('month').plus({ days: 14 })
-    )
-    loadNextInterval()
-  }
-
-  const goToNextWeek = () => {
-    setInternalVisibleDate((currentVisibleDate) =>
-      currentVisibleDate.plus({ week: 1 }).startOf('week').plus({ days: 3 })
     )
     loadNextInterval()
   }
@@ -115,16 +97,10 @@ const CalendarContextProvider = () => {
   return (
     <CalendarContext.Provider
       value={{
-        calendarMode,
         interval,
         goToPreviousMonth,
-        goToPreviousWeek,
         goToNextMonth,
-        goToNextWeek,
         goToToday,
-        setCalendarMode,
-        setInterval,
-        setVisibleDate: setInternalVisibleDate,
         visibleDate,
         setSelectedFilter,
         leaves:
@@ -135,7 +111,7 @@ const CalendarContextProvider = () => {
               : mycircleleaves.data,
       }}
     >
-      <WorkspaceCalendar />
+      <Calendar />
     </CalendarContext.Provider>
   )
 }
@@ -144,7 +120,7 @@ const useCalendarContext = () => {
   const context = useContext(CalendarContext)
 
   if (!context) {
-    throw new Error('getContext must be used within AuthContext')
+    throw new Error('getContext must be used within CalendarContext')
   }
 
   return context

@@ -5,7 +5,7 @@ import { WEEKDAYS, FIRSTDAYOFWEEK } from './constants'
 import Header from './components/header'
 import { useCalendarContext } from './CalendarContext'
 
-export const WorkspaceCalendar = () => {
+export const Calendar = () => {
   const { interval } = useCalendarContext()
 
   const headerElement = useMemo(() => {

@@ -1,5 +1,4 @@
 import { useCalendarContext } from '../CalendarContext'
-import { CALENDARMODE } from '../constants'
 import { Button, Select, SelectItem } from '@nextui-org/react'
 import { ChevronLeftIcon } from '../../../../icons/chevron_left'
 import { ChevronRightIcon } from '../../../../icons/chevron_right'
@@ -7,21 +6,14 @@ import { ChevronRightIcon } from '../../../../icons/chevron_right'
 const Header = () => {
   const {
     visibleDate,
-    calendarMode,
     goToPreviousMonth,
-    goToPreviousWeek,
     goToNextMonth,
-    goToNextWeek,
     goToToday,
     setSelectedFilter,
   } = useCalendarContext()
-  const prevCallback = () =>
-    calendarMode === CALENDARMODE.MONTH
-      ? goToPreviousMonth()
-      : goToPreviousWeek()
+  const prevCallback = () => goToPreviousMonth()
 
-  const nextCallback = () =>
-    calendarMode === CALENDARMODE.MONTH ? goToNextMonth() : goToNextWeek()
+  const nextCallback = () => goToNextMonth()
 
   return (
     <div className="flex m-2 gap-2">
