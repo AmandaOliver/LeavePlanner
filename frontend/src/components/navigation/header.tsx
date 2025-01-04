@@ -17,7 +17,7 @@ import {
   Chip,
 } from '@nextui-org/react'
 import { NavLink } from 'react-router-dom'
-import { Logo } from './logo'
+import { Logo } from '../../icons/logo'
 
 type MenuItemType = {
   link: string

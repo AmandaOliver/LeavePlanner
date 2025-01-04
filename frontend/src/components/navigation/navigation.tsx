@@ -1,10 +1,10 @@
 import { useLocation } from 'react-router-dom'
-import { useEmployeeModel } from '../models/Employees'
-import { useOrganizationModel } from '../models/Organization'
-import { Header } from '../stories/Header/Header'
+import { useEmployeeModel } from '../../models/Employees'
+import { useOrganizationModel } from '../../models/Organization'
+import { Header } from './header'
 import { useAuth0 } from '@auth0/auth0-react'
 import { Skeleton, useDisclosure } from '@nextui-org/react'
-import { LeaveModal } from './leaveModal'
+import { LeaveModal } from '../leaveModal'
 import { useState } from 'react'
 
 export const Navigation = () => {

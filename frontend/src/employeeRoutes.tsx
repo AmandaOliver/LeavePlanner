@@ -1,14 +1,13 @@
 import { Routes, Route } from 'react-router-dom'
 import { AuthenticationGuard } from './authentication-guard'
 import { useEmployeeModel } from './models/Employees'
-import CallbackPage from './pages/callback'
 import { LoadingComponent } from './components/loading'
-import { Navigation } from './components/navigation'
-import { CreateOrganizationAndEmployee } from './pages/CreateOrganization/createOrganizationAndEmployee'
+import { Navigation } from './components/navigation/navigation'
+import { CreateOrganizationAndEmployee } from './pages/createOrganization'
 import { HomePage } from './pages/Home/home'
-import { Leaves } from './pages/MyLeaves/leaves'
-import { MyRequests } from './pages/MyRequests/myRequests'
-import { ProfilePage } from './pages/Profile/profile'
+import { Leaves } from './pages/myLeaves'
+import { MyRequests } from './pages/myRequests'
+import { ProfilePage } from './pages/profile'
 import { Requests } from './pages/ReviewRequests/requests'
 import { SetupOrganization } from './pages/SetupOrganization/setupOrganization'
 import { NotFoundPage } from './pages/not-found'
@@ -51,7 +50,7 @@ export const EmployeeRoutes = () => {
             />
           )}
 
-          <Route path="/callback" element={<CallbackPage />} />
+          <Route path="/home" element={<HomePage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       ) : (

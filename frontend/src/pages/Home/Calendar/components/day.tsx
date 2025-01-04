@@ -3,7 +3,7 @@ import { DateTime } from 'luxon'
 import { useCalendarContext } from '../CalendarContext'
 import { Tooltip } from '@nextui-org/react'
 import { LeaveStartDay } from './leaveStartDay'
-import { getSpaces } from '../getMarginTop'
+import { getSpaces } from './getMarginTop'
 import { LeaveType } from '../../../../models/Leaves'
 
 interface DayProps {

@@ -13,7 +13,7 @@ import { useState } from 'react'
 import {
   useOrganizationModel,
   WorkingDaysType,
-} from '../../models/Organization'
+} from '../../../models/Organization'
 
 export const WorkingDaysModal = ({
   isOpen,

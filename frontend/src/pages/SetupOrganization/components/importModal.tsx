@@ -17,8 +17,8 @@ import {
   Card,
 } from '@nextui-org/react'
 import { useState } from 'react'
-import { useOrganizationModel } from '../../models/Organization'
-import { InfoIcon } from '../../icons/info'
+import { useOrganizationModel } from '../../../models/Organization'
+import { InfoIcon } from '../../../icons/info'
 export const ImportModal = ({
   isOpen,
   onOpenChange,

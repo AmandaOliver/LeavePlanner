@@ -7,7 +7,7 @@ import {
   ModalHeader,
 } from '@nextui-org/react'
 import { useState } from 'react'
-import { EmployeeType, useEmployeeModel } from '../../models/Employees'
+import { EmployeeType, useEmployeeModel } from '../../../models/Employees'
 
 export const DeleteEmployeeModal = ({
   isOpen,

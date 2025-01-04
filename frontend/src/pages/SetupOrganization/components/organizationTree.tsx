@@ -1,7 +1,7 @@
 import { Card, CardBody, CardHeader } from '@nextui-org/react'
 import { EmployeeType } from '../../../models/Employees'
 import { useOrganizationModel } from '../../../models/Organization'
-import { Employee } from './components/employee'
+import { Employee } from './employee'
 
 export const OrganizationTree = () => {
   const { currentOrganization } = useOrganizationModel()
