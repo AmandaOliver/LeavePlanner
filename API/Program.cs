@@ -71,7 +71,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = $"https://dev-pcb54t1svzog7cdm.us.auth0.com/";
-        options.Audience = "https://leaveplanner.com"; ;
+        options.Audience = "https://api.leaveplanner.org"; ;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = true,
