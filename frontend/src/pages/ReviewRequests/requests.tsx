@@ -57,6 +57,7 @@ export const Requests = () => {
           isOpen={isOpenReviewModal}
           onOpenChange={onOpenChangeReviewModal}
           request={request}
+          onCloseCb={() => setRequest({} as LeaveType)}
         />
       )}
 

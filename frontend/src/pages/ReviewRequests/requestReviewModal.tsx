@@ -18,10 +18,12 @@ export const RequestReviewModal = ({
   isOpen,
   onOpenChange,
   request,
+  onCloseCb,
 }: {
   isOpen: boolean
   onOpenChange: () => void
   request: LeaveType
+  onCloseCb: () => void
 }) => {
   const { approveRequest, rejectRequest, useRequestInfo } = useRequestsModel()
   const [isLoadingApprove, setIsLoadingApprove] = useState(false)
@@ -86,7 +88,13 @@ export const RequestReviewModal = ({
               </>
             </ModalBody>
             <ModalFooter>
-              <Button variant="light" onPress={onClose}>
+              <Button
+                variant="light"
+                onPress={() => {
+                  onCloseCb()
+                  onClose()
+                }}
+              >
                 Close
               </Button>
 
@@ -96,6 +104,7 @@ export const RequestReviewModal = ({
                 onPress={async () => {
                   setIsLoadingApprove(true)
                   await approveRequest({ requestId: request.id })
+                  onCloseCb()
                   onClose()
                 }}
               >
@@ -108,6 +117,7 @@ export const RequestReviewModal = ({
                 onPress={async () => {
                   setIsLoadingReject(true)
                   await rejectRequest({ requestId: request.id })
+                  onCloseCb()
                   onClose()
                 }}
               >
