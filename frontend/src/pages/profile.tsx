@@ -20,15 +20,16 @@ export const ProfilePage = () => {
         shadow="lg"
         isBlurred
       >
-        <CardBody className="flex flex-wrap flex-row py-4 pl-8">
+        <CardBody className="flex flex-wrap flex-row py-4 pl-8 ">
           <Image
             alt="Profile image"
-            src={isImageError ? '/userIcon.svg' : user?.picture}
+            src={isImageError ? 'userIcon.svg' : user?.picture}
+            className="hidden sm:flex pr-8"
             width={180}
             height={180}
             onError={() => setIsImageError(true)}
           />
-          <div className="flex flex-wrap flex-col ml-8">
+          <div className="flex flex-wrap flex-col ">
             <h1 className="font-bold text-[36px] text-white leading-none">
               {currentEmployee?.name}
             </h1>

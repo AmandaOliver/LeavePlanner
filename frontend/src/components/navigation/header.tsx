@@ -118,7 +118,7 @@ export function Header({
                     color="primary"
                     size="sm"
                     src={
-                      isImageError ? '/userIcon.svg' : currentUser.avatarPicture
+                      isImageError ? 'userIcon.svg' : currentUser.avatarPicture
                     }
                     onError={() => setIsImageError(true)}
                   />
