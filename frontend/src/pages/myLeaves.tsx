@@ -211,18 +211,20 @@ export const Leaves = () => {
                           <PencilIcon />
                         </Button>
                       </Tooltip>
-                      <Tooltip content="Delete leave">
-                        <Button
-                          isIconOnly
-                          color="default"
-                          variant="light"
-                          aria-label="edit"
-                          size="sm"
-                          onPress={() => handleDeleteModalOpen(leave)}
-                        >
-                          <TrashIcon />
-                        </Button>
-                      </Tooltip>
+                      {leave.type !== 'bankHoliday' && (
+                        <Tooltip content="Delete leave">
+                          <Button
+                            isIconOnly
+                            color="default"
+                            variant="light"
+                            aria-label="edit"
+                            size="sm"
+                            onPress={() => handleDeleteModalOpen(leave)}
+                          >
+                            <TrashIcon />
+                          </Button>
+                        </Tooltip>
+                      )}
                     </>
                   </div>
                 </TableCell>

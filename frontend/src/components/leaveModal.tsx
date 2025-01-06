@@ -36,10 +36,9 @@ export const LeaveModal = ({
         .split('T')[0]
   )
   const [description, setDescription] = useState(leave?.description || '')
-  const [type, setType] = useState(leave?.type || 'paidTimeOff')
+  const [type] = useState(leave?.type || 'paidTimeOff')
 
   const { createLeave, updateLeave, validateLeave } = useLeavesModel()
-  const { currentEmployee } = useEmployeeModel()
   const [feedback, setFeedback] = useState<{
     error?: string
     daysRequested?: number
@@ -65,7 +64,7 @@ export const LeaveModal = ({
           description,
           dateStart,
           dateEnd,
-          type,
+          type: 'paidTimeOff',
         })
       }
       setIsLoading(false)
@@ -85,7 +84,7 @@ export const LeaveModal = ({
           dateStart: start.toString(),
           dateEnd: end.add({ days: 1 }).toString(),
           id: leave?.id,
-          type,
+          type: type || 'paidTimeOff',
         })
       )
 
@@ -110,7 +109,7 @@ export const LeaveModal = ({
             dateStart: parseDate(dateStart).toString(),
             dateEnd: parseDate(dateEnd).toString(),
             id: leave?.id,
-            type,
+            type: type || 'paidTimeOff',
           })
         )
         setIsLoadingInfo(false)
@@ -166,20 +165,7 @@ export const LeaveModal = ({
                   </Card>
                 ))
               )}
-              {/* we dont want to allow to change leave type */}
-              {!leave && (
-                <Select
-                  label="Type"
-                  className=""
-                  onChange={(event) =>
-                    setType(event.target.value as LeaveTypes)
-                  }
-                  defaultSelectedKeys={[type]}
-                >
-                  <SelectItem key="bankHoliday">Public Holiday</SelectItem>
-                  <SelectItem key="paidTimeOff">Paid Time Off</SelectItem>
-                </Select>
-              )}
+
               <DateRangePicker
                 allowsNonContiguousRanges
                 visibleMonths={window.innerWidth > 640 ? 2 : 1}
