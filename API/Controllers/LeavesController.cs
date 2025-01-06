@@ -46,11 +46,11 @@ public class LeavesController : ControllerBase
 		return Results.Ok(result.leaves);
 	}
 
-	[HttpGet]
+	[HttpGet("all/{organizationId}")]
 	[Authorize]
-	public async Task<IResult> GetAllLeaves([FromQuery] string? start, [FromQuery] string? end)
+	public async Task<IResult> GetAllLeaves(string organizationId, [FromQuery] string? start, [FromQuery] string? end)
 	{
-		var result = await _leavesService.GetAllLeaves(start, end);
+		var result = await _leavesService.GetAllLeaves(organizationId, start, end);
 		if (!result.IsSuccess)
 			return Results.BadRequest(result.ErrorMessage);
 

@@ -84,11 +84,11 @@ public class LeavesService
 			return (false, "You need to specify start and end", null);
 		}
 	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, List<LeaveDTO>? leaves)> GetMyCircleLeaves(string id, string? start, string? end)
+	public async Task<(bool IsSuccess, string? ErrorMessage, List<LeaveDTO>? leaves)> GetMyCircleLeaves(string employeeId, string? start, string? end)
 	{
 		if (start != null && end != null)
 		{
-			var employee = await _context.Employees.FindAsync(int.Parse(id));
+			var employee = await _context.Employees.FindAsync(int.Parse(employeeId));
 			if (employee == null)
 			{
 				return (false, "employee not found", null);
@@ -100,7 +100,7 @@ public class LeavesService
 			{
 				// it's head, we don't check teammates
 				var employeeLeaves = await _context.Leaves
-							   .Where(leave => leave.Owner == int.Parse(id) &&
+							   .Where(leave => leave.Owner == int.Parse(employeeId) &&
 											   (leave.ApprovedBy != null))
 							   .ToListAsync();
 				allLeaves.AddRange(employeeLeaves);
@@ -180,10 +180,11 @@ public class LeavesService
 			return (false, "You need to specify start and end", null);
 		}
 	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, List<LeaveDTO>? leaves)> GetAllLeaves(string? start, string? end)
+	public async Task<(bool IsSuccess, string? ErrorMessage, List<LeaveDTO>? leaves)> GetAllLeaves(string organizationId, string? start, string? end)
 	{
+
 		var leaves = await _context.Leaves
-						   .Where(leave => leave.ApprovedBy != null)
+						   .Where(leave => leave.ApprovedBy != null && leave.OwnerNavigation.Organization == int.Parse(organizationId))
 						   .ToListAsync();
 
 		if (leaves == null || leaves.Count == 0)

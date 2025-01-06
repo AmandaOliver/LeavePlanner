@@ -77,11 +77,12 @@ export const useGetMyLeaves = (interval: Interval) => {
 }
 export const useGetAllLeaves = (interval: Interval) => {
   const { getAccessTokenSilently } = useAuth0()
+  const { currentEmployee } = useEmployeeModel()
 
   const fetchAllLeaves = async (): Promise<LeaveType[]> => {
     const accessToken = await getAccessTokenSilently()
     const response = await fetch(
-      `${process.env.REACT_APP_API_SERVER_URL}/leaves?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
+      `${process.env.REACT_APP_API_SERVER_URL}/leaves/all/${currentEmployee?.organization}?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
       {
         method: 'GET',
         headers: {
