@@ -37,7 +37,7 @@ export const LeaveStartDay = ({
       content={
         leave.approvedBy
           ? leave.type === 'bankHoliday'
-            ? 'Bank Holiday'
+            ? 'Public Holiday'
             : 'Paid Time Off'
           : 'Request'
       }

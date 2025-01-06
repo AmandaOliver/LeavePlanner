@@ -17,6 +17,8 @@ namespace LeavePlanner.Models
 		public int? RejectedBy { get; set; }
 
 		public int DaysRequested { get; set; }
+		public int DaysLeftThisYear { get; set; }
+		public int DaysLeftNextYear { get; set; }
 		public List<ConflictDTO>? Conflicts { get; set; }
 
 

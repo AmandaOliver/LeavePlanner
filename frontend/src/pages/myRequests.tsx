@@ -138,7 +138,7 @@ export const MyRequests = () => {
                     )}
                     <p className="hidden md:block">
                       {leave.type === 'bankHoliday'
-                        ? 'Bank Holiday'
+                        ? 'Public Holiday'
                         : 'Paid Time Off'}
                     </p>
                   </div>
@@ -236,7 +236,7 @@ export const MyRequests = () => {
                     )}
                     <p className="hidden md:block">
                       {leave.type === 'bankHoliday'
-                        ? 'Bank Holiday'
+                        ? 'Public Holiday'
                         : 'Paid Time Off'}
                     </p>
                   </div>

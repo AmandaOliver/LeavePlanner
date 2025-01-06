@@ -107,7 +107,7 @@ export const Requests = () => {
                     )}
                     <p className="hidden md:block">
                       {request.type === 'bankHoliday'
-                        ? 'Bank Holiday'
+                        ? 'Public Holiday'
                         : 'Paid Time Off'}
                     </p>
                   </div>
@@ -181,7 +181,7 @@ export const Requests = () => {
                     )}
                     <p className="hidden md:block">
                       {request.type === 'bankHoliday'
-                        ? 'Bank Holiday'
+                        ? 'Public Holiday'
                         : 'Paid Time Off'}
                     </p>
                   </div>

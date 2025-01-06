@@ -52,7 +52,7 @@ export const Day = ({ dayDate }: DayProps) => {
         <Tooltip
           content={
             leave.type === 'bankHoliday'
-              ? 'Bank Holiday'
+              ? 'Public Holiday'
               : leave.approvedBy
                 ? 'Paid Time Off'
                 : 'Request'

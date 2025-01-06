@@ -619,13 +619,16 @@ Hello {manager.Name},
 	}
 	public async Task<LeaveDTO> GetLeaveDynamicInfo(Leave leave, bool withConflicts = false)
 	{
-		int requestedDaysThisYear = await _employeesService.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year, leave.Id != 0 ? leave.Id : null);
-		int requestedDaysNextYear = await _employeesService.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year + 1, leave.Id != 0 ? leave.Id : null);
+
 		var employee = await _context.Employees.FindAsync(leave.Owner);
 		if (employee == null)
 		{
 			throw new Exception("employee not found");
 		}
+		int requestedDaysThisYear = await _employeesService.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year, leave.Id != 0 ? leave.Id : null);
+		int requestedDaysNextYear = await _employeesService.GetDaysRequested(leave.DateStart, leave.DateEnd, leave.Owner, DateTime.UtcNow.Year + 1, leave.Id != 0 ? leave.Id : null);
+		int leftDaysThisYear = await _employeesService.GetPaidTimeOffLeft(leave.Owner, leave.DateStart.Year, leave.Id != 0 ? leave.Id : null);
+		int leftDaysNextYear = await _employeesService.GetPaidTimeOffLeft(leave.Owner, leave.DateStart.Year + 1, leave.Id != 0 ? leave.Id : null);
 		LeaveDTO leaveWithDynamicInfo = new LeaveDTO
 		{
 			Id = leave.Id,
@@ -638,6 +641,8 @@ Hello {manager.Name},
 			ApprovedBy = leave.ApprovedBy,
 			RejectedBy = leave.RejectedBy,
 			DaysRequested = requestedDaysThisYear + requestedDaysNextYear,
+			DaysLeftThisYear = leftDaysThisYear - requestedDaysThisYear,
+			DaysLeftNextYear = leftDaysNextYear - requestedDaysNextYear
 		};
 		if (withConflicts == true)
 		{
@@ -677,7 +682,7 @@ Hello {manager.Name},
 			var days = (dateEnd - dateStart).Days;
 			if (days > 1)
 			{
-				return "You cannot request more than 1 day of bank holidays";
+				return "You cannot request more than 1 day of public holidays";
 			}
 		}
 		// Date validation checks

@@ -22,6 +22,8 @@ export type LeaveType = {
   approvedBy: string
   rejectedBy: string
   daysRequested: number
+  daysLeftThisYear?: number
+  daysLeftNextYear?: number
   conflicts?: ConflictType[]
 }
 export type CreateLeaveParamType = {
@@ -433,7 +435,7 @@ export const useLeaveModel = (id: string) => {
       const accessToken = await getAccessTokenSilently()
 
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/leave/${id}`,
+        `${process.env.REACT_APP_API_SERVER_URL}/leaves/${id}`,
         {
           method: 'GET',
           headers: {

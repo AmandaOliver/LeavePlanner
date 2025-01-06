@@ -44,7 +44,7 @@ export const RequestReviewModal = ({
                   <p>
                     Type:{' '}
                     {request.type === 'bankHoliday'
-                      ? 'Bank Holiday'
+                      ? 'Public Holiday'
                       : 'Paid Time Off'}
                   </p>
                 </Card>

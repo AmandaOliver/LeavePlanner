@@ -28,12 +28,7 @@ export const LeaveModal = ({
   leave?: LeaveType
   onCloseCb: () => void
 }) => {
-  const [dateStart, setDateStart] = useState(
-    leave?.dateStart ||
-      new Date(new Date().setDate(new Date().getDate() + 1))
-        .toISOString()
-        .split('T')[0]
-  )
+  const [dateStart, setDateStart] = useState(leave?.dateStart)
   const [dateEnd, setDateEnd] = useState(
     leave?.dateEnd ||
       new Date(new Date().setDate(new Date().getDate() + 2))
@@ -48,31 +43,35 @@ export const LeaveModal = ({
   const [feedback, setFeedback] = useState<{
     error?: string
     daysRequested?: number
+    daysLeftThisYear: number
+    daysLeftNextYear: number
   }>()
   const [isLoadingInfo, setIsLoadingInfo] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const leaveHandler = async (onClose: () => void) => {
-    setIsLoading(true)
-    if (leave) {
-      await updateLeave({
-        id: leave.id,
-        description,
-        dateStart,
-        dateEnd,
-        type,
-      })
-    } else {
-      await createLeave({
-        description,
-        dateStart,
-        dateEnd,
-        type,
-      })
+    if (dateStart && dateEnd) {
+      setIsLoading(true)
+      if (leave) {
+        await updateLeave({
+          id: leave.id,
+          description,
+          dateStart,
+          dateEnd,
+          type,
+        })
+      } else {
+        await createLeave({
+          description,
+          dateStart,
+          dateEnd,
+          type,
+        })
+      }
+      setIsLoading(false)
+      onCloseCb()
+      onClose()
     }
-    setIsLoading(false)
-    onCloseCb()
-    onClose()
   }
 
   const validateLeaveHandler = useCallback(
@@ -104,16 +103,18 @@ export const LeaveModal = ({
   )
   useEffect(() => {
     const getFeedback = async () => {
-      setIsLoadingInfo(true)
-      setFeedback(
-        await validateLeave({
-          dateStart: parseDate(dateStart).toString(),
-          dateEnd: parseDate(dateEnd).toString(),
-          id: leave?.id,
-          type,
-        })
-      )
-      setIsLoadingInfo(false)
+      if (dateStart && dateEnd) {
+        setIsLoadingInfo(true)
+        setFeedback(
+          await validateLeave({
+            dateStart: parseDate(dateStart).toString(),
+            dateEnd: parseDate(dateEnd).toString(),
+            id: leave?.id,
+            type,
+          })
+        )
+        setIsLoadingInfo(false)
+      }
     }
     getFeedback()
   }, [dateEnd, dateStart, leave, validateLeave, type])
@@ -131,53 +132,66 @@ export const LeaveModal = ({
               {leave ? 'Update leave' : 'Request leave'}
             </ModalHeader>
             <ModalBody>
-              {feedback?.error && (
+              {feedback?.error ? (
                 <Card className="bg-danger w-full text-white p-4">
                   <p className="whitespace-pre-line">{feedback.error}</p>
                 </Card>
-              )}
-              {type !== 'bankHoliday' &&
+              ) : (
+                type !== 'bankHoliday' &&
+                dateStart &&
+                dateEnd &&
+                feedback &&
                 (isLoadingInfo ? (
                   <Skeleton className="rounded-lg">
                     <div className="h-14 rounded-lg bg-default-300"></div>
                   </Skeleton>
                 ) : (
-                  <>
-                    {feedback?.daysRequested !== undefined &&
-                      currentEmployee?.paidTimeOffLeft && (
-                        <Card className="bg-primary w-full text-white p-4">
-                          <p>Days Requested: {feedback.daysRequested}</p>
+                  <Card className="bg-primary w-full text-white p-4">
+                    <p>Days Requested: {feedback.daysRequested}</p>
 
-                          {new Date(dateStart).getFullYear() ===
-                            new Date(dateEnd).getFullYear() && (
-                            <p>
-                              If approved, you'll have{' '}
-                              {currentEmployee.paidTimeOffLeft -
-                                feedback.daysRequested}{' '}
-                              days left in {new Date(dateStart).getFullYear()}.
-                            </p>
-                          )}
-                        </Card>
-                      )}
-                  </>
-                ))}
-              <Select
-                label="Type"
-                className=""
-                onChange={(event) => setType(event.target.value as LeaveTypes)}
-                defaultSelectedKeys={[type]}
-              >
-                <SelectItem key="bankHoliday">Bank Holiday</SelectItem>
-                <SelectItem key="paidTimeOff">Paid Time Off</SelectItem>
-              </Select>
+                    {new Date(dateStart).getFullYear() ===
+                    new Date(dateEnd).getFullYear() ? (
+                      <p>
+                        If approved, you'll have {feedback.daysLeftThisYear}{' '}
+                        days left in {new Date(dateStart).getFullYear()}.
+                      </p>
+                    ) : (
+                      <p>
+                        If approved, you'll have {feedback.daysLeftThisYear}{' '}
+                        days left in {new Date(dateStart).getFullYear()} and{' '}
+                        {feedback.daysLeftNextYear} days left in{' '}
+                        {new Date(dateEnd).getFullYear()}
+                      </p>
+                    )}
+                  </Card>
+                ))
+              )}
+              {/* we dont want to allow to change leave type */}
+              {!leave && (
+                <Select
+                  label="Type"
+                  className=""
+                  onChange={(event) =>
+                    setType(event.target.value as LeaveTypes)
+                  }
+                  defaultSelectedKeys={[type]}
+                >
+                  <SelectItem key="bankHoliday">Public Holiday</SelectItem>
+                  <SelectItem key="paidTimeOff">Paid Time Off</SelectItem>
+                </Select>
+              )}
               <DateRangePicker
                 allowsNonContiguousRanges
                 visibleMonths={window.innerWidth > 640 ? 2 : 1}
                 size="md"
-                value={{
-                  start: parseDate(dateStart),
-                  end: parseDate(dateEnd).add({ days: -1 }),
-                }}
+                value={
+                  dateStart && dateEnd
+                    ? {
+                        start: parseDate(dateStart),
+                        end: parseDate(dateEnd).add({ days: -1 }),
+                      }
+                    : undefined
+                }
                 isRequired
                 label="Days on leave"
                 minValue={parseDate(

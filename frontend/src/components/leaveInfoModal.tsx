@@ -11,7 +11,6 @@ import {
 } from '@nextui-org/react'
 import { LeaveType, useLeaveModel } from '../models/Leaves'
 import { parseDate } from '@internationalized/date'
-import { useEmployeeModel } from '../models/Employees'
 
 export const LeaveInfoModal = ({
   isOpen,
@@ -23,7 +22,6 @@ export const LeaveInfoModal = ({
   leave: LeaveType
 }) => {
   const { leaveInfo, isLoading } = useLeaveModel(leave.id)
-  const { currentEmployee } = useEmployeeModel()
 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
@@ -59,26 +57,31 @@ export const LeaveInfoModal = ({
                     <p>
                       Type:{' '}
                       {leave.type === 'bankHoliday'
-                        ? 'Bank Holiday'
+                        ? 'Public Holiday'
                         : 'Paid Time Off'}
                     </p>
                   </Card>
                   {leaveInfo?.daysRequested !== undefined &&
-                    leave.type !== 'bankHoliday' &&
-                    currentEmployee?.paidTimeOffLeft && (
+                    leave.type !== 'bankHoliday' && (
                       <Card className="shadow-none bg-default-100 w-full text-default-600  p-4">
                         <p>Days Requested: {leaveInfo.daysRequested}</p>
-                        {new Date(leaveInfo.dateStart).getFullYear() ===
-                          new Date(leaveInfo.dateEnd).getFullYear() &&
-                          !leave.approvedBy && (
+                        {!leave.approvedBy &&
+                          (new Date(leaveInfo.dateStart).getFullYear() ===
+                          new Date(leaveInfo.dateEnd).getFullYear() ? (
                             <p>
                               If approved, you'll have{' '}
-                              {currentEmployee.paidTimeOffLeft -
-                                leaveInfo.daysRequested}{' '}
-                              days left in{' '}
+                              {leaveInfo.daysLeftThisYear} days left in{' '}
                               {new Date(leaveInfo.dateStart).getFullYear()}.
                             </p>
-                          )}
+                          ) : (
+                            <p>
+                              If approved, you'll have{' '}
+                              {leaveInfo.daysLeftThisYear} days left in{' '}
+                              {new Date(leaveInfo.dateStart).getFullYear()} and{' '}
+                              {leaveInfo.daysLeftNextYear} days left in{' '}
+                              {new Date(leaveInfo.dateEnd).getFullYear()}
+                            </p>
+                          ))}
                       </Card>
                     )}{' '}
                   <DateRangePicker

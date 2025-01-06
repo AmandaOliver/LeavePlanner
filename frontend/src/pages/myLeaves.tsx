@@ -173,7 +173,7 @@ export const Leaves = () => {
                     )}
                     <p className="hidden lg:block">
                       {leave.type === 'bankHoliday'
-                        ? 'Bank Holiday'
+                        ? 'Public Holiday'
                         : 'Paid Time Off'}
                     </p>
                   </div>
@@ -273,7 +273,7 @@ export const Leaves = () => {
                     )}
                     <p className="hidden lg:block">
                       {leave.type === 'bankHoliday'
-                        ? 'Bank Holiday'
+                        ? 'Public Holiday'
                         : 'Paid Time Off'}
                     </p>
                   </div>
