@@ -96,7 +96,15 @@ export function Header({
       <NavbarContent justify="end">
         <li key="request-leave">
           {buttonLabel && (
-            <Button color="primary" onPress={handleButtonClick}>
+            <Button
+              color="primary"
+              onClick={handleButtonClick}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleButtonClick()
+                }
+              }}
+            >
               {buttonLabel}
             </Button>
           )}

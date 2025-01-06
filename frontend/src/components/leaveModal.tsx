@@ -128,7 +128,7 @@ export const LeaveModal = ({
         {(onClose) => (
           <>
             <ModalHeader className="flex flex-col gap-1">
-              {leave ? 'Update leave' : 'Request a leave'}
+              {leave ? 'Update leave' : 'Request leave'}
             </ModalHeader>
             <ModalBody>
               {feedback?.error && (

@@ -95,7 +95,7 @@ export const Navigation = () => {
           setIsLeaveModalOpen(true)
           onOpen()
         }}
-        buttonLabel={currentEmployee?.country ? 'Request a leave' : undefined}
+        buttonLabel={currentEmployee?.country ? 'Request leave' : undefined}
       />
     </>
   )
