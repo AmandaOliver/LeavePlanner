@@ -165,7 +165,13 @@ export const LeaveModal = ({
                   </Card>
                 ))
               )}
-
+              {/* we dont want to allow to change leave type */}
+              <Card className="shadow-none bg-default-100 w-full text-default-600 p-4">
+                <p>
+                  Type:{' '}
+                  {type === 'bankHoliday' ? 'Public Holiday' : 'Paid Time Off'}
+                </p>
+              </Card>
               <DateRangePicker
                 allowsNonContiguousRanges
                 visibleMonths={window.innerWidth > 640 ? 2 : 1}

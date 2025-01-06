@@ -676,15 +676,23 @@ Hello {manager.Name},
 			{
 				return "You cannot update an already taken leave";
 			}
-		}
-		if (type == "bankHoliday")
-		{
-			var days = (dateEnd - dateStart).Days;
-			if (days > 1)
+			if (type == "bankHoliday")
 			{
-				return "You cannot request more than 1 day of public holidays";
+				var days = (dateEnd - dateStart).Days;
+				if (days > 1)
+				{
+					return "You cannot request more than 1 day of public holidays";
+				}
 			}
 		}
+		else
+		{
+			if (type == "bankHoliday")
+			{
+				return "You can't request a new public holiday";
+			}
+		}
+
 		// Date validation checks
 		if (dateStart < DateTime.UtcNow.Date || dateEnd < DateTime.UtcNow.Date)
 		{

@@ -66,11 +66,31 @@ export const RequestReviewModal = ({
                     ))}
                   </Card>
                 )}
-                {request?.daysRequested !== undefined && (
-                  <Card className="shadow-none bg-default-100 w-full text-default-600  p-4">
-                    <p>Days Requested: {request.daysRequested}</p>
-                  </Card>
-                )}
+                {!!request?.daysRequested &&
+                  !!request?.daysLeftThisYear &&
+                  !!request?.daysLeftNextYear && (
+                    <Card
+                      className={`shadow-none ${request.daysLeftThisYear < 0 || request.daysLeftNextYear < 0 ? 'bg-danger text-white' : 'bg-default-100 text-default-600'} w-full p-4`}
+                    >
+                      <p>Days Requested: {request.daysRequested}</p>
+                      {new Date(request.dateStart).getFullYear() ===
+                      new Date(request.dateEnd).getFullYear() ? (
+                        <p>
+                          If approved, {request.ownerName} will have{' '}
+                          {request.daysLeftThisYear} days left in{' '}
+                          {new Date(request.dateStart).getFullYear()}.
+                        </p>
+                      ) : (
+                        <p>
+                          If approved, {request.ownerName} will have{' '}
+                          {request.daysLeftThisYear} days left in{' '}
+                          {new Date(request.dateStart).getFullYear()} and{' '}
+                          {request.daysLeftNextYear} days left in{' '}
+                          {new Date(request.dateEnd).getFullYear()}
+                        </p>
+                      )}
+                    </Card>
+                  )}
 
                 <DateRangePicker
                   visibleMonths={2}
