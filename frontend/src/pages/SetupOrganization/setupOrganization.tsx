@@ -150,7 +150,11 @@ export const SetupOrganization = () => {
               >
                 Rename
               </Button>
-              <Button color="danger" onPress={onOpenDeleteModal}>
+              <Button
+                color="danger"
+                className="text-black"
+                onPress={onOpenDeleteModal}
+              >
                 Delete
               </Button>
             </div>

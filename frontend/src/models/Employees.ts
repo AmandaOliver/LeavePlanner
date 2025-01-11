@@ -109,7 +109,13 @@ export const useEmployeeModel = () => {
       }
       return await response.json()
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data.email === user?.email) {
+        queryClient.invalidateQueries({
+          queryKey: ['employee'],
+        })
+      }
+
       queryClient.invalidateQueries({
         queryKey: ['organization'],
       })
@@ -134,7 +140,12 @@ export const useEmployeeModel = () => {
       }
       return await response.json()
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data.email === user?.email) {
+        queryClient.invalidateQueries({
+          queryKey: ['employee'],
+        })
+      }
       queryClient.invalidateQueries({
         queryKey: ['organization'],
       })
@@ -158,7 +169,12 @@ export const useEmployeeModel = () => {
       }
       return await response.json()
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data.email === user?.email) {
+        queryClient.invalidateQueries({
+          queryKey: ['employee'],
+        })
+      }
       queryClient.invalidateQueries({
         queryKey: ['organization'],
       })

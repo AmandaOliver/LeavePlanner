@@ -31,7 +31,7 @@ export const CreateOrganizationAndEmployee = () => {
         <CardBody>
           {' '}
           <h2 className="text-[22px] m-auto">
-            But you can create your own and get started with LeavePlanner
+            You can create your own and get started with LeavePlanner
           </h2>
           <div className="p-8 flex flex-wrap flex-col gap-4">
             <Button onPress={onOpenUpdateModal} size="lg" color="primary">

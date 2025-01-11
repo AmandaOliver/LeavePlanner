@@ -106,7 +106,7 @@ export const ImportModal = ({
                       <Tooltip content="Required." color="primary">
                         <Code className="flex flex-wrap flex-row items-center gap-2 rounded-md">
                           <InfoIcon />
-                          Name
+                          Full Name
                         </Code>
                       </Tooltip>
                     </TableCell>

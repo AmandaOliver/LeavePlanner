@@ -156,12 +156,14 @@ export const Leaves = () => {
           }
         >
           <TableHeader>
-            <TableColumn>TYPE</TableColumn>
-            <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
-            <TableColumn>DESCRIPTION</TableColumn>
-            <TableColumn>ACTIONS</TableColumn>
+            <TableColumn className="text-black">TYPE</TableColumn>
+            <TableColumn className="hidden sm:table-cell text-black">
+              DATES
+            </TableColumn>
+            <TableColumn className="text-black">DESCRIPTION</TableColumn>
+            <TableColumn className="text-black">ACTIONS</TableColumn>
           </TableHeader>
-          <TableBody emptyContent={'No upcoming leaves'}>
+          <TableBody className="text-black" emptyContent={'No upcoming leaves'}>
             {(paginatedLeaves?.leaves || []).map((leave) => (
               <TableRow key={leave.id}>
                 <TableCell>
@@ -259,11 +261,13 @@ export const Leaves = () => {
           }
         >
           <TableHeader>
-            <TableColumn>TYPE</TableColumn>
-            <TableColumn className="hidden sm:table-cell">DATES</TableColumn>
-            <TableColumn>DESCRIPTION</TableColumn>
+            <TableColumn className="text-black">TYPE</TableColumn>
+            <TableColumn className="hidden sm:table-cell text-black">
+              DATES
+            </TableColumn>
+            <TableColumn className="text-black">DESCRIPTION</TableColumn>
           </TableHeader>
-          <TableBody emptyContent={'No past leaves'}>
+          <TableBody className="text-black" emptyContent={'No past leaves'}>
             {(paginatedPastLeaves?.leaves || []).map((leave) => (
               <TableRow key={leave.id}>
                 <TableCell>

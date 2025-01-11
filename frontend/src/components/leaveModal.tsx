@@ -9,13 +9,10 @@ import {
   Button,
   Textarea,
   Skeleton,
-  Select,
-  SelectItem,
 } from '@nextui-org/react'
-import { LeaveType, LeaveTypes, useLeavesModel } from '../models/Leaves'
+import { LeaveType, useLeavesModel } from '../models/Leaves'
 import { useCallback, useEffect, useState } from 'react'
 import { CalendarDate, parseDate } from '@internationalized/date'
-import { useEmployeeModel } from '../models/Employees'
 
 export const LeaveModal = ({
   isOpen,

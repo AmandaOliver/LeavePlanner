@@ -3,11 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=1"
-    />
+    <meta name="viewport" content="width=device-width" />
+    <script>
+      function isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
+      }
 
+      if (isIOS()) {
+        const meta = document.createElement('meta')
+        meta.name = 'viewport'
+        meta.content =
+          'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=1'
+        document.head.appendChild(meta)
+      }
+    </script>
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"

@@ -302,6 +302,10 @@ Hello {employee.Name},
 	public async Task<string> ValidateEmployee(EmployeeCreateDTO employee)
 	{
 		var existingEmployee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == employee.Email);
+		if (existingEmployee != null && existingEmployee.Country != null)
+		{
+			return "There is an existing employee with the same email";
+		}
 		var emailRegex = new Regex(
 	  @"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$",
 	  RegexOptions.Compiled | RegexOptions.IgnoreCase);

@@ -214,7 +214,7 @@ export const EmployeeModal = ({
                 value={employeeTitle}
                 onChange={handleTitleChange}
                 onBlur={handleTitleBlur}
-                placeholder="developer"
+                placeholder="Developer"
                 isRequired
                 errorMessage={titleError}
                 isInvalid={!!titleError}
@@ -226,11 +226,11 @@ export const EmployeeModal = ({
                 type="text"
                 name="name"
                 id="name"
-                label="Name"
+                label="Full Name"
                 value={employeeName}
                 onChange={handleNameChange}
                 onBlur={handleNameBlur}
-                placeholder="Enter the employee name"
+                placeholder="Enter the employee full name"
                 isRequired
                 errorMessage={nameError}
                 ref={nameRef}

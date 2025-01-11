@@ -59,10 +59,9 @@ const Header = () => {
       <Button
         data-testid="mode-control-today"
         onClick={() => goToToday()}
-        variant="flat"
-        color="primary"
+        color="secondary"
         size="lg"
-        className="hidden sm:flex"
+        className="hidden sm:flex text-black"
       >
         Go to Today
       </Button>
