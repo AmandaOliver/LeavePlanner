@@ -9,6 +9,7 @@ import {
   Button,
   Textarea,
   Skeleton,
+  RangeValue,
 } from '@nextui-org/react'
 import { LeaveType, useLeavesModel } from '../models/Leaves'
 import { useCallback, useEffect, useState } from 'react'
@@ -71,7 +72,7 @@ export const LeaveModal = ({
   }
 
   const validateLeaveHandler = useCallback(
-    async ({ start, end }: { start: CalendarDate; end: CalendarDate }) => {
+    async ({ start, end }: RangeValue<CalendarDate>) => {
       setDateStart(start.toString())
       setDateEnd(end.add({ days: 1 }).toString())
       setIsLoadingInfo(true)
@@ -193,7 +194,11 @@ export const LeaveModal = ({
                     .toISOString()
                     .split('T')[0]
                 )}
-                onChange={validateLeaveHandler}
+                onChange={(value) => {
+                  if (value) {
+                    validateLeaveHandler({ start: value.start, end: value.end })
+                  }
+                }}
               />
               <Textarea
                 label="Description"

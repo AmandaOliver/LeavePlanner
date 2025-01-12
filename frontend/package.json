@@ -8,12 +8,9 @@
     "@nextui-org/react": "^2.4.8",
     "@tanstack/react-query": "^5.52.1",
     "@tanstack/react-query-devtools": "^5.52.1",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
     "@types/luxon": "^3.4.2",
-    "@types/node": "^16.18.87",
+    "@types/node": "^22.10.5",
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",
     "framer-motion": "^11.11.9",
@@ -27,9 +24,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "test": "yarn playwright test",
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

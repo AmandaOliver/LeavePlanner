@@ -203,7 +203,7 @@ public class EmployeesService
 			employee.Email = model.Email ?? employee.Email;
 			if (employee.IsOrgOwner == true && model.IsOrgOwner == false)
 			{
-				var anotherOwner = await _context.Employees.FirstOrDefaultAsync(e => e.IsOrgOwner == true && employee.Email != e.Email);
+				var anotherOwner = await _context.Employees.FirstOrDefaultAsync(e => e.IsOrgOwner == true && employee.Organization == e.Organization && employee.Email != e.Email);
 				if (anotherOwner == null)
 				{
 					await transaction.RollbackAsync();

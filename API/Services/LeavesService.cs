@@ -421,13 +421,11 @@ Hello {manager.Name},
 			leave.DateStart = leaveUpdate.DateStart;
 			leave.DateEnd = leaveUpdate.DateEnd;
 			leave.CreatedAt = DateTime.UtcNow;
-			leave.Type = leaveUpdate.Type;
 			leave.ApprovedBy = null;
 			leave.RejectedBy = null;
 
 			_context.Leaves.Update(leave);
 			await _context.SaveChangesAsync();
-			await transaction.CommitAsync();
 			var employee = await _context.Employees.FindAsync(leave.Owner);
 
 			if (employee == null)
@@ -465,12 +463,22 @@ Hello {manager.Name},
 	Start Date: {leave.DateStart.ToShortDateString()}
 	End Date: {leave.DateEnd.ToShortDateString()}
 	{conflictsInfo}
-	To review go to {_leavePlannerUrl}/requests/{manager.Email}
-						";
+	To review go to {_leavePlannerUrl ?? "https://localhost:3000"}/requests/{manager.Email}";
 						await _emailService.SendEmail(manager.Email, $"Leave Request Updated by {employee.Name}", emailBody);
 					}
+
 				}
 			}
+			else
+			{
+				leave.ApprovedBy = 1;
+
+			}
+			_context.Leaves.Update(leave);
+
+			await _context.SaveChangesAsync();
+			await transaction.CommitAsync();
+
 			return (true, null, leave);
 
 		}

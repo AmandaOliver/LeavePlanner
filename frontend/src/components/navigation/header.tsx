@@ -109,7 +109,7 @@ export function Header({
             </Button>
           )}
         </li>
-        <li>
+        <li test-id="profile">
           <div className="hidden sm:flex flex-wrap flex-grow-0 w-fit justify-items-end">
             <Dropdown placement="bottom-end">
               <Badge
