@@ -26,9 +26,9 @@ public class RequestsService
 		_leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
 
 	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, PaginatedRequestsResult? requests)> GetReviewedRequestsOfAManager(string id, int page, int pageSize)
+	public async Task<(bool IsSuccess, string? ErrorMessage, PaginatedRequestsResult? requests)> GetReviewedRequestsOfAManager(string employeeId, int page, int pageSize)
 	{
-		var manager = await _context.Employees.FindAsync(int.Parse(id));
+		var manager = await _context.Employees.FindAsync(int.Parse(employeeId));
 		if (manager == null)
 		{
 			return (false, "employee not found", null);
@@ -128,9 +128,9 @@ Hello {employee.Name},
 			return (false, ex.Message, null);
 		}
 	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, PaginatedRequestsResult? requests)> GetRequestsOfAManager(string id, int page, int pageSize)
+	public async Task<(bool IsSuccess, string? ErrorMessage, PaginatedRequestsResult? requests)> GetRequestsOfAManager(string employeeId, int page, int pageSize)
 	{
-		var manager = await _context.Employees.FindAsync(int.Parse(id));
+		var manager = await _context.Employees.FindAsync(int.Parse(employeeId));
 		if (manager == null)
 		{
 			return (false, "employee not found", null);

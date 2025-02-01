@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+[Authorize]
 [ApiController]
 [Route("requests")]
 public class RequestsController
@@ -13,8 +14,9 @@ public class RequestsController
 	{
 		_requestsService = requestsService;
 	}
+
+	[ManagerOnly]
 	[HttpGet("{requestId}")]
-	[Authorize]
 	public async Task<IResult> GetRequest(string requestId)
 	{
 		var result = await _requestsService.GetRequest(requestId);
@@ -23,30 +25,31 @@ public class RequestsController
 
 		return Results.Ok(result.RequestWithDynamicInfo);
 	}
-	[HttpGet("review/{requestId}")]
-	[Authorize]
-	public async Task<IResult> GetRequestsOfAManager(string requestId, int page, int pageSize)
+
+	[SelfAccessOnly]
+	[HttpGet("review/{employeeId}")]
+	public async Task<IResult> GetRequestsOfAManager(string employeeId, int page, int pageSize)
 	{
-		var result = await _requestsService.GetRequestsOfAManager(requestId, page, pageSize);
+		var result = await _requestsService.GetRequestsOfAManager(employeeId, page, pageSize);
 		if (!result.IsSuccess)
 			return Results.BadRequest(result.ErrorMessage);
 
 		return Results.Ok(result.requests);
 	}
 
-	[HttpGet("reviewed/{requestId}")]
-	[Authorize]
-	public async Task<IResult> GetReviewedRequestsOfAManager(string requestId, int page, int pageSize)
+	[SelfAccessOnly]
+	[HttpGet("reviewed/{employeeId}")]
+	public async Task<IResult> GetReviewedRequestsOfAManager(string employeeId, int page, int pageSize)
 	{
-		var result = await _requestsService.GetReviewedRequestsOfAManager(requestId, page, pageSize);
+		var result = await _requestsService.GetReviewedRequestsOfAManager(employeeId, page, pageSize);
 		if (!result.IsSuccess)
 			return Results.BadRequest(result.ErrorMessage);
 
 		return Results.Ok(result.requests);
 	}
 
+	[ManagerOnly]
 	[HttpPost("{employeeId}/approve/{requestId}")]
-	[Authorize]
 	public async Task<IResult> ApproveRequest(string requestId, string employeeId)
 	{
 		var result = await _requestsService.ApproveRequest(requestId, employeeId);
@@ -56,8 +59,8 @@ public class RequestsController
 		return Results.Ok(result.request);
 	}
 
+	[ManagerOnly]
 	[HttpPost("{employeeId}/reject/{requestId}")]
-	[Authorize]
 	public async Task<IResult> RejectRequest(string requestId, string employeeId)
 	{
 		var result = await _requestsService.RejectRequest(requestId, employeeId);

@@ -289,7 +289,7 @@ export const useLeavesModel = () => {
     mutationFn: async (createData: CreateLeaveParamType) => {
       const accessToken = await getAccessTokenSilently()
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/leaves`,
+        `${process.env.REACT_APP_API_SERVER_URL}/leaves/${currentEmployee?.id}`,
         {
           method: 'POST',
           headers: {
@@ -298,7 +298,6 @@ export const useLeavesModel = () => {
           },
           body: JSON.stringify({
             ...createData,
-            owner: currentEmployee?.id,
           }),
         }
       )
@@ -359,7 +358,7 @@ export const useLeavesModel = () => {
     mutationFn: async (validateData: ValidateLeaveParamType) => {
       const accessToken = await getAccessTokenSilently()
       const response = await fetch(
-        `${process.env.REACT_APP_API_SERVER_URL}/leaves/validate`,
+        `${process.env.REACT_APP_API_SERVER_URL}/leaves/validate/${currentEmployee?.id}`,
         {
           method: 'POST',
           headers: {
@@ -368,7 +367,6 @@ export const useLeavesModel = () => {
           },
           body: JSON.stringify({
             ...validateData,
-            owner: currentEmployee?.id,
           }),
         }
       )

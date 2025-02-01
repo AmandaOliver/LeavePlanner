@@ -33,7 +33,9 @@ test('UC-023 Admin Renames Organization', async ({ page }) => {
     .getByPlaceholder('Enter your Organization name')
     .fill('LeavePlannerRenamed')
   await page.getByRole('button', { name: 'Update' }).click()
-  await page.getByRole('heading', { name: 'Name: LeavePlannerRenamed' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Name: LeavePlannerRenamed' })
+  ).toBeVisible()
 })
 test('UC-024 Admin Configures Organization’s Working Days', async ({
   page,
@@ -110,7 +112,8 @@ test('UC-028 Admin Creates a Subordinate Employee', async ({ page }) => {
   await expect(page.getByText('something@gmail.com')).toBeVisible()
   await expect(page.getByText('Title: fakeQA')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Add Subordinate' }).first().click()
+  await page.goto('/setup-organization')
+  await page.getByRole('button', { name: 'Add Subordinate' }).click()
   await page
     .getByPlaceholder('name@yourorganization.com')
     .fill('plannerleave95@gmail.com')
@@ -129,6 +132,9 @@ test('UC-028 Admin Creates a Subordinate Employee', async ({ page }) => {
 test('UC-030 Admin Deletes an Employee', async ({ page }) => {
   await page.goto('/setup-organization')
   await page.getByText('See subordinates').click()
-  await page.getByRole('button', { name: 'Delete employee' }).nth(1).click()
+  await expect(page.getByText('Title: fakeQA')).toBeVisible()
+
+  await page.getByTestId('delete-something@gmail.com').click()
   await page.getByRole('button', { name: 'Delete' }).click()
+  await expect(page.getByText('Title: fakeQA')).not.toBeVisible()
 })

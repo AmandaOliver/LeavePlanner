@@ -2,7 +2,7 @@ using LeavePlanner.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-
+[Authorize]
 [ApiController]
 [Route("organization")]
 public class OrganizationsController : ControllerBase
@@ -13,8 +13,8 @@ public class OrganizationsController : ControllerBase
     {
         _organizationsService = organizationsService;
     }
+
     [HttpPost]
-    [Authorize]
     public async Task<IResult> CreateOrganization([FromBody] OrganizationCreateDTO model)
     {
         var result = await _organizationsService.CreateEmployeeAndOrganization(model);
@@ -24,8 +24,8 @@ public class OrganizationsController : ControllerBase
         return Results.Ok(new { OrganizationId = result.OrganizationId });
     }
 
+    [AdminOnly]
     [HttpPost("import/{organizationId}")]
-    [Authorize]
     public async Task<IResult> ImportOrganization(string organizationId, [FromForm] IFormFile file)
     {
         if (string.IsNullOrEmpty(organizationId))
@@ -48,9 +48,8 @@ public class OrganizationsController : ControllerBase
             return Results.Problem(ex.Message);
         }
     }
-
+    [OrganizationMemberOnly]
     [HttpGet("{organizationId}")]
-    [Authorize]
     public async Task<IResult> GetOrganization(string organizationId)
     {
         var result = await _organizationsService.GetOrganization(organizationId);
@@ -61,8 +60,8 @@ public class OrganizationsController : ControllerBase
 
     }
 
+    [AdminOnly]
     [HttpPut("{organizationId}")]
-    [Authorize]
     public async Task<IResult> UpdateOrganization(int organizationId, [FromBody] OrganizationUpdateDTO organizationUpdate)
     {
         var result = await _organizationsService.UpdateOrganization(organizationId, organizationUpdate);
@@ -72,8 +71,8 @@ public class OrganizationsController : ControllerBase
         return Results.Ok(result.organization);
     }
 
+    [AdminOnly]
     [HttpDelete("{organizationId}")]
-    [Authorize]
     public async Task<IResult> DeleteOrganization(string organizationId)
     {
         var result = await _organizationsService.DeleteOrganization(organizationId);

@@ -94,6 +94,7 @@ export const Employee = ({ employee }: { employee: EmployeeType }) => {
             <Button
               onPress={() => handleDeleteModalOpen(employee)}
               color="danger"
+              data-testid={`delete-${employee.email}`}
             >
               Delete employee
             </Button>

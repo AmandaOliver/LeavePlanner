@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 
+[Authorize]
 [ApiController]
 [Route("employee")]
 public class EmployeesController : ControllerBase
@@ -15,8 +16,8 @@ public class EmployeesController : ControllerBase
 
     }
 
+    [AdminOnly]
     [HttpPost]
-    [Authorize]
     public async Task<IResult> CreateEmployee([FromBody] EmployeeCreateDTO model)
     {
 
@@ -27,8 +28,8 @@ public class EmployeesController : ControllerBase
         return Results.Ok(result.Employee);
     }
 
+    [SelfEmailOrAdminOnly]
     [HttpGet("{email}")]
-    [Authorize]
     public async Task<IResult> GetEmployee(string email)
     {
         var result = await _employeesService.GetEmployeeByEmail(email);
@@ -37,8 +38,9 @@ public class EmployeesController : ControllerBase
 
         return Results.Ok(result.Employee);
     }
+
+    [AdminOnly]
     [HttpPut("{id}")]
-    [Authorize]
     public async Task<IResult> UpdateEmployee(string id, [FromBody] EmployeeUpdateDTO model)
     {
         var result = await _employeesService.UpdateEmployee(id, model);
@@ -48,8 +50,8 @@ public class EmployeesController : ControllerBase
         return Results.Ok(result.Employee);
     }
 
+    [AdminOnly]
     [HttpDelete("{id}")]
-    [Authorize]
     public async Task<IResult> DeleteEmployee(string id)
     {
         var result = await _employeesService.DeleteEmployee(id);

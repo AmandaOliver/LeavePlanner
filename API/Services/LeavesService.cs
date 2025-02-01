@@ -314,36 +314,38 @@ public class LeavesService
 			Leaves = paginatedLeaves
 		});
 	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, Leave? leave)> CreateLeave(LeaveCreateDTO model)
+	public async Task<(bool IsSuccess, string? ErrorMessage, Leave? leave)> CreateLeave(string employeeId, LeaveCreateDTO model)
 	{
-		var validationResult = await ValidateLeave(model.DateStart, model.DateEnd, model.Owner, null, model.Type);
-		if (validationResult != "success")
-		{
-			return (false, validationResult, null);
-		}
 		using var transaction = await _context.Database.BeginTransactionAsync();
 		try
 		{
-			var employee = await _context.Employees.FindAsync(model.Owner);
+			var employee = await _context.Employees.FindAsync(int.Parse(employeeId));
 
 			if (employee == null)
 			{
 				return (false, "Employee not found.", null);
 			}
+			var validationResult = await ValidateLeave(model.DateStart, model.DateEnd, int.Parse(employeeId), null, model.Type);
+			if (validationResult != "success")
+			{
+				return (false, validationResult, null);
+			}
+
+
 			Leave leave = new Leave
 			{
 				Description = model.Description,
 				DateStart = model.DateStart,
 				DateEnd = model.DateEnd,
 				Type = model.Type,
-				Owner = model.Owner,
+				Owner = int.Parse(employeeId),
 				OwnerNavigation = employee,
 				CreatedAt = DateTime.UtcNow
 			};
 
 			if (employee.ManagedBy == null)
 			{
-				leave.ApprovedBy = model.Owner;
+				leave.ApprovedBy = int.Parse(employeeId);
 			}
 			_context.Leaves.Add(leave);
 
@@ -564,25 +566,26 @@ Hello {manager.Name},
 			Leaves = paginatedLeaves
 		});
 	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, LeaveDTO? leave)> ValidateLeaveRequest(LeaveValidateDTO leaveToValidate)
+	public async Task<(bool IsSuccess, string? ErrorMessage, LeaveDTO? leave)> ValidateLeaveRequest(string employeeId, LeaveValidateDTO leaveToValidate)
 	{
-		var validationResult = await ValidateLeave(leaveToValidate.DateStart, leaveToValidate.DateEnd, leaveToValidate.Owner, leaveToValidate.Id, leaveToValidate.Type);
-		if (validationResult != "success")
-		{
-			return (false, validationResult, null);
-		}
-		var employee = await _context.Employees.FindAsync(leaveToValidate.Owner);
+		var employee = await _context.Employees.FindAsync(int.Parse(employeeId));
 		if (employee == null)
 		{
 			return (false, "Employee not found.", null);
 		}
+		var validationResult = await ValidateLeave(leaveToValidate.DateStart, leaveToValidate.DateEnd, int.Parse(employeeId), leaveToValidate.Id, leaveToValidate.Type);
+		if (validationResult != "success")
+		{
+			return (false, validationResult, null);
+		}
+
 		Leave leaveRequest = new Leave
 		{
 			Id = leaveToValidate.Id ?? 0,
 			DateStart = leaveToValidate.DateStart,
 			DateEnd = leaveToValidate.DateEnd,
 			Type = "paidTimeOff",
-			Owner = leaveToValidate.Owner,
+			Owner = int.Parse(employeeId),
 			OwnerNavigation = employee,
 		};
 		var leave = await GetLeaveDynamicInfo(leaveRequest);
