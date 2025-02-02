@@ -31,7 +31,7 @@ CREATE TABLE Employees (
 -- Create the Leaves table without foreign keys
 CREATE TABLE Leaves (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    type ENUM('paidTimeOff', 'bankHoliday'),
+    type ENUM('paidTimeOff', 'bankHoliday', 'statutoryLeave'),
     dateStart DATETIME NOT NULL,
     dateEnd DATETIME NOT NULL,
     owner INT,

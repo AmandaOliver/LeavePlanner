@@ -24,6 +24,7 @@ import { PencilIcon } from '../icons/pencil'
 import { RequestIcon } from '../icons/request'
 import { TrashIcon } from '../icons/trash'
 import { useLeavesModel, LeaveType } from '../models/Leaves'
+import { StatutoryLeaveIcon } from '../icons/statutoryLeave'
 
 export const MyRequests = () => {
   const { usePaginatedLeavesPending, usePaginatedLeavesRejected } =
@@ -133,13 +134,17 @@ export const MyRequests = () => {
                   <div className="flex flex-wrap flex-row items-center gap-4">
                     {leave.type === 'bankHoliday' ? (
                       <PartyIcon />
+                    ) : leave.type === 'statutoryLeave' ? (
+                      <StatutoryLeaveIcon />
                     ) : (
                       <BussinessWatchIcon />
                     )}
                     <p className="hidden md:block">
                       {leave.type === 'bankHoliday'
                         ? 'Public Holiday'
-                        : 'Paid Time Off'}
+                        : leave.type === 'statutoryLeave'
+                          ? 'Statutory Leave'
+                          : 'Paid Time Off'}
                     </p>
                   </div>
                 </TableCell>
@@ -233,13 +238,17 @@ export const MyRequests = () => {
                   <div className="flex flex-wrap flex-row items-center gap-4">
                     {leave.type === 'bankHoliday' ? (
                       <PartyIcon />
+                    ) : leave.type === 'statutoryLeave' ? (
+                      <StatutoryLeaveIcon />
                     ) : (
                       <BussinessWatchIcon />
                     )}
                     <p className="hidden md:block">
                       {leave.type === 'bankHoliday'
                         ? 'Public Holiday'
-                        : 'Paid Time Off'}
+                        : leave.type === 'statutoryLeave'
+                          ? 'Statutory Leave'
+                          : 'Paid Time Off'}
                     </p>
                   </div>
                 </TableCell>

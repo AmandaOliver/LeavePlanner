@@ -41,7 +41,9 @@ export const Day = ({ dayDate }: DayProps) => {
       const background = leave.approvedBy
         ? leave.type === 'bankHoliday'
           ? 'bg-secondary'
-          : 'bg-default-500'
+          : leave.type === 'statutoryLeave'
+            ? 'bg-primary'
+            : 'bg-default-500'
         : 'bg-default-200'
       let processedLeaves: LeaveType[] = []
 
@@ -54,7 +56,9 @@ export const Day = ({ dayDate }: DayProps) => {
             leave.type === 'bankHoliday'
               ? 'Public Holiday'
               : leave.approvedBy
-                ? 'Paid Time Off'
+                ? leave.type === 'statutoryLeave'
+                  ? 'Statutory Leave'
+                  : 'Paid Time Off'
                 : 'Request'
           }
         >

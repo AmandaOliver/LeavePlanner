@@ -22,6 +22,7 @@ import { LoadingComponent } from '../components/loading'
 import { BussinessWatchIcon } from '../icons/bussinesswatch'
 import { EyeIcon } from '../icons/eye'
 import { HistoryIcon } from '../icons/history'
+import { StatutoryLeaveIcon } from '../icons/statutoryLeave'
 import { PartyIcon } from '../icons/party'
 import { PencilIcon } from '../icons/pencil'
 import { TrashIcon } from '../icons/trash'
@@ -170,13 +171,17 @@ export const Leaves = () => {
                   <div className="flex flex-wrap flex-row items-center gap-4">
                     {leave.type === 'bankHoliday' ? (
                       <PartyIcon />
+                    ) : leave.type === 'statutoryLeave' ? (
+                      <StatutoryLeaveIcon />
                     ) : (
                       <BussinessWatchIcon />
                     )}
                     <p className="hidden lg:block">
                       {leave.type === 'bankHoliday'
                         ? 'Public Holiday'
-                        : 'Paid Time Off'}
+                        : leave.type === 'statutoryLeave'
+                          ? 'Statutory Leave'
+                          : 'Paid Time Off'}
                     </p>
                   </div>
                 </TableCell>
@@ -274,13 +279,17 @@ export const Leaves = () => {
                   <div className="flex flex-wrap flex-row items-center gap-4">
                     {leave.type === 'bankHoliday' ? (
                       <PartyIcon />
+                    ) : leave.type === 'statutoryLeave' ? (
+                      <StatutoryLeaveIcon />
                     ) : (
                       <BussinessWatchIcon />
                     )}
                     <p className="hidden lg:block">
                       {leave.type === 'bankHoliday'
                         ? 'Public Holiday'
-                        : 'Paid Time Off'}
+                        : leave.type === 'statutoryLeave'
+                          ? 'Statutory Leave'
+                          : 'Paid Time Off'}
                     </p>
                   </div>
                 </TableCell>

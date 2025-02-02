@@ -55,10 +55,8 @@ public class LeavesService
 			}
 
 			var leavesWithinRange = leaves.Where(leave =>
-				{
-					return leave.DateStart > DateTime.Parse(start) && leave.DateEnd <= DateTime.Parse(end);
-
-				}).ToList();
+				leave.DateEnd >= DateTime.Parse(start) && leave.DateStart <= DateTime.Parse(end)
+			).ToList();
 			var leaveDTOs = new List<LeaveDTO>();
 
 			foreach (var leave in leavesWithinRange)
@@ -147,10 +145,9 @@ public class LeavesService
 			}
 
 			var leavesWithinRange = allLeaves.Where(leave =>
-				{
-					return leave.DateStart > DateTime.Parse(start) && leave.DateEnd <= DateTime.Parse(end);
+				leave.DateEnd >= DateTime.Parse(start) && leave.DateStart <= DateTime.Parse(end)
+			).ToList();
 
-				}).ToList();
 			var leaveDTOs = new List<LeaveDTO>();
 
 			foreach (var leave in leavesWithinRange)
@@ -196,10 +193,8 @@ public class LeavesService
 		{
 
 			var leavesWithinRange = leaves.Where(leave =>
-				{
-					return leave.DateStart > DateTime.Parse(start) && leave.DateEnd <= DateTime.Parse(end);
-
-				}).ToList();
+				leave.DateEnd >= DateTime.Parse(start) && leave.DateStart <= DateTime.Parse(end)
+			).ToList();
 			var leaveDTOs = new List<LeaveDTO>();
 
 			foreach (var leave in leavesWithinRange)
@@ -584,7 +579,7 @@ Hello {manager.Name},
 			Id = leaveToValidate.Id ?? 0,
 			DateStart = leaveToValidate.DateStart,
 			DateEnd = leaveToValidate.DateEnd,
-			Type = "paidTimeOff",
+			Type = leaveToValidate.Type,
 			Owner = int.Parse(employeeId),
 			OwnerNavigation = employee,
 		};
@@ -722,40 +717,41 @@ Hello {manager.Name},
 		}
 
 
-
-		// If leave crosses over into the next year
-		if (dateStart.Year != dateEnd.Year)
+		if (type == "paidTimeOff")
 		{
-			var endOfYear = new DateTime(dateStart.Year + 1, 1, 1);
-			var daysInCurrentYear = await _employeesService.GetDaysRequested(dateStart, endOfYear, owner, dateStart.Year, leaveId);
-			var startOfNextYear = new DateTime(dateEnd.Year, 1, 1);
-			var daysInNextYear = await _employeesService.GetDaysRequested(startOfNextYear, dateEnd, owner, dateEnd.Year, leaveId);
-
-			// Check for enough paid time off in current year
-			var paidTimeOffLeftForCurrentYear = await _employeesService.GetPaidTimeOffLeft(employee.Id, dateStart.Year, leaveId);
-			if (daysInCurrentYear > paidTimeOffLeftForCurrentYear)
+			// If leave crosses over into the next year
+			if (dateStart.Year != dateEnd.Year)
 			{
-				return $"You cannot request more days than you have left.\nDays requested: {daysInCurrentYear}.\nDays left for the year {dateStart.Year}: {paidTimeOffLeftForCurrentYear}.";
+				var endOfYear = new DateTime(dateStart.Year + 1, 1, 1);
+				var daysInCurrentYear = await _employeesService.GetDaysRequested(dateStart, endOfYear, owner, dateStart.Year, leaveId);
+				var startOfNextYear = new DateTime(dateEnd.Year, 1, 1);
+				var daysInNextYear = await _employeesService.GetDaysRequested(startOfNextYear, dateEnd, owner, dateEnd.Year, leaveId);
+
+				// Check for enough paid time off in current year
+				var paidTimeOffLeftForCurrentYear = await _employeesService.GetPaidTimeOffLeft(employee.Id, dateStart.Year, leaveId);
+				if (daysInCurrentYear > paidTimeOffLeftForCurrentYear)
+				{
+					return $"You cannot request more days than you have left.\nDays requested: {daysInCurrentYear}.\nDays left for the year {dateStart.Year}: {paidTimeOffLeftForCurrentYear}.";
+				}
+
+				// Check for enough paid time off in next year
+				var paidTimeOffLeftForNextYear = await _employeesService.GetPaidTimeOffLeft(employee.Id, dateEnd.Year, leaveId);
+				if (daysInNextYear > paidTimeOffLeftForNextYear)
+				{
+					return $"You cannot request more days than you have left.\nDays requested: {daysInNextYear}.\nDays left for the year {dateEnd.Year}: {paidTimeOffLeftForNextYear}.";
+				}
 			}
-
-			// Check for enough paid time off in next year
-			var paidTimeOffLeftForNextYear = await _employeesService.GetPaidTimeOffLeft(employee.Id, dateEnd.Year, leaveId);
-			if (daysInNextYear > paidTimeOffLeftForNextYear)
+			else
 			{
-				return $"You cannot request more days than you have left.\nDays requested: {daysInNextYear}.\nDays left for the year {dateEnd.Year}: {paidTimeOffLeftForNextYear}.";
+				int totalWeekdaysRequested = await _employeesService.GetDaysRequested(dateStart, dateEnd, owner, dateStart.Year, leaveId);
+				var paidTimeOffLeft = await _employeesService.GetPaidTimeOffLeft(employee.Id, dateStart.Year, leaveId);
+
+				if (totalWeekdaysRequested > paidTimeOffLeft)
+				{
+					return $"You cannot request more days than you have left.\nDays requested: {totalWeekdaysRequested}.\nDays left for {dateStart.Year}: {paidTimeOffLeft}.";
+				}
 			}
 		}
-		else
-		{
-			int totalWeekdaysRequested = await _employeesService.GetDaysRequested(dateStart, dateEnd, owner, dateStart.Year, leaveId);
-			var paidTimeOffLeft = await _employeesService.GetPaidTimeOffLeft(employee.Id, dateStart.Year, leaveId);
-
-			if (totalWeekdaysRequested > paidTimeOffLeft)
-			{
-				return $"You cannot request more days than you have left.\nDays requested: {totalWeekdaysRequested}.\nDays left for {dateStart.Year}: {paidTimeOffLeft}.";
-			}
-		}
-
 		return "success";
 	}
 	public async Task<List<ConflictDTO>> GetConflicts(Leave leaveRequest)

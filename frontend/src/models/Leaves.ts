@@ -4,7 +4,7 @@ import { useEmployeeModel } from './Employees'
 import { useNavigate } from 'react-router-dom'
 import { Interval } from 'luxon'
 
-export type LeaveTypes = 'paidTimeOff' | 'bankHoliday'
+export type LeaveTypes = 'paidTimeOff' | 'bankHoliday' | 'statutoryLeave'
 
 export type ConflictType = {
   employeeId: string

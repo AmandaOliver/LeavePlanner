@@ -24,7 +24,8 @@ export const LeaveStartDay = ({
     ?.toObject().days
 
   const text =
-    leave.type === 'paidTimeOff' && leave.approvedBy
+    (leave.type === 'paidTimeOff' || leave.type === 'statutoryLeave') &&
+    leave.approvedBy
       ? 'text-white'
       : 'text-black'
   const name = <p className="pl-2 inline">{leave.ownerName}</p>
@@ -38,7 +39,9 @@ export const LeaveStartDay = ({
         leave.approvedBy
           ? leave.type === 'bankHoliday'
             ? 'Public Holiday'
-            : 'Paid Time Off'
+            : leave.type === 'statutoryLeave'
+              ? 'Statutory Leave'
+              : 'Paid Time Off'
           : 'Request'
       }
     >

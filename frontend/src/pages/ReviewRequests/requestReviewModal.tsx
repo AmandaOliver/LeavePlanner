@@ -45,7 +45,9 @@ export const RequestReviewModal = ({
                     Type:{' '}
                     {request.type === 'bankHoliday'
                       ? 'Public Holiday'
-                      : 'Paid Time Off'}
+                      : request.type === 'statutoryLeave'
+                        ? 'Statutory Leave'
+                        : 'Paid Time Off'}
                   </p>
                 </Card>
                 <Card className="shadow-none bg-default-100 w-full text-default-600 p-4">
@@ -66,7 +68,8 @@ export const RequestReviewModal = ({
                     ))}
                   </Card>
                 )}
-                {!!request?.daysRequested &&
+                {request.type === 'paidTimeOff' &&
+                  !!request?.daysRequested &&
                   !!request?.daysLeftThisYear &&
                   !!request?.daysLeftNextYear && (
                     <Card

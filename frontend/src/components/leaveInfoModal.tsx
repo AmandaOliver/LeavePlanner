@@ -58,11 +58,13 @@ export const LeaveInfoModal = ({
                       Type:{' '}
                       {leave.type === 'bankHoliday'
                         ? 'Public Holiday'
-                        : 'Paid Time Off'}
+                        : leave.type === 'statutoryLeave'
+                          ? 'Statutory Leave'
+                          : 'Paid Time Off'}
                     </p>
                   </Card>
                   {leaveInfo?.daysRequested !== undefined &&
-                    leave.type !== 'bankHoliday' && (
+                    leave.type === 'paidTimeOff' && (
                       <Card className="shadow-none bg-default-100 w-full text-default-600  p-4">
                         <p>Days Requested: {leaveInfo.daysRequested}</p>
                         {!leave.approvedBy &&

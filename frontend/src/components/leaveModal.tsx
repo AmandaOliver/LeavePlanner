@@ -10,8 +10,10 @@ import {
   Textarea,
   Skeleton,
   RangeValue,
+  Select,
+  SelectItem,
 } from '@nextui-org/react'
-import { LeaveType, useLeavesModel } from '../models/Leaves'
+import { LeaveType, LeaveTypes, useLeavesModel } from '../models/Leaves'
 import { useCallback, useEffect, useState } from 'react'
 import { CalendarDate, parseDate } from '@internationalized/date'
 
@@ -34,7 +36,7 @@ export const LeaveModal = ({
         .split('T')[0]
   )
   const [description, setDescription] = useState(leave?.description || '')
-  const [type] = useState(leave?.type || 'paidTimeOff')
+  const [type, setType] = useState(leave?.type || 'paidTimeOff')
 
   const { createLeave, updateLeave, validateLeave } = useLeavesModel()
   const [feedback, setFeedback] = useState<{
@@ -62,7 +64,7 @@ export const LeaveModal = ({
           description,
           dateStart,
           dateEnd,
-          type: 'paidTimeOff',
+          type,
         })
       }
       setIsLoading(false)
@@ -82,7 +84,7 @@ export const LeaveModal = ({
           dateStart: start.toString(),
           dateEnd: end.add({ days: 1 }).toString(),
           id: leave?.id,
-          type: type || 'paidTimeOff',
+          type: type,
         })
       )
 
@@ -107,7 +109,7 @@ export const LeaveModal = ({
             dateStart: parseDate(dateStart).toString(),
             dateEnd: parseDate(dateEnd).toString(),
             id: leave?.id,
-            type: type || 'paidTimeOff',
+            type: type,
           })
         )
         setIsLoadingInfo(false)
@@ -134,7 +136,7 @@ export const LeaveModal = ({
                   <p className="whitespace-pre-line">{feedback.error}</p>
                 </Card>
               ) : (
-                type !== 'bankHoliday' &&
+                type === 'paidTimeOff' &&
                 dateStart &&
                 dateEnd &&
                 feedback &&
@@ -163,13 +165,28 @@ export const LeaveModal = ({
                   </Card>
                 ))
               )}
-              {/* we dont want to allow to change leave type */}
-              <Card className="shadow-none bg-default-100 w-full text-default-600 p-4">
-                <p>
-                  Type:{' '}
-                  {type === 'bankHoliday' ? 'Public Holiday' : 'Paid Time Off'}
-                </p>
-              </Card>
+              {
+                <Select
+                  label="Type"
+                  className=""
+                  isDisabled={type === 'bankHoliday'}
+                  onChange={(event) =>
+                    setType(event.target.value as LeaveTypes)
+                  }
+                  defaultSelectedKeys={[type]}
+                >
+                  {type !== 'bankHoliday' ? (
+                    <>
+                      <SelectItem key="paidTimeOff">Paid Time Off</SelectItem>
+                      <SelectItem key="statutoryLeave">
+                        Statutory Leave
+                      </SelectItem>
+                    </>
+                  ) : (
+                    <SelectItem key="bankHoliday">Public Holiday</SelectItem>
+                  )}
+                </Select>
+              }
               <DateRangePicker
                 allowsNonContiguousRanges
                 visibleMonths={window.innerWidth > 640 ? 2 : 1}
