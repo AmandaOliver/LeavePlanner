@@ -1,17 +1,15 @@
 using LeavePlanner.Application.Common;
 using LeavePlanner.Application.Leaves;
-using LeavePlanner.Data;
 using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
 
 namespace LeavePlanner.Application.Leaves.Commands;
 
-public record UpdateLeaveCommand(int LeaveId, LeaveUpdateDTO Leave) : ICommand<Result<Leave>>;
+public record UpdateLeaveCommand(int LeaveId, LeaveUpdateDTO Leave) : ICommand<Result<LeaveDTO>>;
 
-public class UpdateLeaveCommandHandler : IRequestHandler<UpdateLeaveCommand, Result<Leave>>
+public class UpdateLeaveCommandHandler : IRequestHandler<UpdateLeaveCommand, Result<LeaveDTO>>
 {
-	private readonly LeavePlannerContext _context;
 	private readonly IEmployeeRepository _employees;
 	private readonly ILeaveRepository _leaves;
 	private readonly LeaveEvaluator _evaluator;
@@ -19,14 +17,12 @@ public class UpdateLeaveCommandHandler : IRequestHandler<UpdateLeaveCommand, Res
 	private readonly IClock _clock;
 
 	public UpdateLeaveCommandHandler(
-		LeavePlannerContext context,
 		IEmployeeRepository employees,
 		ILeaveRepository leaves,
 		LeaveEvaluator evaluator,
 		IUnitOfWork unitOfWork,
 		IClock clock)
 	{
-		_context = context;
 		_employees = employees;
 		_leaves = leaves;
 		_evaluator = evaluator;
@@ -34,7 +30,7 @@ public class UpdateLeaveCommandHandler : IRequestHandler<UpdateLeaveCommand, Res
 		_clock = clock;
 	}
 
-	public async Task<Result<Leave>> Handle(UpdateLeaveCommand command, CancellationToken cancellationToken)
+	public async Task<Result<LeaveDTO>> Handle(UpdateLeaveCommand command, CancellationToken cancellationToken)
 	{
 		var update = command.Leave;
 		try
@@ -44,22 +40,24 @@ public class UpdateLeaveCommandHandler : IRequestHandler<UpdateLeaveCommand, Res
 		}
 		catch (DomainException ex)
 		{
-			return Result<Leave>.Invalid(ex.Message);
+			return Result<LeaveDTO>.Invalid(ex.Message);
 		}
 
-		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+		await _unitOfWork.BeginTransactionAsync(cancellationToken);
 		try
 		{
 			var leave = await _leaves.GetByIdAsync(command.LeaveId, cancellationToken);
 			if (leave == null)
 			{
-				return Result<Leave>.Invalid("Leave not found with that Id");
+				await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+				return Result<LeaveDTO>.Invalid("Leave not found with that Id");
 			}
 
 			var employee = await _employees.GetByIdAsync(leave.Owner, cancellationToken);
 			if (employee == null)
 			{
-				return Result<Leave>.Invalid("Employee not found.");
+				await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+				return Result<LeaveDTO>.Invalid("Employee not found.");
 			}
 
 			int? systemApproverId = null;
@@ -72,20 +70,20 @@ public class UpdateLeaveCommandHandler : IRequestHandler<UpdateLeaveCommand, Res
 
 			var events = _unitOfWork.CollectEvents();
 			await _unitOfWork.SaveChangesAsync(cancellationToken);
-			await transaction.CommitAsync(cancellationToken);
+			await _unitOfWork.CommitTransactionAsync(cancellationToken);
 			await _unitOfWork.DispatchAsync(events, cancellationToken);
 
-			return Result<Leave>.Success(leave);
+			return Result<LeaveDTO>.Success(leave.ToLeaveDto(employee.Name));
 		}
 		catch (DomainException ex)
 		{
-			await transaction.RollbackAsync(cancellationToken);
-			return Result<Leave>.Invalid(ex.Message);
+			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+			return Result<LeaveDTO>.Invalid(ex.Message);
 		}
 		catch (Exception ex)
 		{
-			await transaction.RollbackAsync(cancellationToken);
-			return Result<Leave>.Invalid(ex.Message);
+			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+			return Result<LeaveDTO>.Invalid(ex.Message);
 		}
 	}
 }

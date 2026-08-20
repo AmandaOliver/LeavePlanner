@@ -1,9 +1,7 @@
 using LeavePlanner.Application.Common;
-using LeavePlanner.Data;
 using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace LeavePlanner.Application.Leaves.Queries;
 
@@ -11,21 +9,23 @@ public record GetAllLeavesQuery(string OrganizationId, string? Start, string? En
 
 public class GetAllLeavesQueryHandler : IRequestHandler<GetAllLeavesQuery, Result<List<LeaveDTO>>>
 {
-	private readonly LeavePlannerContext _context;
+	private readonly IEmployeeRepository _employees;
+	private readonly ILeaveRepository _leaves;
 
-	public GetAllLeavesQueryHandler(LeavePlannerContext context) => _context = context;
+	public GetAllLeavesQueryHandler(IEmployeeRepository employees, ILeaveRepository leaves)
+	{
+		_employees = employees;
+		_leaves = leaves;
+	}
 
 	public async Task<Result<List<LeaveDTO>>> Handle(GetAllLeavesQuery request, CancellationToken cancellationToken)
 	{
 		var organizationId = int.Parse(request.OrganizationId);
-
-		var leaves = await _context.Leaves
-			.Where(leave => leave.ApprovedBy != null && leave.OwnerNavigation.Organization == organizationId)
-			.ToListAsync(cancellationToken);
+		var leaves = await _leaves.GetApprovedInOrganizationAsync(organizationId, cancellationToken);
 
 		if (leaves.Count == 0)
 		{
-			return Result<List<LeaveDTO>>.Success(new List<LeaveDTO>());
+			return Result<List<LeaveDTO>>.Success([]);
 		}
 
 		if (request.Start == null || request.End == null)
@@ -39,24 +39,13 @@ public class GetAllLeavesQueryHandler : IRequestHandler<GetAllLeavesQuery, Resul
 		var leaveDTOs = new List<LeaveDTO>();
 		foreach (var leave in leaves.Where(leave => leave.DateEnd >= start && leave.DateStart <= end))
 		{
-			var employee = await _context.Employees.FindAsync(new object?[] { leave.Owner }, cancellationToken);
+			var employee = await _employees.GetByIdAsync(leave.Owner, cancellationToken);
 			if (employee == null)
 			{
 				return Result<List<LeaveDTO>>.Invalid("employee not found");
 			}
 
-			leaveDTOs.Add(new LeaveDTO
-			{
-				Id = leave.Id,
-				Type = leave.Type,
-				Owner = leave.Owner,
-				OwnerName = employee.Name,
-				DateStart = leave.DateStart,
-				DateEnd = leave.DateEnd,
-				Description = leave.Description,
-				ApprovedBy = leave.ApprovedBy,
-				RejectedBy = leave.RejectedBy,
-			});
+			leaveDTOs.Add(leave.ToLeaveDto(employee.Name));
 		}
 
 		return Result<List<LeaveDTO>>.Success(leaveDTOs);

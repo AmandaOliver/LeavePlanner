@@ -1,5 +1,4 @@
 using LeavePlanner.Application.Common;
-using LeavePlanner.Data;
 using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
@@ -10,18 +9,15 @@ public record CreateOrganizationCommand(OrganizationCreateDTO Organization) : IC
 
 public class CreateOrganizationCommandHandler : IRequestHandler<CreateOrganizationCommand, Result<int>>
 {
-	private readonly LeavePlannerContext _context;
 	private readonly IOrganizationRepository _organizations;
 	private readonly IEmployeeRepository _employees;
 	private readonly IUnitOfWork _unitOfWork;
 
 	public CreateOrganizationCommandHandler(
-		LeavePlannerContext context,
 		IOrganizationRepository organizations,
 		IEmployeeRepository employees,
 		IUnitOfWork unitOfWork)
 	{
-		_context = context;
 		_organizations = organizations;
 		_employees = employees;
 		_unitOfWork = unitOfWork;
@@ -35,7 +31,7 @@ public class CreateOrganizationCommandHandler : IRequestHandler<CreateOrganizati
 			return Result<int>.Invalid("Invalid data.");
 		}
 
-		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+		await _unitOfWork.BeginTransactionAsync(cancellationToken);
 		try
 		{
 			var organization = Organization.Create(model.OrganizationName);
@@ -44,18 +40,18 @@ public class CreateOrganizationCommandHandler : IRequestHandler<CreateOrganizati
 
 			_employees.Add(Employee.CreateOwner(model.Email, organization.Id));
 			await _unitOfWork.SaveChangesAsync(cancellationToken);
-			await transaction.CommitAsync(cancellationToken);
+			await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
 			return Result<int>.Success(organization.Id);
 		}
 		catch (DomainException ex)
 		{
-			await transaction.RollbackAsync(cancellationToken);
+			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result<int>.Invalid(ex.Message);
 		}
 		catch (Exception ex)
 		{
-			await transaction.RollbackAsync(cancellationToken);
+			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result<int>.Invalid(ex.Message);
 		}
 	}

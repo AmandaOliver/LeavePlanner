@@ -1,9 +1,7 @@
 using LeavePlanner.Application.Common;
-using LeavePlanner.Data;
 using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace LeavePlanner.Application.Leaves.Queries;
 
@@ -11,9 +9,14 @@ public record GetMyLeavesQuery(string EmployeeId, string? Start, string? End) : 
 
 public class GetMyLeavesQueryHandler : IRequestHandler<GetMyLeavesQuery, Result<List<LeaveDTO>>>
 {
-	private readonly LeavePlannerContext _context;
+	private readonly IEmployeeRepository _employees;
+	private readonly ILeaveRepository _leaves;
 
-	public GetMyLeavesQueryHandler(LeavePlannerContext context) => _context = context;
+	public GetMyLeavesQueryHandler(IEmployeeRepository employees, ILeaveRepository leaves)
+	{
+		_employees = employees;
+		_leaves = leaves;
+	}
 
 	public async Task<Result<List<LeaveDTO>>> Handle(GetMyLeavesQuery request, CancellationToken cancellationToken)
 	{
@@ -23,33 +26,19 @@ public class GetMyLeavesQueryHandler : IRequestHandler<GetMyLeavesQuery, Result<
 		}
 
 		var employeeId = int.Parse(request.EmployeeId);
-		var employee = await _context.Employees.FindAsync(new object?[] { employeeId }, cancellationToken);
+		var employee = await _employees.GetByIdAsync(employeeId, cancellationToken);
 		if (employee == null)
 		{
 			return Result<List<LeaveDTO>>.Invalid("employee not found");
 		}
 
-		var leaves = await _context.Leaves
-			.Where(leave => leave.Owner == employeeId && leave.RejectedBy == null)
-			.ToListAsync(cancellationToken);
-
+		var leaves = await _leaves.GetNotRejectedByOwnerAsync(employeeId, cancellationToken);
 		var start = DateTime.Parse(request.Start);
 		var end = DateTime.Parse(request.End);
 
 		var leaveDTOs = leaves
 			.Where(leave => leave.DateEnd >= start && leave.DateStart <= end)
-			.Select(leave => new LeaveDTO
-			{
-				Id = leave.Id,
-				Type = leave.Type,
-				Owner = leave.Owner,
-				OwnerName = employee.Name,
-				DateStart = leave.DateStart,
-				DateEnd = leave.DateEnd,
-				Description = leave.Description,
-				ApprovedBy = leave.ApprovedBy,
-				RejectedBy = leave.RejectedBy,
-			})
+			.Select(leave => leave.ToLeaveDto(employee.Name))
 			.ToList();
 
 		return Result<List<LeaveDTO>>.Success(leaveDTOs);

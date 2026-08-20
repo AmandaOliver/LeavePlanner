@@ -11,7 +11,7 @@ public class LeaveRepository : ILeaveRepository
 	public LeaveRepository(LeavePlannerContext context) => _context = context;
 
 	public async Task<Leave?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
-		await _context.Leaves.FindAsync(new object[] { id }, cancellationToken);
+		await _context.Leaves.FindAsync([id], cancellationToken);
 
 	public Task<List<Leave>> GetOwnedByAsync(int ownerId, CancellationToken cancellationToken) =>
 		_context.Leaves.Where(leave => leave.Owner == ownerId).ToListAsync(cancellationToken);
@@ -19,6 +19,79 @@ public class LeaveRepository : ILeaveRepository
 	public Task<List<Leave>> GetPublicHolidaysOwnedByAsync(int ownerId, CancellationToken cancellationToken) =>
 		_context.Leaves
 			.Where(leave => leave.Owner == ownerId && leave.Type == LeaveTypes.BankHoliday)
+			.ToListAsync(cancellationToken);
+
+	public Task<List<Leave>> GetNotRejectedByOwnerAsync(int ownerId, CancellationToken cancellationToken) =>
+		_context.Leaves
+			.Where(leave => leave.Owner == ownerId && leave.RejectedBy == null)
+			.ToListAsync(cancellationToken);
+
+	public Task<List<Leave>> GetRejectedByOwnerAsync(int ownerId, CancellationToken cancellationToken) =>
+		_context.Leaves
+			.Where(leave => leave.Owner == ownerId && leave.RejectedBy != null)
+			.ToListAsync(cancellationToken);
+
+	public Task<List<Leave>> GetPendingByOwnerAsync(int ownerId, CancellationToken cancellationToken) =>
+		_context.Leaves
+			.Where(leave => leave.Owner == ownerId && leave.ApprovedBy == null && leave.RejectedBy == null)
+			.ToListAsync(cancellationToken);
+
+	public Task<List<Leave>> GetReviewedByOwnerAsync(int ownerId, int systemEmployeeId, CancellationToken cancellationToken) =>
+		_context.Leaves
+			.Where(leave => leave.Owner == ownerId &&
+							((leave.ApprovedBy != null && leave.ApprovedBy != systemEmployeeId) || leave.RejectedBy != null))
+			.ToListAsync(cancellationToken);
+
+	public Task<List<Leave>> GetApprovedByOwnerAsync(int ownerId, CancellationToken cancellationToken) =>
+		_context.Leaves
+			.Where(leave => leave.Owner == ownerId && leave.ApprovedBy != null)
+			.ToListAsync(cancellationToken);
+
+	public Task<List<Leave>> GetApprovedUpcomingByOwnerAsync(int ownerId, DateTime asOf, CancellationToken cancellationToken) =>
+		_context.Leaves
+			.Where(leave => leave.Owner == ownerId && leave.ApprovedBy != null && leave.DateStart >= asOf)
+			.OrderBy(leave => leave.DateStart)
+			.ToListAsync(cancellationToken);
+
+	public Task<List<Leave>> GetApprovedPastByOwnerAsync(int ownerId, DateTime asOf, CancellationToken cancellationToken) =>
+		_context.Leaves
+			.Where(leave => leave.Owner == ownerId && leave.ApprovedBy != null && leave.DateStart < asOf)
+			.OrderByDescending(leave => leave.DateStart)
+			.ToListAsync(cancellationToken);
+
+	public Task<List<Leave>> GetApprovedInOrganizationAsync(int organizationId, CancellationToken cancellationToken) =>
+		_context.Leaves
+			.Where(leave => leave.ApprovedBy != null && leave.OwnerNavigation!.Organization == organizationId)
+			.ToListAsync(cancellationToken);
+
+	public Task<List<Leave>> GetApprovedPaidTimeOffInYearAsync(int ownerId, int year, int? excludeLeaveId, CancellationToken cancellationToken) =>
+		_context.Leaves
+			.Where(leave =>
+				leave.Owner == ownerId &&
+				leave.Id != excludeLeaveId &&
+				leave.Type == LeaveTypes.PaidTimeOff &&
+				leave.ApprovedBy != null &&
+				(leave.DateStart.Year == year || leave.DateEnd.Year == year))
+			.ToListAsync(cancellationToken);
+
+	public Task<List<Leave>> GetBlockingLeavesAsync(
+		int ownerId,
+		DateTime start,
+		DateTime end,
+		DateTime asOf,
+		int? excludeLeaveId,
+		CancellationToken cancellationToken) =>
+		_context.Leaves
+			.Where(leave =>
+				leave.Owner == ownerId &&
+				(leave.ApprovedBy != null || leave.Type == LeaveTypes.BankHoliday) &&
+				(excludeLeaveId == null || leave.Id != excludeLeaveId) &&
+				leave.CreatedAt < asOf &&
+				(
+					(start >= leave.DateStart && start < leave.DateEnd) ||
+					(end > leave.DateStart && end <= leave.DateEnd) ||
+					(start < leave.DateStart && end > leave.DateEnd)
+				))
 			.ToListAsync(cancellationToken);
 
 	public void Add(Leave leave) => _context.Leaves.Add(leave);
@@ -35,7 +108,7 @@ public class EmployeeRepository : IEmployeeRepository
 	public EmployeeRepository(LeavePlannerContext context) => _context = context;
 
 	public async Task<Employee?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
-		await _context.Employees.FindAsync(new object[] { id }, cancellationToken);
+		await _context.Employees.FindAsync([id], cancellationToken);
 
 	public Task<Employee?> GetByEmailAsync(string email, CancellationToken cancellationToken) =>
 		_context.Employees.FirstOrDefaultAsync(e => e.Email == email, cancellationToken);
@@ -74,7 +147,12 @@ public class OrganizationRepository : IOrganizationRepository
 	public OrganizationRepository(LeavePlannerContext context) => _context = context;
 
 	public async Task<Organization?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
-		await _context.Organizations.FindAsync(new object[] { id }, cancellationToken);
+		await _context.Organizations.FindAsync([id], cancellationToken);
+
+	public Task<Organization?> GetByIdWithEmployeesAsync(int id, CancellationToken cancellationToken) =>
+		_context.Organizations
+			.Include(organization => organization.Employees)
+			.FirstOrDefaultAsync(organization => organization.Id == id, cancellationToken);
 
 	public void Add(Organization organization) => _context.Organizations.Add(organization);
 

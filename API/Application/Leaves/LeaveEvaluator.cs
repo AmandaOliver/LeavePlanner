@@ -1,20 +1,24 @@
-using LeavePlanner.Data;
 using LeavePlanner.Domain;
 using LeavePlanner.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace LeavePlanner.Application.Leaves;
 
 public class LeaveEvaluator
 {
-	private readonly LeavePlannerContext _context;
+	private readonly ILeaveRepository _leaves;
 	private readonly IEmployeeRepository _employees;
+	private readonly IOrganizationRepository _organizations;
 	private readonly IClock _clock;
 
-	public LeaveEvaluator(LeavePlannerContext context, IEmployeeRepository employees, IClock clock)
+	public LeaveEvaluator(
+		ILeaveRepository leaves,
+		IEmployeeRepository employees,
+		IOrganizationRepository organizations,
+		IClock clock)
 	{
-		_context = context;
+		_leaves = leaves;
 		_employees = employees;
+		_organizations = organizations;
 		_clock = clock;
 	}
 
@@ -23,14 +27,14 @@ public class LeaveEvaluator
 		Leave? existing = null;
 		if (leaveId != null)
 		{
-			existing = await _context.Leaves.FindAsync(new object[] { leaveId.Value }, cancellationToken);
+			existing = await _leaves.GetByIdAsync(leaveId.Value, cancellationToken);
 			if (existing == null)
 			{
 				throw new DomainException("Leave not found.");
 			}
 		}
 
-		var employee = await _context.Employees.FindAsync(new object[] { ownerId }, cancellationToken);
+		var employee = await _employees.GetByIdAsync(ownerId, cancellationToken);
 		if (employee == null)
 		{
 			throw new DomainException("Employee not found.");
@@ -73,7 +77,7 @@ public class LeaveEvaluator
 
 	public async Task<LeaveDTO> ComposeDto(Leave leave, bool withConflicts, CancellationToken cancellationToken)
 	{
-		var employee = await _context.Employees.FindAsync(new object[] { leave.Owner }, cancellationToken);
+		var employee = await _employees.GetByIdAsync(leave.Owner, cancellationToken);
 		if (employee == null)
 		{
 			throw new DomainException("employee not found");
@@ -85,21 +89,10 @@ public class LeaveEvaluator
 		var leftDaysThisYear = await RemainingPaidTimeOff(leave.Owner, leave.DateStart.Year, excludeId, cancellationToken);
 		var leftDaysNextYear = await RemainingPaidTimeOff(leave.Owner, leave.DateStart.Year + 1, excludeId, cancellationToken);
 
-		var dto = new LeaveDTO
-		{
-			Id = leave.Id,
-			Type = leave.Type,
-			Owner = leave.Owner,
-			OwnerName = employee.Name,
-			DateStart = leave.DateStart,
-			DateEnd = leave.DateEnd,
-			Description = leave.Description,
-			ApprovedBy = leave.ApprovedBy,
-			RejectedBy = leave.RejectedBy,
-			DaysRequested = requestedDaysThisYear + requestedDaysNextYear,
-			DaysLeftThisYear = leftDaysThisYear - requestedDaysThisYear,
-			DaysLeftNextYear = leftDaysNextYear - requestedDaysNextYear
-		};
+		var dto = leave.ToLeaveDto(employee.Name);
+		dto.DaysRequested = requestedDaysThisYear + requestedDaysNextYear;
+		dto.DaysLeftThisYear = leftDaysThisYear - requestedDaysThisYear;
+		dto.DaysLeftNextYear = leftDaysNextYear - requestedDaysNextYear;
 
 		if (withConflicts)
 		{
@@ -122,25 +115,20 @@ public class LeaveEvaluator
 
 	public async Task<List<LeaveDTO>> GetPendingRequests(int employeeId, CancellationToken cancellationToken)
 	{
-		var leaves = await _context.Leaves
-			.Where(leave => leave.Owner == employeeId && leave.ApprovedBy == null && leave.RejectedBy == null)
-			.ToListAsync(cancellationToken);
+		var leaves = await _leaves.GetPendingByOwnerAsync(employeeId, cancellationToken);
 		return await ComposeDtos(leaves, false, cancellationToken);
 	}
 
 	public async Task<List<LeaveDTO>> GetReviewedRequests(int employeeId, CancellationToken cancellationToken)
 	{
 		var system = await _employees.GetSystemAsync(cancellationToken);
-		var leaves = await _context.Leaves
-			.Where(leave => leave.Owner == employeeId &&
-							((leave.ApprovedBy != null && leave.ApprovedBy != system.Id) || leave.RejectedBy != null))
-			.ToListAsync(cancellationToken);
+		var leaves = await _leaves.GetReviewedByOwnerAsync(employeeId, system.Id, cancellationToken);
 		return await ComposeDtos(leaves, false, cancellationToken);
 	}
 
 	public async Task<List<ConflictDTO>> GetConflicts(Leave leaveRequest, CancellationToken cancellationToken)
 	{
-		var employee = await _context.Employees.FindAsync(new object[] { leaveRequest.Owner }, cancellationToken);
+		var employee = await _employees.GetByIdAsync(leaveRequest.Owner, cancellationToken);
 		if (employee == null)
 		{
 			throw new DomainException("Employee not found");
@@ -151,22 +139,17 @@ public class LeaveEvaluator
 			return [];
 		}
 
-		var manager = await _context.Employees.FindAsync(new object[] { employee.ManagedBy }, cancellationToken);
+		var manager = await _employees.GetByIdAsync(employee.ManagedBy.Value, cancellationToken);
 		if (manager == null)
 		{
 			throw new DomainException("Manager not found");
 		}
 
-		var teammates = await _context.Employees
-			.Where(e => e.ManagedBy == manager.Id)
-			.ToListAsync(cancellationToken);
-
+		var teammates = await _employees.GetDirectReportsAsync(manager.Id, cancellationToken);
 		var teammateLeaves = new List<(int Id, string? Name, List<Leave> ApprovedLeaves)>();
 		foreach (var teammate in teammates)
 		{
-			var approved = await _context.Leaves
-				.Where(leave => leave.Owner == teammate.Id && leave.ApprovedBy != null)
-				.ToListAsync(cancellationToken);
+			var approved = await _leaves.GetApprovedByOwnerAsync(teammate.Id, cancellationToken);
 			teammateLeaves.Add((teammate.Id, teammate.Name, approved));
 		}
 
@@ -175,7 +158,7 @@ public class LeaveEvaluator
 			{
 				EmployeeId = conflict.EmployeeId,
 				EmployeeName = conflict.Name,
-				ConflictingLeaves = conflict.Leaves
+				ConflictingLeaves = conflict.Leaves.Select(leave => leave.ToLeaveDto(conflict.Name)).ToList()
 			})
 			.ToList();
 	}
@@ -203,16 +186,13 @@ public class LeaveEvaluator
 
 	public async Task<int> RemainingPaidTimeOff(int employeeId, int year, int? leaveId, CancellationToken cancellationToken)
 	{
-		var employee = await _context.Employees.FindAsync(new object[] { employeeId }, cancellationToken);
+		var employee = await _employees.GetByIdAsync(employeeId, cancellationToken);
 		if (employee == null)
 		{
 			throw new DomainException("Employee not found.");
 		}
 
-		var leavesThisYear = await _context.Leaves
-			.Where(l => l.Owner == employeeId && l.Id != leaveId && l.Type == LeaveTypes.PaidTimeOff && l.ApprovedBy != null && (l.DateStart.Year == year || l.DateEnd.Year == year))
-			.ToListAsync(cancellationToken);
-
+		var leavesThisYear = await _leaves.GetApprovedPaidTimeOffInYearAsync(employeeId, year, leaveId, cancellationToken);
 		var totalDaysTaken = 0;
 		foreach (var leave in leavesThisYear)
 		{
@@ -227,7 +207,7 @@ public class LeaveEvaluator
 		var asOf = _clock.UtcNow;
 		if (leaveId != null)
 		{
-			var currentLeave = await _context.Leaves.FindAsync(new object[] { leaveId.Value }, cancellationToken);
+			var currentLeave = await _leaves.GetByIdAsync(leaveId.Value, cancellationToken);
 			if (currentLeave == null)
 			{
 				throw new DomainException("leave not found");
@@ -236,26 +216,19 @@ public class LeaveEvaluator
 			asOf = currentLeave.CreatedAt;
 		}
 
-		var blockingLeaves = await _context.Leaves
-			.Where(leave =>
-				leave.Owner == owner &&
-				(leave.ApprovedBy != null || leave.Type == LeaveTypes.BankHoliday) &&
-				(leaveId == null || leave.Id != leaveId) &&
-				leave.CreatedAt < asOf &&
-				(
-					(start >= leave.DateStart && start < leave.DateEnd) ||
-					(end > leave.DateStart && end <= leave.DateEnd) ||
-					(start < leave.DateStart && end > leave.DateEnd)
-				))
-			.ToListAsync(cancellationToken);
-
-		var employee = await _context.Employees.FindAsync(new object[] { owner }, cancellationToken);
+		var blockingLeaves = await _leaves.GetBlockingLeavesAsync(owner, start, end, asOf, leaveId, cancellationToken);
+		var employee = await _employees.GetByIdAsync(owner, cancellationToken);
 		if (employee == null)
 		{
 			throw new DomainException("Owner not found");
 		}
 
-		var organization = await _context.Organizations.FindAsync(new object[] { employee.Organization }, cancellationToken);
+		if (employee.Organization == null)
+		{
+			throw new DomainException("Organization not found");
+		}
+
+		var organization = await _organizations.GetByIdAsync(employee.Organization.Value, cancellationToken);
 		if (organization == null)
 		{
 			throw new DomainException("Organization not found");

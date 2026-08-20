@@ -88,6 +88,7 @@ builder.Services.AddScoped<EmployeeHierarchy>();
 builder.Services.AddScoped<PublicHolidayGenerator>();
 builder.Services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IAccessChecker, AccessChecker>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
