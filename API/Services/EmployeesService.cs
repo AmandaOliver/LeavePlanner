@@ -1,30 +1,17 @@
 using System.Text.RegularExpressions;
-using LeavePlanner.Configuration;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
-using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
-
 
 public class EmployeesService
 {
 	private readonly LeavePlannerContext _context;
-	private readonly CountriesService _countriesService;
-	private readonly EmailService _emailService;
-	private readonly string _leavePlannerUrl;
-
 
 	private static readonly Regex _emailRegex = new Regex(
 		 @"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$",
 		 RegexOptions.Compiled | RegexOptions.IgnoreCase);
-	public EmployeesService(LeavePlannerContext context, CountriesService countriesService, IOptions<AppOptions> appOptions, EmailService emailService)
-	{
-		_context = context;
-		_countriesService = countriesService;
-		_emailService = emailService;
-		_leavePlannerUrl = appOptions.Value.FrontendUrl;
 
-	}
+	public EmployeesService(LeavePlannerContext context) => _context = context;
 	public async Task<int> GetPaidTimeOffLeft(int employeeId, int year, int? leaveId)
 	{
 		// Fetch employee details
@@ -108,197 +95,6 @@ public class EmployeesService
 
 		return totalDays;
 	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, Employee? Employee)> DeleteEmployee(string id)
-	{
-		using var transaction = await _context.Database.BeginTransactionAsync();
-		try
-		{
-			var employee = await _context.Employees.FindAsync(int.Parse(id));
-
-			if (employee == null)
-			{
-				return (false, "Employee not found.", null);
-			}
-
-			// Check if the employee is the head of the organization (ManagedBy is null)
-			if (employee.ManagedBy == null)
-			{
-				// Check if the head manages any subordinates
-				var subordinates = await _context.Employees
-												.Where(e => e.ManagedBy == employee.Id)
-												.ToListAsync();
-
-				if (subordinates.Any())
-				{
-					return (false, "Cannot delete the head of the organization because they manage other employees.", null);
-				}
-			}
-			else
-			{
-
-				// Reassign subordinates to the manager above
-				var subordinates = await _context.Employees
-												.Where(e => e.ManagedBy == employee.Id)
-												.ToListAsync();
-
-				foreach (var subordinate in subordinates)
-				{
-					subordinate.ManagedBy = employee.ManagedBy;
-				}
-
-				_context.Employees.UpdateRange(subordinates);
-			}
-			// Remove leaves associated with the employee
-			var leaves = await _context.Leaves.Where(l => l.Owner == employee.Id).ToListAsync();
-			_context.Leaves.RemoveRange(leaves);
-
-			// if employee is org owner, can't be deleted completely
-			if (employee.IsOrgOwner == true)
-			{
-				employee.Country = null;
-				employee.ManagedBy = null;
-				employee.PaidTimeOff = 0;
-				employee.Title = null;
-
-				_context.Employees.Update(employee);
-			}
-			else
-			{
-				_context.Employees.Remove(employee);
-			}
-			await _context.SaveChangesAsync();
-			await transaction.CommitAsync();
-
-			return (true, null, employee);
-		}
-		catch (Exception ex)
-		{
-			await transaction.RollbackAsync();
-			return (false, ex.Message, null);
-		}
-	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, Employee? Employee)> UpdateEmployee(string id, EmployeeUpdateDTO model)
-	{
-		using var transaction = await _context.Database.BeginTransactionAsync();
-		try
-		{
-			var employee = await _context.Employees.FindAsync(int.Parse(id));
-
-			if (employee == null)
-			{
-				return (false, "Employee not found.", null);
-			}
-
-			// if country changes we need to update the leaves
-			if (employee.Country != model.Country)
-			{
-				var leaves = await _context.Leaves.Where(l => l.Owner == employee.Id && l.Type == "bankHoliday").ToListAsync();
-				_context.Leaves.RemoveRange(leaves);
-				employee.Country = model.Country;
-				await _countriesService.GenerateEmployeeBankHolidays(employee);
-			}
-			employee.PaidTimeOff = model.PaidTimeOff != 0 ? model.PaidTimeOff : employee.PaidTimeOff;
-			employee.Title = model.Title ?? employee.Title;
-			employee.Name = model.Name ?? employee.Name;
-			employee.Email = model.Email ?? employee.Email;
-			if (employee.IsOrgOwner == true && model.IsOrgOwner == false)
-			{
-				var anotherOwner = await _context.Employees.FirstOrDefaultAsync(e => e.IsOrgOwner == true && employee.Organization == e.Organization && employee.Email != e.Email);
-				if (anotherOwner == null)
-				{
-					await transaction.RollbackAsync();
-					return (false, "You can't leave the organization without admins", null);
-				}
-			}
-			employee.IsOrgOwner = model.IsOrgOwner;
-
-			await transaction.CommitAsync();
-			await _context.SaveChangesAsync();
-			return (true, null, employee);
-		}
-		catch (Exception ex)
-		{
-			await transaction.RollbackAsync();
-			return (false, ex.Message, null);
-		}
-	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, EmployeeWithSubordinatesDTO? Employee)> GetEmployeeByEmail(string email)
-	{
-		var employee = await _context.Employees
-								   .FirstOrDefaultAsync(e => e.Email == email);
-
-		if (employee == null)
-		{
-			return (false, "User is not an employee.", null);
-		}
-
-		// Fetch subordinates recursively
-		var employeeWithSubordinates = await GetEmployeeWithSubordinates(employee);
-		return (true, null, employeeWithSubordinates);
-	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, Employee? Employee)> CreateEmployee(EmployeeCreateDTO model)
-	{
-		var validationResult = await ValidateEmployee(model);
-		if (validationResult != "success")
-			return (false, validationResult, null);
-
-		using var transaction = await _context.Database.BeginTransactionAsync();
-		try
-		{
-			Employee employee;
-			var existingEmployee = await _context.Employees.FirstOrDefaultAsync(employee => employee.Email == model.Email);
-			if (existingEmployee != null)
-			{
-				existingEmployee.Country = model.Country;
-				existingEmployee.Organization = model.Organization;
-				existingEmployee.ManagedBy = model.ManagedBy;
-				existingEmployee.PaidTimeOff = model.PaidTimeOff;
-				existingEmployee.Title = model.Title;
-				existingEmployee.Name = model.Name;
-
-				_context.Employees.Update(existingEmployee);
-				var leaves = await _context.Leaves.Where(l => l.Owner == existingEmployee.Id && l.Type == "bankHoliday").ToListAsync();
-				_context.Leaves.RemoveRange(leaves);
-				employee = existingEmployee;
-			}
-			else
-			{
-				employee = new Employee
-				{
-					Email = model.Email,
-					Country = model.Country,
-					Organization = model.Organization,
-					ManagedBy = model.ManagedBy,
-					IsOrgOwner = model.IsOrgOwner,
-					PaidTimeOff = model.PaidTimeOff,
-					Title = model.Title,
-					Name = model.Name,
-				};
-
-				_context.Employees.Add(employee);
-			}
-			await _context.SaveChangesAsync();
-			await _countriesService.GenerateEmployeeBankHolidays(employee);
-			await transaction.CommitAsync();
-			var organization = await _context.Organizations.FindAsync(employee.Organization);
-			if (organization != null)
-			{
-				string emailBody = $@"
-Hello {employee.Name}, 
-	You have been added as an Employee of {organization.Name} organization in LeavePlanner App. 
-    Please log in with this email in {_leavePlannerUrl} to see your dashboard.";
-				await _emailService.SendEmail(employee.Email, $"You have been added to LeavePlanner", emailBody);
-			}
-			return (true, null, employee);
-		}
-		catch (Exception ex)
-		{
-			await transaction.RollbackAsync();
-			return (false, ex.Message, null);
-		}
-
-	}
-
 	public async Task<string> ValidateEmployee(EmployeeCreateDTO employee)
 	{
 		var existingEmployee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == employee.Email);

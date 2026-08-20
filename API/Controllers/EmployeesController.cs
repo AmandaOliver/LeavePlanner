@@ -1,63 +1,37 @@
+using LeavePlanner.Application.Common;
+using LeavePlanner.Application.Employees.Commands;
+using LeavePlanner.Application.Employees.Queries;
 using LeavePlanner.Models;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 
 [Authorize]
 [ApiController]
 [Route("employee")]
 public class EmployeesController : ControllerBase
 {
-    private readonly EmployeesService _employeesService;
+	private readonly IMediator _mediator;
 
-    public EmployeesController(EmployeesService employeesService)
-    {
-        _employeesService = employeesService;
+	public EmployeesController(IMediator mediator) => _mediator = mediator;
 
-    }
+	[AdminOnly]
+	[HttpPost]
+	public async Task<IResult> CreateEmployee([FromBody] EmployeeCreateDTO model) =>
+		(await _mediator.Send(new CreateEmployeeCommand(model))).ToHttpResult();
 
-    [AdminOnly]
-    [HttpPost]
-    public async Task<IResult> CreateEmployee([FromBody] EmployeeCreateDTO model)
-    {
+	[SelfEmailOrAdminOnly]
+	[HttpGet("{email}")]
+	public async Task<IResult> GetEmployee(string email) =>
+		(await _mediator.Send(new GetEmployeeByEmailQuery(email))).ToHttpResult();
 
-        var result = await _employeesService.CreateEmployee(model);
-        if (!result.IsSuccess)
-            return Results.BadRequest(result.ErrorMessage);
+	[AdminOnly]
+	[HttpPut("{id}")]
+	public async Task<IResult> UpdateEmployee(string id, [FromBody] EmployeeUpdateDTO model) =>
+		(await _mediator.Send(new UpdateEmployeeCommand(id, model))).ToHttpResult();
 
-        return Results.Ok(result.Employee);
-    }
-
-    [SelfEmailOrAdminOnly]
-    [HttpGet("{email}")]
-    public async Task<IResult> GetEmployee(string email)
-    {
-        var result = await _employeesService.GetEmployeeByEmail(email);
-        if (!result.IsSuccess)
-            return Results.NotFound(result.ErrorMessage);
-
-        return Results.Ok(result.Employee);
-    }
-
-    [AdminOnly]
-    [HttpPut("{id}")]
-    public async Task<IResult> UpdateEmployee(string id, [FromBody] EmployeeUpdateDTO model)
-    {
-        var result = await _employeesService.UpdateEmployee(id, model);
-        if (!result.IsSuccess)
-            return Results.BadRequest(result.ErrorMessage);
-
-        return Results.Ok(result.Employee);
-    }
-
-    [AdminOnly]
-    [HttpDelete("{id}")]
-    public async Task<IResult> DeleteEmployee(string id)
-    {
-        var result = await _employeesService.DeleteEmployee(id);
-        if (!result.IsSuccess)
-            return Results.BadRequest(result.ErrorMessage);
-
-        return Results.Ok(result.Employee);
-    }
+	[AdminOnly]
+	[HttpDelete("{id}")]
+	public async Task<IResult> DeleteEmployee(string id) =>
+		(await _mediator.Send(new DeleteEmployeeCommand(id))).ToHttpResult();
 }

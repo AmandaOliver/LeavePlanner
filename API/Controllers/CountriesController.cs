@@ -1,26 +1,19 @@
-// https://www.googleapis.com/calendar/v3/calendars/en.italian%23holiday%40group.v.calendar.google.com/events?key=AIzaSyD8hdrcLyIKD6lXD-0nGAPWJerZz1c3n5c
+using LeavePlanner.Application.Common;
+using LeavePlanner.Application.Countries.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("countries")]
-public class CountriesController
+public class CountriesController : ControllerBase
 {
-	private readonly CountriesService _countriesService;
+	private readonly IMediator _mediator;
 
-	public CountriesController(CountriesService countriesService)
-	{
-		_countriesService = countriesService;
-	}
+	public CountriesController(IMediator mediator) => _mediator = mediator;
+
 	[HttpGet]
 	[Authorize]
-	public async Task<IResult> GetCountries()
-	{
-		var result = await _countriesService.GetCountries();
-		if (!result.IsSuccess)
-		{
-			return Results.NotFound(result.ErrorMessage);
-		}
-		return Results.Ok(result.countries);
-	}
+	public async Task<IResult> GetCountries() =>
+		(await _mediator.Send(new GetCountriesQuery())).ToHttpResult();
 }

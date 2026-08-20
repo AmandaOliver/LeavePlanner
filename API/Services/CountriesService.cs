@@ -15,18 +15,6 @@ public class CountriesService
 		_httpClient = httpClient;
 
 	}
-	public async Task<(bool IsSuccess, string? ErrorMessage, List<Country>? countries)> GetCountries()
-	{
-		try
-		{
-			var countries = await _context.Countries.ToListAsync();
-			return (true, null, countries);
-		}
-		catch (Exception ex)
-		{
-			return (false, ex.Message, null);
-		}
-	}
 	public async Task<List<HolidayModel>> FetchBankHolidays(string countryCode)
 	{
 		var holidays = new List<HolidayModel>();

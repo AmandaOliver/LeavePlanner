@@ -1,147 +1,77 @@
+using LeavePlanner.Application.Common;
+using LeavePlanner.Application.Leaves.Commands;
+using LeavePlanner.Application.Leaves.Queries;
 using LeavePlanner.Models;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 [Authorize]
 [ApiController]
 [Route("leaves")]
 public class LeavesController : ControllerBase
 {
-	private readonly LeavesService _leavesService;
+	private readonly IMediator _mediator;
 
-	public LeavesController(LeavesService leavesService)
-	{
-		_leavesService = leavesService;
-	}
+	public LeavesController(IMediator mediator) => _mediator = mediator;
 
 	[LeaveOwnerOrManager]
 	[HttpGet("{leaveId}")]
-	public async Task<IResult> GetLeaveInfo(string leaveId)
-	{
-		var result = await _leavesService.GetLeaveInfo(leaveId);
-		if (!result.IsSuccess)
-			return Results.NotFound(result.ErrorMessage);
-
-		return Results.Ok(result.LeaveWithDynamicInfo);
-	}
+	public async Task<IResult> GetLeaveInfo(string leaveId) =>
+		(await _mediator.Send(new GetLeaveInfoQuery(leaveId))).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpGet("myleaves/{employeeId}")]
-	public async Task<IResult> GetMyLeaves(string employeeId, [FromQuery] string? start, [FromQuery] string? end)
-	{
-		var result = await _leavesService.GetMyLeaves(employeeId, start, end);
-		if (!result.IsSuccess)
-			return Results.BadRequest(result.ErrorMessage);
-
-		return Results.Ok(result.leaves);
-	}
+	public async Task<IResult> GetMyLeaves(string employeeId, [FromQuery] string? start, [FromQuery] string? end) =>
+		(await _mediator.Send(new GetMyLeavesQuery(employeeId, start, end))).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpGet("circle/{employeeId}")]
-	public async Task<IResult> GetMyCircleLeaves(string employeeId, [FromQuery] string? start, [FromQuery] string? end)
-	{
-		var result = await _leavesService.GetMyCircleLeaves(employeeId, start, end);
-		if (!result.IsSuccess)
-			return Results.BadRequest(result.ErrorMessage);
-
-		return Results.Ok(result.leaves);
-	}
+	public async Task<IResult> GetMyCircleLeaves(string employeeId, [FromQuery] string? start, [FromQuery] string? end) =>
+		(await _mediator.Send(new GetMyCircleLeavesQuery(employeeId, start, end))).ToHttpResult();
 
 	[OrganizationMemberOnly]
 	[HttpGet("all/{organizationId}")]
-	public async Task<IResult> GetAllLeaves(string organizationId, [FromQuery] string? start, [FromQuery] string? end)
-	{
-		var result = await _leavesService.GetAllLeaves(organizationId, start, end);
-		if (!result.IsSuccess)
-			return Results.BadRequest(result.ErrorMessage);
-
-		return Results.Ok(result.leaves);
-	}
+	public async Task<IResult> GetAllLeaves(string organizationId, [FromQuery] string? start, [FromQuery] string? end) =>
+		(await _mediator.Send(new GetAllLeavesQuery(organizationId, start, end))).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpGet("approved/{employeeId}")]
-	public async Task<IResult> GetLeavesApproved(string employeeId, [FromQuery] int page, [FromQuery] int pageSize)
-	{
-		var result = await _leavesService.GetLeavesApproved(employeeId, page, pageSize);
-		if (!result.IsSuccess)
-			return Results.BadRequest(result.ErrorMessage);
-
-		return Results.Ok(result.leaves);
-	}
+	public async Task<IResult> GetLeavesApproved(string employeeId, [FromQuery] int page, [FromQuery] int pageSize) =>
+		(await _mediator.Send(new GetLeavesApprovedQuery(employeeId, page, pageSize))).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpGet("past/{employeeId}")]
-	public async Task<IResult> GetPastLeaves(string employeeId, [FromQuery] int page, [FromQuery] int pageSize)
-	{
-		var result = await _leavesService.GetPastLeaves(employeeId, page, pageSize);
-		if (!result.IsSuccess)
-			return Results.BadRequest(result.ErrorMessage);
-
-		return Results.Ok(result.leaves);
-	}
+	public async Task<IResult> GetPastLeaves(string employeeId, [FromQuery] int page, [FromQuery] int pageSize) =>
+		(await _mediator.Send(new GetPastLeavesQuery(employeeId, page, pageSize))).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpGet("rejected/{employeeId}")]
-	public async Task<IResult> GetLeavesRejected(string employeeId, [FromQuery] int page, [FromQuery] int pageSize)
-	{
-		var result = await _leavesService.GetLeavesRejected(employeeId, page, pageSize);
-		if (!result.IsSuccess)
-			return Results.BadRequest(result.ErrorMessage);
-
-		return Results.Ok(result.leaves);
-	}
+	public async Task<IResult> GetLeavesRejected(string employeeId, [FromQuery] int page, [FromQuery] int pageSize) =>
+		(await _mediator.Send(new GetLeavesRejectedQuery(employeeId, page, pageSize))).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpGet("pending/{employeeId}")]
-	public async Task<IResult> GetLeavesPending(string employeeId, [FromQuery] int page, [FromQuery] int pageSize)
-	{
-		var result = await _leavesService.GetLeavesPending(employeeId, page, pageSize);
-		if (!result.IsSuccess)
-			return Results.BadRequest(result.ErrorMessage);
-
-		return Results.Ok(result.leaves);
-	}
+	public async Task<IResult> GetLeavesPending(string employeeId, [FromQuery] int page, [FromQuery] int pageSize) =>
+		(await _mediator.Send(new GetLeavesPendingQuery(employeeId, page, pageSize))).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpPost("validate/{employeeId}")]
-	public async Task<IResult> ValidateLeaveRequest(string employeeId, [FromBody] LeaveValidateDTO leaveToValidate)
-	{
-		var result = await _leavesService.ValidateLeaveRequest(employeeId, leaveToValidate);
-		if (!result.IsSuccess)
-			return Results.BadRequest(result.ErrorMessage);
-
-		return Results.Ok(result.leave);
-	}
+	public async Task<IResult> ValidateLeaveRequest(string employeeId, [FromBody] LeaveValidateDTO leaveToValidate) =>
+		(await _mediator.Send(new ValidateLeaveRequestQuery(employeeId, leaveToValidate))).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpPost("{employeeId}")]
-	public async Task<IResult> CreateLeave(string employeeId, [FromBody] LeaveCreateDTO model)
-	{
-		var result = await _leavesService.CreateLeave(employeeId, model);
-		if (!result.IsSuccess)
-			return Results.BadRequest(result.ErrorMessage);
-
-		return Results.Ok(result.leave);
-	}
+	public async Task<IResult> CreateLeave(string employeeId, [FromBody] LeaveCreateDTO model) =>
+		(await _mediator.Send(new CreateLeaveCommand(employeeId, model))).ToHttpResult();
 
 	[LeaveOwnerOrManager]
 	[HttpPut("{leaveId}")]
-	public async Task<IResult> UpdateLeave(int leaveId, LeaveUpdateDTO leaveUpdate)
-	{
-		var result = await _leavesService.UpdateLeave(leaveId, leaveUpdate);
-		if (!result.IsSuccess)
-			return Results.BadRequest(result.ErrorMessage);
-
-		return Results.Ok(result.leave);
-	}
+	public async Task<IResult> UpdateLeave(int leaveId, LeaveUpdateDTO leaveUpdate) =>
+		(await _mediator.Send(new UpdateLeaveCommand(leaveId, leaveUpdate))).ToHttpResult();
 
 	[LeaveOwnerOrManager]
 	[HttpDelete("{leaveId}")]
-	public async Task<IResult> DeleteLeave(int leaveId)
-	{
-		var result = await _leavesService.DeleteLeave(leaveId);
-		if (!result.IsSuccess)
-			return Results.BadRequest(result.ErrorMessage);
-
-		return Results.Ok(result.leave);
-	}
+	public async Task<IResult> DeleteLeave(int leaveId) =>
+		(await _mediator.Send(new DeleteLeaveCommand(leaveId))).ToHttpResult();
 }

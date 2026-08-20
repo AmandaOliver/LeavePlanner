@@ -1,3 +1,4 @@
+using LeavePlanner.Application.Common.Behaviors;
 using LeavePlanner.Configuration;
 using System.ComponentModel.DataAnnotations;
 using LeavePlanner.Data;
@@ -55,9 +56,13 @@ static T BindAndValidate<T>(IConfiguration configuration, string sectionName) wh
 }
 
 builder.Services.AddControllers();
-builder.Services.AddScoped<OrganizationsService>();
+builder.Services.AddMediatR(configuration =>
+{
+    configuration.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    configuration.AddOpenBehavior(typeof(UnhandledExceptionBehavior<,>));
+    configuration.AddOpenBehavior(typeof(LoggingBehavior<,>));
+});
 builder.Services.AddScoped<LeavesService>();
-builder.Services.AddScoped<RequestsService>();
 builder.Services.AddScoped<EmployeesService>();
 builder.Services.AddScoped<CountriesService>();
 builder.Services.AddHttpClient<CountriesService>();
