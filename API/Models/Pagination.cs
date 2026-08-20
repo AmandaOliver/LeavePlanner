@@ -1,11 +1,9 @@
-using LeavePlanner.Domain;
-
 namespace LeavePlanner.Models;
 
 public class PaginatedLeavesResult
 {
 	public int TotalCount { get; set; }
-	public List<Leave>? Leaves { get; set; }
+	public List<LeaveDTO>? Leaves { get; set; }
 }
 
 public class PaginatedRequestsResult

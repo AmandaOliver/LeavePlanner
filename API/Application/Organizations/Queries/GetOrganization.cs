@@ -1,9 +1,7 @@
 using LeavePlanner.Application.Common;
-using LeavePlanner.Data;
 using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace LeavePlanner.Application.Organizations.Queries;
 
@@ -11,16 +9,13 @@ public record GetOrganizationQuery(string OrganizationId) : IQuery<Result<Organi
 
 public class GetOrganizationQueryHandler : IRequestHandler<GetOrganizationQuery, Result<OrganizationTree>>
 {
-	private readonly LeavePlannerContext _context;
+	private readonly IOrganizationRepository _organizations;
 
-	public GetOrganizationQueryHandler(LeavePlannerContext context) => _context = context;
+	public GetOrganizationQueryHandler(IOrganizationRepository organizations) => _organizations = organizations;
 
 	public async Task<Result<OrganizationTree>> Handle(GetOrganizationQuery request, CancellationToken cancellationToken)
 	{
-		var organization = await _context.Organizations
-			.Include(o => o.Employees)
-			.FirstOrDefaultAsync(e => e.Id.ToString() == request.OrganizationId, cancellationToken);
-
+		var organization = await _organizations.GetByIdWithEmployeesAsync(int.Parse(request.OrganizationId), cancellationToken);
 		if (organization == null)
 		{
 			return Result<OrganizationTree>.NotFound("Organization does not exists.");

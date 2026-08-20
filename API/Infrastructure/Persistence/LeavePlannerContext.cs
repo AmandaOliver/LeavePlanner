@@ -121,6 +121,7 @@ public partial class LeavePlannerContext : DbContext
 			entity.Ignore(e => e.IsApproved);
 			entity.Ignore(e => e.IsRejected);
 			entity.Ignore(e => e.IsPending);
+			entity.Ignore(e => e.Status);
 
 			entity.HasOne(d => d.ApprovedByNavigation).WithMany(p => p.LeaveApprovedByNavigations)
 				.HasForeignKey(d => d.ApprovedBy)

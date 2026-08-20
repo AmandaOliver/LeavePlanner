@@ -1,6 +1,11 @@
-using System.Text.Json.Serialization;
-
 namespace LeavePlanner.Domain;
+
+public enum LeaveStatus
+{
+	Pending,
+	Approved,
+	Rejected
+}
 
 public class Leave : AggregateRoot
 {
@@ -26,26 +31,24 @@ public class Leave : AggregateRoot
 
 	public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
-	[JsonIgnore]
 	public virtual Employee? ApprovedByNavigation { get; set; }
 
-	[JsonIgnore]
 	public virtual Employee? RejectedByNavigation { get; set; }
 
-	[JsonIgnore]
 	public virtual Employee? OwnerNavigation { get; set; }
 
-	[JsonIgnore]
 	public DateRange Period => new(DateStart, DateEnd);
 
-	[JsonIgnore]
-	public bool IsApproved => ApprovedBy != null;
+	public LeaveStatus Status =>
+		ApprovedBy != null ? LeaveStatus.Approved :
+		RejectedBy != null ? LeaveStatus.Rejected :
+		LeaveStatus.Pending;
 
-	[JsonIgnore]
-	public bool IsRejected => RejectedBy != null;
+	public bool IsApproved => Status == LeaveStatus.Approved;
 
-	[JsonIgnore]
-	public bool IsPending => ApprovedBy == null && RejectedBy == null;
+	public bool IsRejected => Status == LeaveStatus.Rejected;
+
+	public bool IsPending => Status == LeaveStatus.Pending;
 
 	public static Leave Submit(Employee owner, string type, DateTime start, DateTime end, string? description, DateTime utcNow)
 	{
@@ -79,6 +82,31 @@ public class Leave : AggregateRoot
 			DateEnd = end,
 			Owner = owner.Id,
 			OwnerNavigation = owner
+		};
+	}
+
+	public static Leave Rehydrate(
+		int id,
+		string? type,
+		DateTime dateStart,
+		DateTime dateEnd,
+		int owner,
+		string? description = null,
+		int? approvedBy = null,
+		int? rejectedBy = null,
+		DateTime? createdAt = null)
+	{
+		return new Leave
+		{
+			Id = id,
+			Type = type,
+			DateStart = dateStart,
+			DateEnd = dateEnd,
+			Owner = owner,
+			Description = description,
+			ApprovedBy = approvedBy,
+			RejectedBy = rejectedBy,
+			CreatedAt = createdAt ?? DateTime.UnixEpoch
 		};
 	}
 

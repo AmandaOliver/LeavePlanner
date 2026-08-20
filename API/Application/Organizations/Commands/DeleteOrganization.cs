@@ -1,44 +1,42 @@
 using LeavePlanner.Application.Common;
 using LeavePlanner.Application.Employees;
-using LeavePlanner.Data;
 using LeavePlanner.Domain;
+using LeavePlanner.Models;
 using MediatR;
 
 namespace LeavePlanner.Application.Organizations.Commands;
 
-public record DeleteOrganizationCommand(string OrganizationId) : ICommand<Result<Organization>>;
+public record DeleteOrganizationCommand(string OrganizationId) : ICommand<Result<OrganizationDTO>>;
 
-public class DeleteOrganizationCommandHandler : IRequestHandler<DeleteOrganizationCommand, Result<Organization>>
+public class DeleteOrganizationCommandHandler : IRequestHandler<DeleteOrganizationCommand, Result<OrganizationDTO>>
 {
-	private readonly LeavePlannerContext _context;
 	private readonly IOrganizationRepository _organizations;
 	private readonly IEmployeeRepository _employees;
 	private readonly EmployeeHierarchy _hierarchy;
 	private readonly IUnitOfWork _unitOfWork;
 
 	public DeleteOrganizationCommandHandler(
-		LeavePlannerContext context,
 		IOrganizationRepository organizations,
 		IEmployeeRepository employees,
 		EmployeeHierarchy hierarchy,
 		IUnitOfWork unitOfWork)
 	{
-		_context = context;
 		_organizations = organizations;
 		_employees = employees;
 		_hierarchy = hierarchy;
 		_unitOfWork = unitOfWork;
 	}
 
-	public async Task<Result<Organization>> Handle(DeleteOrganizationCommand command, CancellationToken cancellationToken)
+	public async Task<Result<OrganizationDTO>> Handle(DeleteOrganizationCommand command, CancellationToken cancellationToken)
 	{
-		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+		await _unitOfWork.BeginTransactionAsync(cancellationToken);
 		try
 		{
 			var organization = await _organizations.GetByIdAsync(int.Parse(command.OrganizationId), cancellationToken);
 			if (organization == null)
 			{
-				return Result<Organization>.Invalid("Organization not found.");
+				await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+				return Result<OrganizationDTO>.Invalid("Organization not found.");
 			}
 
 			var employees = await _employees.GetByOrganizationAsync(organization.Id, cancellationToken);
@@ -49,14 +47,14 @@ public class DeleteOrganizationCommandHandler : IRequestHandler<DeleteOrganizati
 
 			_organizations.Remove(organization);
 			await _unitOfWork.SaveChangesAsync(cancellationToken);
-			await transaction.CommitAsync(cancellationToken);
+			await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-			return Result<Organization>.Success(organization);
+			return Result<OrganizationDTO>.Success(organization.ToOrganizationDto());
 		}
 		catch (Exception ex)
 		{
-			await transaction.RollbackAsync(cancellationToken);
-			return Result<Organization>.Invalid(ex.Message);
+			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+			return Result<OrganizationDTO>.Invalid(ex.Message);
 		}
 	}
 }

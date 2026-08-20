@@ -1,6 +1,5 @@
 using LeavePlanner.Application.Common;
 using LeavePlanner.Application.Leaves;
-using LeavePlanner.Data;
 using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;

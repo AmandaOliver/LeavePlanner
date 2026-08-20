@@ -1,17 +1,15 @@
 using LeavePlanner.Application.Common;
 using LeavePlanner.Application.Leaves;
-using LeavePlanner.Data;
 using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
 
 namespace LeavePlanner.Application.Leaves.Commands;
 
-public record CreateLeaveCommand(string EmployeeId, LeaveCreateDTO Leave) : ICommand<Result<Leave>>;
+public record CreateLeaveCommand(string EmployeeId, LeaveCreateDTO Leave) : ICommand<Result<LeaveDTO>>;
 
-public class CreateLeaveCommandHandler : IRequestHandler<CreateLeaveCommand, Result<Leave>>
+public class CreateLeaveCommandHandler : IRequestHandler<CreateLeaveCommand, Result<LeaveDTO>>
 {
-	private readonly LeavePlannerContext _context;
 	private readonly IEmployeeRepository _employees;
 	private readonly ILeaveRepository _leaves;
 	private readonly LeaveEvaluator _evaluator;
@@ -19,14 +17,12 @@ public class CreateLeaveCommandHandler : IRequestHandler<CreateLeaveCommand, Res
 	private readonly IClock _clock;
 
 	public CreateLeaveCommandHandler(
-		LeavePlannerContext context,
 		IEmployeeRepository employees,
 		ILeaveRepository leaves,
 		LeaveEvaluator evaluator,
 		IUnitOfWork unitOfWork,
 		IClock clock)
 	{
-		_context = context;
 		_employees = employees;
 		_leaves = leaves;
 		_evaluator = evaluator;
@@ -34,16 +30,17 @@ public class CreateLeaveCommandHandler : IRequestHandler<CreateLeaveCommand, Res
 		_clock = clock;
 	}
 
-	public async Task<Result<Leave>> Handle(CreateLeaveCommand command, CancellationToken cancellationToken)
+	public async Task<Result<LeaveDTO>> Handle(CreateLeaveCommand command, CancellationToken cancellationToken)
 	{
-		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+		await _unitOfWork.BeginTransactionAsync(cancellationToken);
 		try
 		{
 			var employeeId = int.Parse(command.EmployeeId);
 			var employee = await _employees.GetByIdAsync(employeeId, cancellationToken);
 			if (employee == null)
 			{
-				return Result<Leave>.Invalid("Employee not found.");
+				await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+				return Result<LeaveDTO>.Invalid("Employee not found.");
 			}
 
 			await _evaluator.AssertCanRequest(
@@ -55,20 +52,20 @@ public class CreateLeaveCommandHandler : IRequestHandler<CreateLeaveCommand, Res
 
 			var events = _unitOfWork.CollectEvents();
 			await _unitOfWork.SaveChangesAsync(cancellationToken);
-			await transaction.CommitAsync(cancellationToken);
+			await _unitOfWork.CommitTransactionAsync(cancellationToken);
 			await _unitOfWork.DispatchAsync(events, cancellationToken);
 
-			return Result<Leave>.Success(leave);
+			return Result<LeaveDTO>.Success(leave.ToLeaveDto(employee.Name));
 		}
 		catch (DomainException ex)
 		{
-			await transaction.RollbackAsync(cancellationToken);
-			return Result<Leave>.Invalid(ex.Message);
+			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+			return Result<LeaveDTO>.Invalid(ex.Message);
 		}
 		catch (Exception ex)
 		{
-			await transaction.RollbackAsync(cancellationToken);
-			return Result<Leave>.Invalid(ex.Message);
+			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+			return Result<LeaveDTO>.Invalid(ex.Message);
 		}
 	}
 }

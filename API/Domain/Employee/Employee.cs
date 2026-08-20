@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace LeavePlanner.Domain;
 
 public class Employee : AggregateRoot
@@ -18,28 +16,15 @@ public class Employee : AggregateRoot
 	public int PaidTimeOff { get; private set; }
 	public string? Title { get; private set; }
 
-	[JsonIgnore]
 	public virtual ICollection<Employee> InverseManagedByNavigation { get; set; } = new List<Employee>();
-
-	[JsonIgnore]
 	public virtual ICollection<Leave> LeaveApprovedByNavigations { get; set; } = new List<Leave>();
-
-	[JsonIgnore]
 	public virtual ICollection<Leave> LeaveRejectedByNavigations { get; set; } = new List<Leave>();
-
-	[JsonIgnore]
 	public virtual ICollection<Leave> LeaveOwnerNavigations { get; set; } = new List<Leave>();
-
-	[JsonIgnore]
 	public virtual Employee? ManagedByNavigation { get; set; }
-
-	[JsonIgnore]
 	public virtual Organization? OrganizationNavigation { get; set; }
 
-	[JsonIgnore]
 	public bool IsOrgHead => ManagedBy == null;
 
-	[JsonIgnore]
 	public bool IsActive => Country != null;
 
 	public static Employee CreateOwner(string email, int organizationId)
@@ -75,6 +60,31 @@ public class Employee : AggregateRoot
 		};
 		employee.Raise(new EmployeeJoined(employee));
 		return employee;
+	}
+
+	public static Employee Rehydrate(
+		int id,
+		string email,
+		string? name = null,
+		int? organization = null,
+		int? managedBy = null,
+		string? country = "GB",
+		bool isOrgOwner = false,
+		int paidTimeOff = 25,
+		string? title = null)
+	{
+		return new Employee
+		{
+			Id = id,
+			Email = email,
+			Name = name,
+			Organization = organization,
+			ManagedBy = managedBy,
+			Country = country,
+			IsOrgOwner = isOrgOwner,
+			PaidTimeOff = paidTimeOff,
+			Title = title
+		};
 	}
 
 	public void Reactivate(

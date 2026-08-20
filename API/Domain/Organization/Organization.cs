@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace LeavePlanner.Domain;
 
 public class Organization : AggregateRoot
@@ -14,7 +12,6 @@ public class Organization : AggregateRoot
 
 	public int[] WorkingDays { get; private set; } = [1, 2, 3, 4, 5];
 
-	[JsonIgnore]
 	public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
 
 	public static Organization Create(string name)
@@ -25,6 +22,16 @@ public class Organization : AggregateRoot
 		}
 
 		return new Organization { Name = name };
+	}
+
+	public static Organization Rehydrate(int id, string name, int[] workingDays)
+	{
+		return new Organization
+		{
+			Id = id,
+			Name = name,
+			WorkingDays = workingDays
+		};
 	}
 
 	public void Rename(string name) => Name = name;

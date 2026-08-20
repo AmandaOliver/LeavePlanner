@@ -2,7 +2,6 @@ using System.Globalization;
 using CsvHelper;
 using LeavePlanner.Application.Calendar;
 using LeavePlanner.Application.Common;
-using LeavePlanner.Data;
 using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
@@ -13,20 +12,17 @@ public record ImportOrganizationCommand(string OrganizationId, Stream File) : IC
 
 public class ImportOrganizationCommandHandler : IRequestHandler<ImportOrganizationCommand, Result>
 {
-	private readonly LeavePlannerContext _context;
 	private readonly IEmployeeRepository _employees;
 	private readonly ICountryRepository _countries;
 	private readonly PublicHolidayGenerator _holidays;
 	private readonly IUnitOfWork _unitOfWork;
 
 	public ImportOrganizationCommandHandler(
-		LeavePlannerContext context,
 		IEmployeeRepository employees,
 		ICountryRepository countries,
 		PublicHolidayGenerator holidays,
 		IUnitOfWork unitOfWork)
 	{
-		_context = context;
 		_employees = employees;
 		_countries = countries;
 		_holidays = holidays;
@@ -37,7 +33,7 @@ public class ImportOrganizationCommandHandler : IRequestHandler<ImportOrganizati
 	{
 		var organizationId = int.Parse(command.OrganizationId);
 
-		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+		await _unitOfWork.BeginTransactionAsync(cancellationToken);
 		try
 		{
 			List<EmployeeCsvDTO> rows;
@@ -118,14 +114,14 @@ public class ImportOrganizationCommandHandler : IRequestHandler<ImportOrganizati
 
 			var events = _unitOfWork.CollectEvents();
 			await _unitOfWork.SaveChangesAsync(cancellationToken);
-			await transaction.CommitAsync(cancellationToken);
+			await _unitOfWork.CommitTransactionAsync(cancellationToken);
 			await _unitOfWork.DispatchAsync(events, cancellationToken);
 
 			return Result.Success();
 		}
 		catch (Exception ex)
 		{
-			await transaction.RollbackAsync(cancellationToken);
+			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result.Invalid(ex.Message);
 		}
 	}
