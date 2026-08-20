@@ -11,7 +11,11 @@ export type CountriesType = Array<CountryType>
 export const useCountriesModel = () => {
   const { getAccessTokenSilently } = useAuth0()
 
-  const fetchCountries = async (): Promise<CountriesType> => {
+  const fetchCountries = async ({
+    signal,
+  }: {
+    signal: AbortSignal
+  }): Promise<CountriesType> => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
@@ -22,6 +26,7 @@ export const useCountriesModel = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
+        signal,
       }
     )
 

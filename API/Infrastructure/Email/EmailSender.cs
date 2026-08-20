@@ -18,7 +18,7 @@ public class EmailSender : IEmailSender
 		_logger = logger;
 	}
 
-	public async Task SendAsync(string toEmail, string subject, string body)
+	public async Task SendAsync(string toEmail, string subject, string body, CancellationToken cancellationToken)
 	{
 		if (!_options.Enabled)
 		{
@@ -43,7 +43,7 @@ public class EmailSender : IEmailSender
 			.To(toEmail)
 			.Subject(subject)
 			.Body(body)
-			.SendAsync();
+			.SendAsync(cancellationToken);
 
 		if (!email.Successful)
 		{

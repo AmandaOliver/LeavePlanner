@@ -52,7 +52,11 @@ export const useGetMyLeaves = (interval: Interval) => {
   const { getAccessTokenSilently } = useAuth0()
   const { currentEmployee } = useEmployeeModel()
 
-  const fetchMyLeaves = async (): Promise<LeaveType[]> => {
+  const fetchMyLeaves = async ({
+    signal,
+  }: {
+    signal: AbortSignal
+  }): Promise<LeaveType[]> => {
     const accessToken = await getAccessTokenSilently()
     const response = await fetch(
       `${process.env.REACT_APP_API_SERVER_URL}/leaves/myleaves/${currentEmployee?.id}?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
@@ -62,6 +66,7 @@ export const useGetMyLeaves = (interval: Interval) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
+        signal,
       }
     )
 
@@ -81,7 +86,11 @@ export const useGetAllLeaves = (interval: Interval) => {
   const { getAccessTokenSilently } = useAuth0()
   const { currentEmployee } = useEmployeeModel()
 
-  const fetchAllLeaves = async (): Promise<LeaveType[]> => {
+  const fetchAllLeaves = async ({
+    signal,
+  }: {
+    signal: AbortSignal
+  }): Promise<LeaveType[]> => {
     const accessToken = await getAccessTokenSilently()
     const response = await fetch(
       `${process.env.REACT_APP_API_SERVER_URL}/leaves/all/${currentEmployee?.organization}?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
@@ -91,6 +100,7 @@ export const useGetAllLeaves = (interval: Interval) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
+        signal,
       }
     )
 
@@ -111,7 +121,11 @@ export const useGetMyCircleLeaves = (interval: Interval) => {
   const { getAccessTokenSilently } = useAuth0()
   const { currentEmployee } = useEmployeeModel()
 
-  const fetchAllLeaves = async (): Promise<LeaveType[]> => {
+  const fetchAllLeaves = async ({
+    signal,
+  }: {
+    signal: AbortSignal
+  }): Promise<LeaveType[]> => {
     const accessToken = await getAccessTokenSilently()
     const response = await fetch(
       `${process.env.REACT_APP_API_SERVER_URL}/leaves/circle/${currentEmployee?.id}?start=${interval.start?.toString().split('T')[0]}&end=${interval.end?.toString().split('T')[0]}`,
@@ -121,6 +135,7 @@ export const useGetMyCircleLeaves = (interval: Interval) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
+        signal,
       }
     )
 
@@ -144,7 +159,7 @@ export const useLeavesModel = () => {
   const usePaginatedLeaves = (page: number, pageSize: number) =>
     useQuery({
       queryKey: ['leaves', currentEmployee?.id, page, pageSize],
-      queryFn: async (): Promise<{
+      queryFn: async ({ signal }): Promise<{
         leaves: LeaveType[]
         totalCount: number
       }> => {
@@ -158,6 +173,7 @@ export const useLeavesModel = () => {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${accessToken}`,
             },
+            signal,
           }
         )
 
@@ -180,7 +196,7 @@ export const useLeavesModel = () => {
   const usePaginatedPastLeaves = (page: number, pageSize: number) =>
     useQuery({
       queryKey: ['pastLeaves', currentEmployee?.id, page, pageSize],
-      queryFn: async (): Promise<{
+      queryFn: async ({ signal }): Promise<{
         leaves: LeaveType[]
         totalCount: number
       }> => {
@@ -194,6 +210,7 @@ export const useLeavesModel = () => {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${accessToken}`,
             },
+            signal,
           }
         )
 
@@ -216,7 +233,7 @@ export const useLeavesModel = () => {
   const usePaginatedLeavesPending = (page: number, pageSize: number) =>
     useQuery({
       queryKey: ['leavesAwaitingApproval', currentEmployee?.id, page, pageSize],
-      queryFn: async (): Promise<{
+      queryFn: async ({ signal }): Promise<{
         leaves: LeaveType[]
         totalCount: number
       }> => {
@@ -230,6 +247,7 @@ export const useLeavesModel = () => {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${accessToken}`,
             },
+            signal,
           }
         )
 
@@ -252,7 +270,7 @@ export const useLeavesModel = () => {
   const usePaginatedLeavesRejected = (page: number, pageSize: number) =>
     useQuery({
       queryKey: ['leavesRejected', currentEmployee?.id, page, pageSize],
-      queryFn: async (): Promise<{
+      queryFn: async ({ signal }): Promise<{
         leaves: LeaveType[]
         totalCount: number
       }> => {
@@ -266,6 +284,7 @@ export const useLeavesModel = () => {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${accessToken}`,
             },
+            signal,
           }
         )
 
@@ -429,7 +448,7 @@ export const useLeaveModel = (id: string) => {
   const { getAccessTokenSilently } = useAuth0()
   const leaveQuery = useQuery({
     queryKey: ['leave', id],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const accessToken = await getAccessTokenSilently()
 
       const response = await fetch(
@@ -440,6 +459,7 @@ export const useLeaveModel = (id: string) => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
+          signal,
         }
       )
 

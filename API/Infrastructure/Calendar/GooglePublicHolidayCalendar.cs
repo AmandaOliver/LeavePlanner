@@ -51,7 +51,7 @@ public class GooglePublicHolidayCalendar : IPublicHolidayCalendar
 
 			return holidays;
 		}
-		catch (Exception ex) when (ex is not DomainException)
+		catch (Exception ex) when (ex is not DomainException and not OperationCanceledException)
 		{
 			throw new Exception("Error when fetching holidays", ex);
 		}

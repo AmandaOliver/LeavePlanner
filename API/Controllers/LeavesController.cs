@@ -17,61 +17,61 @@ public class LeavesController : ControllerBase
 
 	[LeaveOwnerOrManager]
 	[HttpGet("{leaveId}")]
-	public async Task<IResult> GetLeaveInfo(string leaveId) =>
-		(await _mediator.Send(new GetLeaveInfoQuery(leaveId))).ToHttpResult();
+	public async Task<IResult> GetLeaveInfo(string leaveId, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new GetLeaveInfoQuery(leaveId), cancellationToken)).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpGet("myleaves/{employeeId}")]
-	public async Task<IResult> GetMyLeaves(string employeeId, [FromQuery] string? start, [FromQuery] string? end) =>
-		(await _mediator.Send(new GetMyLeavesQuery(employeeId, start, end))).ToHttpResult();
+	public async Task<IResult> GetMyLeaves(string employeeId, [FromQuery] string? start, [FromQuery] string? end, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new GetMyLeavesQuery(employeeId, start, end), cancellationToken)).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpGet("circle/{employeeId}")]
-	public async Task<IResult> GetMyCircleLeaves(string employeeId, [FromQuery] string? start, [FromQuery] string? end) =>
-		(await _mediator.Send(new GetMyCircleLeavesQuery(employeeId, start, end))).ToHttpResult();
+	public async Task<IResult> GetMyCircleLeaves(string employeeId, [FromQuery] string? start, [FromQuery] string? end, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new GetMyCircleLeavesQuery(employeeId, start, end), cancellationToken)).ToHttpResult();
 
 	[OrganizationMemberOnly]
 	[HttpGet("all/{organizationId}")]
-	public async Task<IResult> GetAllLeaves(string organizationId, [FromQuery] string? start, [FromQuery] string? end) =>
-		(await _mediator.Send(new GetAllLeavesQuery(organizationId, start, end))).ToHttpResult();
+	public async Task<IResult> GetAllLeaves(string organizationId, [FromQuery] string? start, [FromQuery] string? end, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new GetAllLeavesQuery(organizationId, start, end), cancellationToken)).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpGet("approved/{employeeId}")]
-	public async Task<IResult> GetLeavesApproved(string employeeId, [FromQuery] int page, [FromQuery] int pageSize) =>
-		(await _mediator.Send(new GetLeavesApprovedQuery(employeeId, page, pageSize))).ToHttpResult();
+	public async Task<IResult> GetLeavesApproved(string employeeId, [FromQuery] int page, [FromQuery] int pageSize, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new GetLeavesApprovedQuery(employeeId, page, pageSize), cancellationToken)).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpGet("past/{employeeId}")]
-	public async Task<IResult> GetPastLeaves(string employeeId, [FromQuery] int page, [FromQuery] int pageSize) =>
-		(await _mediator.Send(new GetPastLeavesQuery(employeeId, page, pageSize))).ToHttpResult();
+	public async Task<IResult> GetPastLeaves(string employeeId, [FromQuery] int page, [FromQuery] int pageSize, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new GetPastLeavesQuery(employeeId, page, pageSize), cancellationToken)).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpGet("rejected/{employeeId}")]
-	public async Task<IResult> GetLeavesRejected(string employeeId, [FromQuery] int page, [FromQuery] int pageSize) =>
-		(await _mediator.Send(new GetLeavesRejectedQuery(employeeId, page, pageSize))).ToHttpResult();
+	public async Task<IResult> GetLeavesRejected(string employeeId, [FromQuery] int page, [FromQuery] int pageSize, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new GetLeavesRejectedQuery(employeeId, page, pageSize), cancellationToken)).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpGet("pending/{employeeId}")]
-	public async Task<IResult> GetLeavesPending(string employeeId, [FromQuery] int page, [FromQuery] int pageSize) =>
-		(await _mediator.Send(new GetLeavesPendingQuery(employeeId, page, pageSize))).ToHttpResult();
+	public async Task<IResult> GetLeavesPending(string employeeId, [FromQuery] int page, [FromQuery] int pageSize, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new GetLeavesPendingQuery(employeeId, page, pageSize), cancellationToken)).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpPost("validate/{employeeId}")]
-	public async Task<IResult> ValidateLeaveRequest(string employeeId, [FromBody] LeaveValidateDTO leaveToValidate) =>
-		(await _mediator.Send(new ValidateLeaveRequestQuery(employeeId, leaveToValidate))).ToHttpResult();
+	public async Task<IResult> ValidateLeaveRequest(string employeeId, [FromBody] LeaveValidateDTO leaveToValidate, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new ValidateLeaveRequestQuery(employeeId, leaveToValidate), cancellationToken)).ToHttpResult();
 
 	[SelfAccessOnly]
 	[HttpPost("{employeeId}")]
-	public async Task<IResult> CreateLeave(string employeeId, [FromBody] LeaveCreateDTO model) =>
-		(await _mediator.Send(new CreateLeaveCommand(employeeId, model))).ToHttpResult();
+	public async Task<IResult> CreateLeave(string employeeId, [FromBody] LeaveCreateDTO model, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new CreateLeaveCommand(employeeId, model), cancellationToken)).ToHttpResult();
 
 	[LeaveOwnerOrManager]
 	[HttpPut("{leaveId}")]
-	public async Task<IResult> UpdateLeave(int leaveId, LeaveUpdateDTO leaveUpdate) =>
-		(await _mediator.Send(new UpdateLeaveCommand(leaveId, leaveUpdate))).ToHttpResult();
+	public async Task<IResult> UpdateLeave(int leaveId, LeaveUpdateDTO leaveUpdate, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new UpdateLeaveCommand(leaveId, leaveUpdate), cancellationToken)).ToHttpResult();
 
 	[LeaveOwnerOrManager]
 	[HttpDelete("{leaveId}")]
-	public async Task<IResult> DeleteLeave(int leaveId) =>
-		(await _mediator.Send(new DeleteLeaveCommand(leaveId))).ToHttpResult();
+	public async Task<IResult> DeleteLeave(int leaveId, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new DeleteLeaveCommand(leaveId), cancellationToken)).ToHttpResult();
 }
