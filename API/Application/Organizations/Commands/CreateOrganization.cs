@@ -49,10 +49,10 @@ public class CreateOrganizationCommandHandler : IRequestHandler<CreateOrganizati
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result<int>.Invalid(ex.Message);
 		}
-		catch (Exception ex)
+		catch
 		{
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-			return Result<int>.Invalid(ex.Message);
+			throw;
 		}
 	}
 }

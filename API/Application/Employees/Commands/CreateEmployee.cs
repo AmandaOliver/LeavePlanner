@@ -74,10 +74,10 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result<EmployeeDTO>.Invalid(ex.Message);
 		}
-		catch (Exception ex)
+		catch
 		{
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-			return Result<EmployeeDTO>.Invalid(ex.Message);
+			throw;
 		}
 	}
 

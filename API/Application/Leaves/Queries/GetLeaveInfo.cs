@@ -21,12 +21,24 @@ public class GetLeaveInfoQueryHandler : IRequestHandler<GetLeaveInfoQuery, Resul
 
 	public async Task<Result<LeaveDTO>> Handle(GetLeaveInfoQuery request, CancellationToken cancellationToken)
 	{
-		var leave = await _leaves.GetByIdAsync(int.Parse(request.LeaveId), cancellationToken);
+		if (!int.TryParse(request.LeaveId, out var leaveId))
+		{
+			return Result<LeaveDTO>.Invalid("Invalid leave id.");
+		}
+
+		var leave = await _leaves.GetByIdAsync(leaveId, cancellationToken);
 		if (leave == null)
 		{
 			return Result<LeaveDTO>.NotFound("leave not found");
 		}
 
-		return Result<LeaveDTO>.Success(await _evaluator.ComposeDto(leave, false, cancellationToken));
+		try
+		{
+			return Result<LeaveDTO>.Success(await _evaluator.ComposeDto(leave, false, cancellationToken));
+		}
+		catch (DomainException ex)
+		{
+			return Result<LeaveDTO>.Invalid(ex.Message);
+		}
 	}
 }

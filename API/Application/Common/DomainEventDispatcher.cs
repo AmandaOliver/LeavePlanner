@@ -92,7 +92,7 @@ Hello {manager.Name},
 	{LeaveEvaluator.DescribeConflicts(info)}
 	To review go to {_leavePlannerUrl}/requests/{manager.Email}";
 
-		await _email.SendAsync(manager.Email, subject, body);
+		await _email.SendAsync(manager.Email, subject, body, cancellationToken);
 	}
 
 	private async Task NotifyManagerOfCancellation(LeaveCancelled cancelled, CancellationToken cancellationToken)
@@ -117,7 +117,7 @@ Hello {manager.Name},
 	End Date: {cancelled.DateEnd.ToShortDateString()}
 	Description: {cancelled.Description}						
 ";
-		await _email.SendAsync(manager.Email, $"Leave Request Deleted by {employee.Name}", body);
+		await _email.SendAsync(manager.Email, $"Leave Request Deleted by {employee.Name}", body, cancellationToken);
 	}
 
 	private async Task NotifyOwnerOfDecision(Leave leave, bool approved, CancellationToken cancellationToken)
@@ -135,7 +135,7 @@ Hello {employee.Name},
 	Your leave request from {leave.DateStart.ToShortDateString()} to {leave.DateEnd.ToShortDateString()} 
 	has been approved. 
 	Enjoy your time off!.";
-			await _email.SendAsync(employee.Email, "Leave Request approved", body);
+			await _email.SendAsync(employee.Email, "Leave Request approved", body, cancellationToken);
 		}
 		else
 		{
@@ -143,7 +143,7 @@ Hello {employee.Name},
 Hello {employee.Name}, 
 	Your leave request from {leave.DateStart.ToShortDateString()} to {leave.DateEnd.ToShortDateString()} 
 	has been rejected. ";
-			await _email.SendAsync(employee.Email, "Leave Request rejected", body);
+			await _email.SendAsync(employee.Email, "Leave Request rejected", body, cancellationToken);
 		}
 	}
 
@@ -164,6 +164,6 @@ Hello {employee.Name},
 Hello {employee.Name}, 
 	You have been added as an Employee of {organization.Name} organization in LeavePlanner App. 
     Please log in with this email in {_leavePlannerUrl} to see your dashboard.";
-		await _email.SendAsync(employee.Email, "You have been added to LeavePlanner", body);
+		await _email.SendAsync(employee.Email, "You have been added to LeavePlanner", body, cancellationToken);
 	}
 }

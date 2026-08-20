@@ -14,7 +14,8 @@ export const useRequestsModel = () => {
 
   const fetchRequests = async (
     page: number,
-    pageSize: number
+    pageSize: number,
+    signal: AbortSignal
   ): Promise<{ requests: LeaveType[]; totalCount: number }> => {
     const accessToken = await getAccessTokenSilently()
 
@@ -26,6 +27,7 @@ export const useRequestsModel = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
+        signal,
       }
     )
 
@@ -45,7 +47,8 @@ export const useRequestsModel = () => {
   }
   const fetchReviewedRequests = async (
     page: number,
-    pageSize: number
+    pageSize: number,
+    signal: AbortSignal
   ): Promise<{ requests: LeaveType[]; totalCount: number }> => {
     const accessToken = await getAccessTokenSilently()
 
@@ -57,6 +60,7 @@ export const useRequestsModel = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
+        signal,
       }
     )
 
@@ -75,7 +79,10 @@ export const useRequestsModel = () => {
       throw new Error('Failed to fetch reviewed requests')
     }
   }
-  const fetchRequestInfo = async (requestId: string): Promise<LeaveType> => {
+  const fetchRequestInfo = async (
+    requestId: string,
+    signal: AbortSignal
+  ): Promise<LeaveType> => {
     const accessToken = await getAccessTokenSilently()
 
     const response = await fetch(
@@ -86,6 +93,7 @@ export const useRequestsModel = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
+        signal,
       }
     )
 
@@ -98,18 +106,18 @@ export const useRequestsModel = () => {
   const useRequestInfo = (requestId: string) =>
     useQuery({
       queryKey: ['requestInfo', requestId],
-      queryFn: () => fetchRequestInfo(requestId),
+      queryFn: ({ signal }) => fetchRequestInfo(requestId, signal),
     })
   const usePaginatedRequests = (page: number, pageSize: number) =>
     useQuery({
       queryKey: ['requests', currentEmployee?.id, page, pageSize],
-      queryFn: () => fetchRequests(page, pageSize),
+      queryFn: ({ signal }) => fetchRequests(page, pageSize, signal),
       placeholderData: (prevData) => prevData,
     })
   const usePaginatedReviewedRequests = (page: number, pageSize: number) =>
     useQuery({
       queryKey: ['reviewedRequests', currentEmployee?.id, page, pageSize],
-      queryFn: () => fetchReviewedRequests(page, pageSize),
+      queryFn: ({ signal }) => fetchReviewedRequests(page, pageSize, signal),
       placeholderData: (prevData) => prevData,
     })
   const approveRequestMutation = useMutation({

@@ -20,7 +20,11 @@ public class GetAllLeavesQueryHandler : IRequestHandler<GetAllLeavesQuery, Resul
 
 	public async Task<Result<List<LeaveDTO>>> Handle(GetAllLeavesQuery request, CancellationToken cancellationToken)
 	{
-		var organizationId = int.Parse(request.OrganizationId);
+		if (!int.TryParse(request.OrganizationId, out var organizationId))
+		{
+			return Result<List<LeaveDTO>>.Invalid("Invalid organization id.");
+		}
+
 		var leaves = await _leaves.GetApprovedInOrganizationAsync(organizationId, cancellationToken);
 
 		if (leaves.Count == 0)
@@ -28,13 +32,10 @@ public class GetAllLeavesQueryHandler : IRequestHandler<GetAllLeavesQuery, Resul
 			return Result<List<LeaveDTO>>.Success([]);
 		}
 
-		if (request.Start == null || request.End == null)
+		if (!DateTime.TryParse(request.Start, out var start) || !DateTime.TryParse(request.End, out var end))
 		{
 			return Result<List<LeaveDTO>>.Invalid("You need to specify start and end");
 		}
-
-		var start = DateTime.Parse(request.Start);
-		var end = DateTime.Parse(request.End);
 
 		var leaveDTOs = new List<LeaveDTO>();
 		foreach (var leave in leaves.Where(leave => leave.DateEnd >= start && leave.DateStart <= end))

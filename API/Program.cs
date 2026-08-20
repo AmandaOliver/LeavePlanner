@@ -82,7 +82,11 @@ builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<ICountryRepository, CountryRepository>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
-builder.Services.AddHttpClient<IPublicHolidayCalendar, GooglePublicHolidayCalendar>();
+builder.Services.AddSingleton(_ => new HttpClient(new SocketsHttpHandler
+{
+	PooledConnectionLifetime = TimeSpan.FromMinutes(15)
+}));
+builder.Services.AddSingleton<IPublicHolidayCalendar, GooglePublicHolidayCalendar>();
 builder.Services.AddScoped<LeaveEvaluator>();
 builder.Services.AddScoped<EmployeeHierarchy>();
 builder.Services.AddScoped<PublicHolidayGenerator>();

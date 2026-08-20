@@ -14,6 +14,6 @@ public class CountriesController : ControllerBase
 
 	[HttpGet]
 	[Authorize]
-	public async Task<IResult> GetCountries() =>
-		(await _mediator.Send(new GetCountriesQuery())).ToHttpResult();
+	public async Task<IResult> GetCountries(CancellationToken cancellationToken) =>
+		(await _mediator.Send(new GetCountriesQuery(), cancellationToken)).ToHttpResult();
 }

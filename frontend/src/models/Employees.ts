@@ -45,7 +45,11 @@ export const useEmployeeModel = () => {
   const { user, getAccessTokenSilently } = useAuth0()
   const queryClient = useQueryClient()
 
-  const fetchEmployee = async (): Promise<EmployeeType | null> => {
+  const fetchEmployee = async ({
+    signal,
+  }: {
+    signal: AbortSignal
+  }): Promise<EmployeeType | null> => {
     const accessToken = await getAccessTokenSilently()
     const response = await fetch(
       `${process.env.REACT_APP_API_SERVER_URL}/employee/${user?.email}`,
@@ -55,6 +59,7 @@ export const useEmployeeModel = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
+        signal,
       }
     )
     if (response.status === 200) {

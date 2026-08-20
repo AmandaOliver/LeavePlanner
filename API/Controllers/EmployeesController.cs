@@ -17,21 +17,21 @@ public class EmployeesController : ControllerBase
 
 	[AdminOnly]
 	[HttpPost]
-	public async Task<IResult> CreateEmployee([FromBody] EmployeeCreateDTO model) =>
-		(await _mediator.Send(new CreateEmployeeCommand(model))).ToHttpResult();
+	public async Task<IResult> CreateEmployee([FromBody] EmployeeCreateDTO model, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new CreateEmployeeCommand(model), cancellationToken)).ToHttpResult();
 
 	[SelfEmailOrAdminOnly]
 	[HttpGet("{email}")]
-	public async Task<IResult> GetEmployee(string email) =>
-		(await _mediator.Send(new GetEmployeeByEmailQuery(email))).ToHttpResult();
+	public async Task<IResult> GetEmployee(string email, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new GetEmployeeByEmailQuery(email), cancellationToken)).ToHttpResult();
 
 	[AdminOnly]
 	[HttpPut("{id}")]
-	public async Task<IResult> UpdateEmployee(string id, [FromBody] EmployeeUpdateDTO model) =>
-		(await _mediator.Send(new UpdateEmployeeCommand(id, model))).ToHttpResult();
+	public async Task<IResult> UpdateEmployee(string id, [FromBody] EmployeeUpdateDTO model, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new UpdateEmployeeCommand(id, model), cancellationToken)).ToHttpResult();
 
 	[AdminOnly]
 	[HttpDelete("{id}")]
-	public async Task<IResult> DeleteEmployee(string id) =>
-		(await _mediator.Send(new DeleteEmployeeCommand(id))).ToHttpResult();
+	public async Task<IResult> DeleteEmployee(string id, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new DeleteEmployeeCommand(id), cancellationToken)).ToHttpResult();
 }

@@ -20,12 +20,16 @@ public class GetMyLeavesQueryHandler : IRequestHandler<GetMyLeavesQuery, Result<
 
 	public async Task<Result<List<LeaveDTO>>> Handle(GetMyLeavesQuery request, CancellationToken cancellationToken)
 	{
-		if (request.Start == null || request.End == null)
+		if (!int.TryParse(request.EmployeeId, out var employeeId))
+		{
+			return Result<List<LeaveDTO>>.Invalid("Invalid employee id.");
+		}
+
+		if (!DateTime.TryParse(request.Start, out var start) || !DateTime.TryParse(request.End, out var end))
 		{
 			return Result<List<LeaveDTO>>.Invalid("You need to specify start and end");
 		}
 
-		var employeeId = int.Parse(request.EmployeeId);
 		var employee = await _employees.GetByIdAsync(employeeId, cancellationToken);
 		if (employee == null)
 		{
@@ -33,9 +37,6 @@ public class GetMyLeavesQueryHandler : IRequestHandler<GetMyLeavesQuery, Result<
 		}
 
 		var leaves = await _leaves.GetNotRejectedByOwnerAsync(employeeId, cancellationToken);
-		var start = DateTime.Parse(request.Start);
-		var end = DateTime.Parse(request.End);
-
 		var leaveDTOs = leaves
 			.Where(leave => leave.DateEnd >= start && leave.DateStart <= end)
 			.Select(leave => leave.ToLeaveDto(employee.Name))

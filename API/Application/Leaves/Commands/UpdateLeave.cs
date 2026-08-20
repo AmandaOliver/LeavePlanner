@@ -80,10 +80,10 @@ public class UpdateLeaveCommandHandler : IRequestHandler<UpdateLeaveCommand, Res
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result<LeaveDTO>.Invalid(ex.Message);
 		}
-		catch (Exception ex)
+		catch
 		{
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-			return Result<LeaveDTO>.Invalid(ex.Message);
+			throw;
 		}
 	}
 }

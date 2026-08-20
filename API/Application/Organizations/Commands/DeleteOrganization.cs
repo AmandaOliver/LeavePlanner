@@ -32,7 +32,13 @@ public class DeleteOrganizationCommandHandler : IRequestHandler<DeleteOrganizati
 		await _unitOfWork.BeginTransactionAsync(cancellationToken);
 		try
 		{
-			var organization = await _organizations.GetByIdAsync(int.Parse(command.OrganizationId), cancellationToken);
+			if (!int.TryParse(command.OrganizationId, out var organizationId))
+			{
+				await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+				return Result<OrganizationDTO>.Invalid("Invalid organization id.");
+			}
+
+			var organization = await _organizations.GetByIdAsync(organizationId, cancellationToken);
 			if (organization == null)
 			{
 				await _unitOfWork.RollbackTransactionAsync(cancellationToken);
@@ -51,10 +57,15 @@ public class DeleteOrganizationCommandHandler : IRequestHandler<DeleteOrganizati
 
 			return Result<OrganizationDTO>.Success(organization.ToOrganizationDto());
 		}
-		catch (Exception ex)
+		catch (DomainException ex)
 		{
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result<OrganizationDTO>.Invalid(ex.Message);
+		}
+		catch
+		{
+			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+			throw;
 		}
 	}
 }

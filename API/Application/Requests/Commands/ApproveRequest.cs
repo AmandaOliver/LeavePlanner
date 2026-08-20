@@ -20,7 +20,7 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
 
 	public async Task<Result<LeaveDTO>> Handle(ApproveRequestCommand command, CancellationToken cancellationToken)
 	{
-		if (string.IsNullOrEmpty(command.RequestId) || string.IsNullOrEmpty(command.EmployeeId))
+		if (!int.TryParse(command.RequestId, out var requestId) || !int.TryParse(command.EmployeeId, out var employeeId))
 		{
 			return Result<LeaveDTO>.Invalid("employee and request id can't be empty");
 		}
@@ -28,14 +28,14 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
 		await _unitOfWork.BeginTransactionAsync(cancellationToken);
 		try
 		{
-			var request = await _leaves.GetByIdAsync(int.Parse(command.RequestId), cancellationToken);
+			var request = await _leaves.GetByIdAsync(requestId, cancellationToken);
 			if (request == null)
 			{
 				await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 				return Result<LeaveDTO>.Invalid("request not found");
 			}
 
-			request.Approve(int.Parse(command.EmployeeId));
+			request.Approve(employeeId);
 			var events = _unitOfWork.CollectEvents();
 			await _unitOfWork.SaveChangesAsync(cancellationToken);
 			await _unitOfWork.CommitTransactionAsync(cancellationToken);
@@ -43,10 +43,15 @@ public class ApproveRequestCommandHandler : IRequestHandler<ApproveRequestComman
 
 			return Result<LeaveDTO>.Success(request.ToLeaveDto());
 		}
-		catch (Exception ex)
+		catch (DomainException ex)
 		{
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result<LeaveDTO>.Invalid(ex.Message);
+		}
+		catch
+		{
+			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+			throw;
 		}
 	}
 }

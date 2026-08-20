@@ -26,12 +26,15 @@ public class GetMyCircleLeavesQueryHandler : IRequestHandler<GetMyCircleLeavesQu
 
 	public async Task<Result<List<LeaveDTO>>> Handle(GetMyCircleLeavesQuery request, CancellationToken cancellationToken)
 	{
-		if (request.Start == null || request.End == null)
+		if (!int.TryParse(request.EmployeeId, out var employeeId))
+		{
+			return Result<List<LeaveDTO>>.Invalid("Invalid employee id.");
+		}
+
+		if (!DateTime.TryParse(request.Start, out var start) || !DateTime.TryParse(request.End, out var end))
 		{
 			return Result<List<LeaveDTO>>.Invalid("You need to specify start and end");
 		}
-
-		var employeeId = int.Parse(request.EmployeeId);
 		var employee = await _employees.GetByIdAsync(employeeId, cancellationToken);
 		if (employee == null)
 		{
@@ -68,9 +71,6 @@ public class GetMyCircleLeavesQueryHandler : IRequestHandler<GetMyCircleLeavesQu
 		{
 			return Result<List<LeaveDTO>>.Success([]);
 		}
-
-		var start = DateTime.Parse(request.Start);
-		var end = DateTime.Parse(request.End);
 
 		var leaveDTOs = new List<LeaveDTO>();
 		foreach (var leave in allLeaves.Where(leave => leave.DateEnd >= start && leave.DateStart <= end))

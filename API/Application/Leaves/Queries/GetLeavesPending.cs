@@ -15,7 +15,11 @@ public class GetLeavesPendingQueryHandler : IRequestHandler<GetLeavesPendingQuer
 
 	public async Task<Result<PaginatedLeavesResult>> Handle(GetLeavesPendingQuery request, CancellationToken cancellationToken)
 	{
-		var employeeId = int.Parse(request.EmployeeId);
+		if (!int.TryParse(request.EmployeeId, out var employeeId))
+		{
+			return Result<PaginatedLeavesResult>.Invalid("Invalid employee id.");
+		}
+
 		var leaves = await _leaves.GetPendingByOwnerAsync(employeeId, cancellationToken);
 
 		return Result<PaginatedLeavesResult>.Success(new PaginatedLeavesResult

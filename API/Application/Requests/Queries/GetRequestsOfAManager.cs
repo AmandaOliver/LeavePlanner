@@ -28,7 +28,12 @@ public class GetRequestsOfAManagerQueryHandler : IRequestHandler<GetRequestsOfAM
 
 	public async Task<Result<PaginatedRequestsResult>> Handle(GetRequestsOfAManagerQuery request, CancellationToken cancellationToken)
 	{
-		var manager = await _employees.GetByIdAsync(int.Parse(request.EmployeeId), cancellationToken);
+		if (!int.TryParse(request.EmployeeId, out var employeeId))
+		{
+			return Result<PaginatedRequestsResult>.Invalid("Invalid employee id.");
+		}
+
+		var manager = await _employees.GetByIdAsync(employeeId, cancellationToken);
 		if (manager == null)
 		{
 			return Result<PaginatedRequestsResult>.Invalid("employee not found");

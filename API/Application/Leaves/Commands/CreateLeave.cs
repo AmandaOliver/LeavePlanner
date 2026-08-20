@@ -35,7 +35,11 @@ public class CreateLeaveCommandHandler : IRequestHandler<CreateLeaveCommand, Res
 		await _unitOfWork.BeginTransactionAsync(cancellationToken);
 		try
 		{
-			var employeeId = int.Parse(command.EmployeeId);
+			if (!int.TryParse(command.EmployeeId, out var employeeId))
+			{
+				await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+				return Result<LeaveDTO>.Invalid("Invalid employee id.");
+			}
 			var employee = await _employees.GetByIdAsync(employeeId, cancellationToken);
 			if (employee == null)
 			{
@@ -62,10 +66,10 @@ public class CreateLeaveCommandHandler : IRequestHandler<CreateLeaveCommand, Res
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result<LeaveDTO>.Invalid(ex.Message);
 		}
-		catch (Exception ex)
+		catch
 		{
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-			return Result<LeaveDTO>.Invalid(ex.Message);
+			throw;
 		}
 	}
 }

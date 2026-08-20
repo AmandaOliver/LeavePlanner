@@ -59,10 +59,10 @@ public class UpdateOrganizationCommandHandler : IRequestHandler<UpdateOrganizati
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result<OrganizationDTO>.Invalid(ex.Message);
 		}
-		catch (Exception ex)
+		catch
 		{
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-			return Result<OrganizationDTO>.Invalid(ex.Message);
+			throw;
 		}
 	}
 }

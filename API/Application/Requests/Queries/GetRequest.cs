@@ -21,12 +21,24 @@ public class GetRequestQueryHandler : IRequestHandler<GetRequestQuery, Result<Le
 
 	public async Task<Result<LeaveDTO>> Handle(GetRequestQuery request, CancellationToken cancellationToken)
 	{
-		var leave = await _leaves.GetByIdAsync(int.Parse(request.RequestId), cancellationToken);
+		if (!int.TryParse(request.RequestId, out var requestId))
+		{
+			return Result<LeaveDTO>.Invalid("Invalid request id.");
+		}
+
+		var leave = await _leaves.GetByIdAsync(requestId, cancellationToken);
 		if (leave == null)
 		{
 			return Result<LeaveDTO>.NotFound("Request not found");
 		}
 
-		return Result<LeaveDTO>.Success(await _evaluator.ComposeDto(leave, true, cancellationToken));
+		try
+		{
+			return Result<LeaveDTO>.Success(await _evaluator.ComposeDto(leave, true, cancellationToken));
+		}
+		catch (DomainException ex)
+		{
+			return Result<LeaveDTO>.Invalid(ex.Message);
+		}
 	}
 }
