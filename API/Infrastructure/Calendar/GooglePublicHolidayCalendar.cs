@@ -8,11 +8,16 @@ namespace LeavePlanner.Infrastructure.Calendar;
 public class GooglePublicHolidayCalendar : IPublicHolidayCalendar
 {
 	private readonly HttpClient _httpClient;
+	private readonly ILogger<GooglePublicHolidayCalendar> _logger;
 	private readonly string _apiKey;
 
-	public GooglePublicHolidayCalendar(HttpClient httpClient, IOptions<GoogleCalendarOptions> options)
+	public GooglePublicHolidayCalendar(
+		HttpClient httpClient,
+		IOptions<GoogleCalendarOptions> options,
+		ILogger<GooglePublicHolidayCalendar> logger)
 	{
 		_httpClient = httpClient;
+		_logger = logger;
 		_apiKey = options.Value.ApiKey;
 	}
 
@@ -20,11 +25,24 @@ public class GooglePublicHolidayCalendar : IPublicHolidayCalendar
 	{
 		try
 		{
-			var url = $"https://www.googleapis.com/calendar/v3/calendars/en.{countryCode}.official%23holiday%40group.v.calendar.google.com/events?key={Uri.EscapeDataString(_apiKey)}";
+			var now = DateTime.UtcNow;
+			var query = new QueryString()
+				.Add("key", _apiKey)
+				.Add("singleEvents", "true")
+				.Add("orderBy", "startTime")
+				.Add("timeMin", now.ToString("o"))
+				.Add("timeMax", now.AddYears(2).ToString("o"));
+			var calendarId = Uri.EscapeDataString($"en.{countryCode}.official#holiday@group.v.calendar.google.com");
+			var url = $"https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events{query}";
+
 			var response = await _httpClient.GetAsync(url, cancellationToken);
 			if (!response.IsSuccessStatusCode)
 			{
-				return [];
+				_logger.LogWarning(
+					"Google holiday calendar returned {StatusCode} for {CountryCode}",
+					(int)response.StatusCode,
+					countryCode);
+				throw new DomainException("Could not load public holidays for this country.");
 			}
 
 			var data = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -39,11 +57,11 @@ public class GooglePublicHolidayCalendar : IPublicHolidayCalendar
 			{
 				if (item.Start?.Date == null || item.End?.Date == null)
 				{
-					throw new Exception("holiday returned by google is missing date");
+					continue;
 				}
 
 				var start = DateTime.Parse(item.Start.Date);
-				if (start > DateTime.UtcNow)
+				if (start >= now.Date)
 				{
 					holidays.Add(new PublicHoliday(start, DateTime.Parse(item.End.Date), item.Summary));
 				}
