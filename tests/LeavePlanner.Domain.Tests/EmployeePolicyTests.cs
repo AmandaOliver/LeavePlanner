@@ -106,4 +106,24 @@ public class EmployeePolicyTests
 			manager: null,
 			countryExists: true);
 	}
+
+	[Fact]
+	public void Rejects_a_manager_from_another_organization()
+	{
+		var manager = Employee.Rehydrate(1, "boss@other.com", organization: 99);
+
+		var error = Assert.Throws<DomainException>(() =>
+			EmployeePolicy.AssertCanHire(
+				"alex@org.com",
+				"Alex",
+				"Engineer",
+				"GB",
+				25,
+				existingWithEmail: null,
+				manager,
+				countryExists: true,
+				organizationId: 10));
+
+		Assert.Equal("Manager must belong to the same organization.", error.Message);
+	}
 }

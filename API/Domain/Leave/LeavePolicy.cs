@@ -143,7 +143,8 @@ public static class EmployeePolicy
 		int paidTimeOff,
 		Employee? existingWithEmail,
 		Employee? manager,
-		bool countryExists)
+		bool countryExists,
+		int? organizationId = null)
 	{
 		if (existingWithEmail != null && existingWithEmail.Country != null)
 		{
@@ -173,6 +174,11 @@ public static class EmployeePolicy
 		if (manager != null && manager.Email == email)
 		{
 			throw new DomainException("An employee can't be managed by himself");
+		}
+
+		if (manager != null && organizationId != null && manager.Organization != organizationId)
+		{
+			throw new DomainException("Manager must belong to the same organization.");
 		}
 
 		if (string.IsNullOrWhiteSpace(country))

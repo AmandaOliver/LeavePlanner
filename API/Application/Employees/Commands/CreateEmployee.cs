@@ -93,6 +93,6 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
 
 		var country = await _countries.GetByNameAsync(model.Country, cancellationToken);
 		EmployeePolicy.AssertCanHire(
-			model.Email, model.Name, model.Title, model.Country, model.PaidTimeOff, existing, manager, country != null);
+			model.Email, model.Name, model.Title, model.Country, model.PaidTimeOff, existing, manager, country != null, model.Organization);
 	}
 }

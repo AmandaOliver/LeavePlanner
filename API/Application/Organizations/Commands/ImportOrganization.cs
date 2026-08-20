@@ -66,7 +66,7 @@ public class ImportOrganizationCommandHandler : IRequestHandler<ImportOrganizati
 				try
 				{
 					EmployeePolicy.AssertCanHire(
-						row.Email, row.Name, row.Title, row.Country, row.PaidTimeOff, existing, manager: null, country != null);
+						row.Email, row.Name, row.Title, row.Country, row.PaidTimeOff, existing, manager: null, country != null, organizationId);
 				}
 				catch (DomainException ex)
 				{
@@ -104,6 +104,11 @@ public class ImportOrganizationCommandHandler : IRequestHandler<ImportOrganizati
 					if (manager == null)
 					{
 						throw new InvalidOperationException("Error in Employee " + row.Email + ": manager not found");
+					}
+
+					if (manager.Organization != organizationId)
+					{
+						throw new InvalidOperationException("Error in Employee " + row.Email + ": manager must belong to the same organization");
 					}
 
 					employee.AssignManager(manager.Id);

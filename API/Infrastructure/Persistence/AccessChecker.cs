@@ -14,28 +14,60 @@ public class AccessChecker : IAccessChecker
 		_leaves = leaves;
 	}
 
-	public async Task<AccessDenial> EnsureAdmin(string? email, CancellationToken cancellationToken)
+	public async Task<AccessDenial> EnsureAdmin(string? email, string? organizationId, string? employeeId, CancellationToken cancellationToken)
 	{
-		if (email == null)
+		var caller = await CallerOrDenial(email, cancellationToken);
+		if (caller.Denial != AccessDenial.None)
 		{
-			return AccessDenial.Unauthorized;
+			return caller.Denial;
 		}
 
-		var employee = await _employees.GetByEmailAsync(email, cancellationToken);
-		return employee == null || !employee.IsOrgOwner ? AccessDenial.Forbidden : AccessDenial.None;
+		if (!caller.Employee!.IsOrgOwner)
+		{
+			return AccessDenial.Forbidden;
+		}
+
+		int? targetOrganization = null;
+		if (organizationId != null)
+		{
+			if (!int.TryParse(organizationId, out var parsedOrganizationId))
+			{
+				return AccessDenial.BadRequest;
+			}
+
+			targetOrganization = parsedOrganizationId;
+		}
+		else if (employeeId != null)
+		{
+			if (!int.TryParse(employeeId, out var parsedEmployeeId))
+			{
+				return AccessDenial.BadRequest;
+			}
+
+			var target = await _employees.GetByIdAsync(parsedEmployeeId, cancellationToken);
+			if (target == null)
+			{
+				return AccessDenial.NotFound;
+			}
+
+			targetOrganization = target.Organization;
+		}
+		else
+		{
+			return AccessDenial.BadRequest;
+		}
+
+		return AccessPolicy.CanAdministerOrganization(caller.Employee, targetOrganization)
+			? AccessDenial.None
+			: AccessDenial.Forbidden;
 	}
 
 	public async Task<AccessDenial> EnsureSelf(string? email, string? employeeId, CancellationToken cancellationToken)
 	{
-		if (email == null)
+		var caller = await CallerOrDenial(email, cancellationToken);
+		if (caller.Denial != AccessDenial.None)
 		{
-			return AccessDenial.Unauthorized;
-		}
-
-		var employee = await _employees.GetByEmailAsync(email, cancellationToken);
-		if (employee == null)
-		{
-			return AccessDenial.Unauthorized;
+			return caller.Denial;
 		}
 
 		if (employeeId == null || !int.TryParse(employeeId, out var requestedEmployeeId))
@@ -43,7 +75,7 @@ public class AccessChecker : IAccessChecker
 			return AccessDenial.BadRequest;
 		}
 
-		return employee.Id != requestedEmployeeId ? AccessDenial.Forbidden : AccessDenial.None;
+		return caller.Employee!.Id != requestedEmployeeId ? AccessDenial.Forbidden : AccessDenial.None;
 	}
 
 	public async Task<AccessDenial> EnsureSelfEmailOrAdmin(string? email, string? requestedEmail, CancellationToken cancellationToken)
@@ -53,33 +85,37 @@ public class AccessChecker : IAccessChecker
 			return AccessDenial.Unauthorized;
 		}
 
-		var employee = await _employees.GetByEmailAsync(email, cancellationToken);
-		if (employee != null && employee.IsOrgOwner)
-		{
-			return AccessDenial.None;
-		}
-
 		if (requestedEmail == null)
 		{
 			return AccessDenial.BadRequest;
 		}
 
-		return string.Equals(email, requestedEmail, StringComparison.OrdinalIgnoreCase)
-			? AccessDenial.None
-			: AccessDenial.Forbidden;
+		if (string.Equals(email, requestedEmail, StringComparison.OrdinalIgnoreCase))
+		{
+			return AccessDenial.None;
+		}
+
+		var caller = await _employees.GetByEmailAsync(email, cancellationToken);
+		if (caller == null || !caller.IsOrgOwner)
+		{
+			return AccessDenial.Forbidden;
+		}
+
+		var target = await _employees.GetByEmailAsync(requestedEmail, cancellationToken);
+		if (target == null)
+		{
+			return AccessDenial.NotFound;
+		}
+
+		return AccessPolicy.CanViewEmployee(caller, target) ? AccessDenial.None : AccessDenial.Forbidden;
 	}
 
 	public async Task<AccessDenial> EnsureOrganizationMember(string? email, string? organizationId, CancellationToken cancellationToken)
 	{
-		if (email == null)
+		var caller = await CallerOrDenial(email, cancellationToken);
+		if (caller.Denial != AccessDenial.None)
 		{
-			return AccessDenial.Unauthorized;
-		}
-
-		var employee = await _employees.GetByEmailAsync(email, cancellationToken);
-		if (employee == null)
-		{
-			return AccessDenial.Unauthorized;
+			return caller.Denial;
 		}
 
 		if (organizationId == null || !int.TryParse(organizationId, out var requestedOrganizationId))
@@ -87,25 +123,28 @@ public class AccessChecker : IAccessChecker
 			return AccessDenial.BadRequest;
 		}
 
-		return employee.Organization != requestedOrganizationId ? AccessDenial.Forbidden : AccessDenial.None;
+		return caller.Employee!.Organization != requestedOrganizationId ? AccessDenial.Forbidden : AccessDenial.None;
 	}
 
-	public async Task<AccessDenial> EnsureManagerOfRequest(string? email, string? requestId, CancellationToken cancellationToken)
+	public async Task<AccessDenial> EnsureManagerOfRequest(string? email, string? requestId, string? employeeId, CancellationToken cancellationToken)
 	{
-		if (email == null)
+		var caller = await CallerOrDenial(email, cancellationToken);
+		if (caller.Denial != AccessDenial.None)
 		{
-			return AccessDenial.Unauthorized;
-		}
-
-		var manager = await _employees.GetByEmailAsync(email, cancellationToken);
-		if (manager == null)
-		{
-			return AccessDenial.Unauthorized;
+			return caller.Denial;
 		}
 
 		if (requestId == null || !int.TryParse(requestId, out var id))
 		{
 			return AccessDenial.BadRequest;
+		}
+
+		if (employeeId != null)
+		{
+			if (!int.TryParse(employeeId, out var actingEmployeeId) || actingEmployeeId != caller.Employee!.Id)
+			{
+				return AccessDenial.Forbidden;
+			}
 		}
 
 		var leaveRequest = await _leaves.GetByIdAsync(id, cancellationToken);
@@ -120,20 +159,17 @@ public class AccessChecker : IAccessChecker
 			return AccessDenial.NotFound;
 		}
 
-		return leaveOwner.ManagedBy != manager.Id ? AccessDenial.Forbidden : AccessDenial.None;
+		return AccessPolicy.CanReviewAsManager(caller.Employee!, leaveOwner)
+			? AccessDenial.None
+			: AccessDenial.Forbidden;
 	}
 
 	public async Task<AccessDenial> EnsureLeaveOwnerOrManager(string? email, string? leaveId, CancellationToken cancellationToken)
 	{
-		if (email == null)
+		var caller = await CallerOrDenial(email, cancellationToken);
+		if (caller.Denial != AccessDenial.None)
 		{
-			return AccessDenial.Unauthorized;
-		}
-
-		var employee = await _employees.GetByEmailAsync(email, cancellationToken);
-		if (employee == null)
-		{
-			return AccessDenial.Unauthorized;
+			return caller.Denial;
 		}
 
 		if (leaveId == null || !int.TryParse(leaveId, out var id))
@@ -147,12 +183,27 @@ public class AccessChecker : IAccessChecker
 			return AccessDenial.NotFound;
 		}
 
-		if (leave.Owner == employee.Id)
+		var owner = await _employees.GetByIdAsync(leave.Owner, cancellationToken);
+		if (owner == null)
 		{
-			return AccessDenial.None;
+			return AccessDenial.NotFound;
 		}
 
-		var owner = await _employees.GetByIdAsync(leave.Owner, cancellationToken);
-		return owner?.ManagedBy == employee.Id ? AccessDenial.None : AccessDenial.Forbidden;
+		return AccessPolicy.CanManageLeave(caller.Employee!, owner)
+			? AccessDenial.None
+			: AccessDenial.Forbidden;
+	}
+
+	private async Task<(Employee? Employee, AccessDenial Denial)> CallerOrDenial(string? email, CancellationToken cancellationToken)
+	{
+		if (email == null)
+		{
+			return (null, AccessDenial.Unauthorized);
+		}
+
+		var employee = await _employees.GetByEmailAsync(email, cancellationToken);
+		return employee == null
+			? (null, AccessDenial.Unauthorized)
+			: (employee, AccessDenial.None);
 	}
 }

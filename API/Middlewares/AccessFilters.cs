@@ -2,6 +2,8 @@ using LeavePlanner.Application.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 
 internal static class AccessResult
 {
@@ -26,7 +28,38 @@ public class AdminOnlyAttribute : Attribute, IAsyncAuthorizationFilter
 	public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
 	{
 		var checker = context.HttpContext.RequestServices.GetRequiredService<IAccessChecker>();
-		AccessResult.Apply(context, await checker.EnsureAdmin(AccessResult.Email(context), context.HttpContext.RequestAborted));
+		var organizationId = context.RouteData.Values["organizationId"]?.ToString();
+		var employeeId = context.RouteData.Values["id"]?.ToString();
+		if (organizationId == null && employeeId == null)
+		{
+			organizationId = await OrganizationIdFromBody(context.HttpContext.Request);
+		}
+
+		AccessResult.Apply(
+			context,
+			await checker.EnsureAdmin(AccessResult.Email(context), organizationId, employeeId, context.HttpContext.RequestAborted));
+	}
+
+	private static async Task<string?> OrganizationIdFromBody(HttpRequest request)
+	{
+		request.EnableBuffering();
+		using var reader = new StreamReader(request.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, leaveOpen: true);
+		var body = await reader.ReadToEndAsync();
+		request.Body.Position = 0;
+		if (string.IsNullOrWhiteSpace(body))
+		{
+			return null;
+		}
+
+		using var document = JsonDocument.Parse(body);
+		if (!document.RootElement.TryGetProperty("organization", out var organization))
+		{
+			return null;
+		}
+
+		return organization.ValueKind == JsonValueKind.Number
+			? organization.GetInt32().ToString()
+			: organization.GetString();
 	}
 }
 
@@ -72,9 +105,10 @@ public class ManagerOnlyAttribute : Attribute, IAsyncAuthorizationFilter
 	{
 		var checker = context.HttpContext.RequestServices.GetRequiredService<IAccessChecker>();
 		var requestId = context.RouteData.Values["requestId"]?.ToString();
+		var employeeId = context.RouteData.Values["employeeId"]?.ToString();
 		AccessResult.Apply(
 			context,
-			await checker.EnsureManagerOfRequest(AccessResult.Email(context), requestId, context.HttpContext.RequestAborted));
+			await checker.EnsureManagerOfRequest(AccessResult.Email(context), requestId, employeeId, context.HttpContext.RequestAborted));
 	}
 }
 
