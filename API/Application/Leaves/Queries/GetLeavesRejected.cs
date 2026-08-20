@@ -15,7 +15,11 @@ public class GetLeavesRejectedQueryHandler : IRequestHandler<GetLeavesRejectedQu
 
 	public async Task<Result<PaginatedLeavesResult>> Handle(GetLeavesRejectedQuery request, CancellationToken cancellationToken)
 	{
-		var employeeId = int.Parse(request.EmployeeId);
+		if (!int.TryParse(request.EmployeeId, out var employeeId))
+		{
+			return Result<PaginatedLeavesResult>.Invalid("Invalid employee id.");
+		}
+
 		var leaves = await _leaves.GetRejectedByOwnerAsync(employeeId, cancellationToken);
 
 		return Result<PaginatedLeavesResult>.Success(new PaginatedLeavesResult

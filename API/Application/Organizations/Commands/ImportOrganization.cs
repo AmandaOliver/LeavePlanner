@@ -31,7 +31,10 @@ public class ImportOrganizationCommandHandler : IRequestHandler<ImportOrganizati
 
 	public async Task<Result> Handle(ImportOrganizationCommand command, CancellationToken cancellationToken)
 	{
-		var organizationId = int.Parse(command.OrganizationId);
+		if (!int.TryParse(command.OrganizationId, out var organizationId))
+		{
+			return Result.Invalid("Invalid organization id.");
+		}
 
 		await _unitOfWork.BeginTransactionAsync(cancellationToken);
 		try
@@ -124,10 +127,20 @@ public class ImportOrganizationCommandHandler : IRequestHandler<ImportOrganizati
 
 			return Result.Success();
 		}
-		catch (Exception ex)
+		catch (DomainException ex)
 		{
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result.Invalid(ex.Message);
+		}
+		catch (InvalidOperationException ex)
+		{
+			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+			return Result.Invalid(ex.Message);
+		}
+		catch
+		{
+			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+			throw;
 		}
 	}
 }

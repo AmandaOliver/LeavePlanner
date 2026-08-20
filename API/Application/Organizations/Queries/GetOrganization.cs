@@ -15,7 +15,12 @@ public class GetOrganizationQueryHandler : IRequestHandler<GetOrganizationQuery,
 
 	public async Task<Result<OrganizationTree>> Handle(GetOrganizationQuery request, CancellationToken cancellationToken)
 	{
-		var organization = await _organizations.GetByIdWithEmployeesAsync(int.Parse(request.OrganizationId), cancellationToken);
+		if (!int.TryParse(request.OrganizationId, out var organizationId))
+		{
+			return Result<OrganizationTree>.Invalid("Invalid organization id.");
+		}
+
+		var organization = await _organizations.GetByIdWithEmployeesAsync(organizationId, cancellationToken);
 		if (organization == null)
 		{
 			return Result<OrganizationTree>.NotFound("Organization does not exists.");

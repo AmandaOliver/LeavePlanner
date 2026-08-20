@@ -21,9 +21,13 @@ public class ValidateLeaveRequestQueryHandler : IRequestHandler<ValidateLeaveReq
 
 	public async Task<Result<LeaveDTO>> Handle(ValidateLeaveRequestQuery request, CancellationToken cancellationToken)
 	{
+		if (!int.TryParse(request.EmployeeId, out var employeeId))
+		{
+			return Result<LeaveDTO>.Invalid("Invalid employee id.");
+		}
+
 		try
 		{
-			var employeeId = int.Parse(request.EmployeeId);
 			var toValidate = request.Leave;
 
 			var employee = await _employees.GetByIdAsync(employeeId, cancellationToken);

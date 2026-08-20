@@ -49,10 +49,10 @@ public class DeleteLeaveCommandHandler : IRequestHandler<DeleteLeaveCommand, Res
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result<LeaveDTO>.Invalid(ex.Message);
 		}
-		catch (Exception ex)
+		catch
 		{
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-			return Result<LeaveDTO>.Invalid(ex.Message);
+			throw;
 		}
 	}
 }

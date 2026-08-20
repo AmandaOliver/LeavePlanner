@@ -29,7 +29,13 @@ public class UpdateEmployeeCommandHandler : IRequestHandler<UpdateEmployeeComman
 		await _unitOfWork.BeginTransactionAsync(cancellationToken);
 		try
 		{
-			var employee = await _employees.GetByIdAsync(int.Parse(request.EmployeeId), cancellationToken);
+			if (!int.TryParse(request.EmployeeId, out var employeeId))
+			{
+				await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+				return Result<EmployeeDTO>.Invalid("Invalid employee id.");
+			}
+
+			var employee = await _employees.GetByIdAsync(employeeId, cancellationToken);
 			if (employee == null)
 			{
 				await _unitOfWork.RollbackTransactionAsync(cancellationToken);
@@ -60,10 +66,10 @@ public class UpdateEmployeeCommandHandler : IRequestHandler<UpdateEmployeeComman
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
 			return Result<EmployeeDTO>.Invalid(ex.Message);
 		}
-		catch (Exception ex)
+		catch
 		{
 			await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-			return Result<EmployeeDTO>.Invalid(ex.Message);
+			throw;
 		}
 	}
 }

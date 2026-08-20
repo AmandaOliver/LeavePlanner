@@ -20,7 +20,11 @@ public class GetLeavesApprovedQueryHandler : IRequestHandler<GetLeavesApprovedQu
 
 	public async Task<Result<PaginatedLeavesResult>> Handle(GetLeavesApprovedQuery request, CancellationToken cancellationToken)
 	{
-		var employeeId = int.Parse(request.EmployeeId);
+		if (!int.TryParse(request.EmployeeId, out var employeeId))
+		{
+			return Result<PaginatedLeavesResult>.Invalid("Invalid employee id.");
+		}
+
 		var leaves = await _leaves.GetApprovedUpcomingByOwnerAsync(employeeId, _clock.UtcNow, cancellationToken);
 
 		return Result<PaginatedLeavesResult>.Success(new PaginatedLeavesResult

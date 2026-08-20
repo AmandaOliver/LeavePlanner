@@ -20,7 +20,11 @@ public class GetPastLeavesQueryHandler : IRequestHandler<GetPastLeavesQuery, Res
 
 	public async Task<Result<PaginatedLeavesResult>> Handle(GetPastLeavesQuery request, CancellationToken cancellationToken)
 	{
-		var employeeId = int.Parse(request.EmployeeId);
+		if (!int.TryParse(request.EmployeeId, out var employeeId))
+		{
+			return Result<PaginatedLeavesResult>.Invalid("Invalid employee id.");
+		}
+
 		var leaves = await _leaves.GetApprovedPastByOwnerAsync(employeeId, _clock.UtcNow, cancellationToken);
 
 		return Result<PaginatedLeavesResult>.Success(new PaginatedLeavesResult
