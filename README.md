@@ -22,7 +22,7 @@ Nothing secret is committed. ASP.NET Core reads configuration from `appsettings.
 | `REACT_APP_AUTH0_*` | no | `frontend/.env.development` | build environment |
 | `E2E_USER` / `E2E_PASSWORD` | **password only** | `frontend/.env.local` | CI repository secrets |
 
-`API/appsettings.Example.json` and `frontend/.env.example` are annotated references for every key. They are templates — neither is loaded at runtime.
+`API/appsettings.Example.json` and `frontend/.env.example` are fill-in-the-blanks templates for the non-secret keys. Neither is loaded at runtime.
 
 Two of these are deliberately *not* treated as secrets. The Auth0 domain and the SPA client ID are public identifiers that ship in the browser bundle and travel in every token; they live in configuration because they are environment-specific, not because they are confidential.
 
@@ -80,7 +80,7 @@ dotnet user-secrets set "ConnectionStrings:LeavePlannerDB" \
 dotnet run
 ```
 
-User-secrets are written to `~/.microsoft/usersecrets/` — outside the working tree, so they cannot be committed by accident.
+User-secrets are written to `~/.microsoft/usersecrets/`, outside the working tree.
 
 Email is off by default in development (`Email:Enabled: false`); the service logs what it would have sent. To exercise real delivery, set `Email:Enabled` to `true`, set `Email:FromAddress`, and add the password:
 
@@ -88,7 +88,7 @@ Email is off by default in development (`Email:Enabled: false`); the service log
 dotnet user-secrets set "Email:Password" "your-smtp-app-password"
 ```
 
-For Gmail this is an **App Password** (Google Account → Security → 2-Step Verification → App passwords), not the account password. Revoking one is a single click, which is exactly why it should never be pasted into source.
+For Gmail this is an **App Password** (Google Account → Security → 2-Step Verification → App passwords), not the account password.
 
 ### 4. Frontend
 
@@ -133,16 +133,15 @@ Both the API and the frontend need to be running first.
 
 ## Secret handling
 
-- Secrets reach the app through **user-secrets** (local) or **environment variables** (deployed). Never through `appsettings.json`.
-- `.gitignore` covers `.env*`, `*.key`, `*.crt`, `*.pem`, `*.pfx` and `auth.json`.
-- Every run of CI scans the full history with [gitleaks](.github/workflows/secret-scan.yml). Enable GitHub's **push protection** (Settings → Code security) as well — it blocks the push before it lands and is free on public repositories.
-- Install the same check locally so it fails on your machine rather than in review:
+CI scans the full history with [gitleaks](.github/workflows/secret-scan.yml) on every push. Run the same check before committing:
 
-  ```bash
-  gitleaks protect --staged
-  ```
+```bash
+gitleaks protect --staged
+```
 
-**If a credential is ever exposed: rotate it first.** A published secret is compromised the moment it is published, and rewriting git history does not un-publish it. Revoke and reissue, then decide whether the history cleanup is worth invalidating every clone.
+Enabling GitHub's **push protection** (Settings → Code security) adds a server-side block and is free on public repositories.
+
+If a credential is ever exposed, rotate it before anything else: a published secret stays compromised no matter what the history says afterwards.
 
 ### Why not a secrets manager?
 
