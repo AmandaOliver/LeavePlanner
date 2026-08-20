@@ -32,7 +32,7 @@ public class AdminOnlyAttribute : Attribute, IAsyncAuthorizationFilter
 		var employeeId = context.RouteData.Values["id"]?.ToString();
 		if (organizationId == null && employeeId == null)
 		{
-			organizationId = await OrganizationIdFromBody(context.HttpContext.Request);
+			organizationId = await OrganizationIdFromBody(context.HttpContext.Request, context.HttpContext.RequestAborted);
 		}
 
 		AccessResult.Apply(
@@ -40,11 +40,11 @@ public class AdminOnlyAttribute : Attribute, IAsyncAuthorizationFilter
 			await checker.EnsureAdmin(AccessResult.Email(context), organizationId, employeeId, context.HttpContext.RequestAborted));
 	}
 
-	private static async Task<string?> OrganizationIdFromBody(HttpRequest request)
+	private static async Task<string?> OrganizationIdFromBody(HttpRequest request, CancellationToken cancellationToken)
 	{
 		request.EnableBuffering();
 		using var reader = new StreamReader(request.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, leaveOpen: true);
-		var body = await reader.ReadToEndAsync();
+		var body = await reader.ReadToEndAsync(cancellationToken);
 		request.Body.Position = 0;
 		if (string.IsNullOrWhiteSpace(body))
 		{

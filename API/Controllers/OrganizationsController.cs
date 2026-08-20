@@ -16,9 +16,9 @@ public class OrganizationsController : ControllerBase
 	public OrganizationsController(IMediator mediator) => _mediator = mediator;
 
 	[HttpPost]
-	public async Task<IResult> CreateOrganization([FromBody] OrganizationCreateDTO model)
+	public async Task<IResult> CreateOrganization([FromBody] OrganizationCreateDTO model, CancellationToken cancellationToken)
 	{
-		var result = await _mediator.Send(new CreateOrganizationCommand(model));
+		var result = await _mediator.Send(new CreateOrganizationCommand(model), cancellationToken);
 		return result.IsSuccess
 			? Results.Ok(new { OrganizationId = result.Value })
 			: result.ToHttpResult();
@@ -26,7 +26,7 @@ public class OrganizationsController : ControllerBase
 
 	[AdminOnly]
 	[HttpPost("import/{organizationId}")]
-	public async Task<IResult> ImportOrganization(string organizationId, [FromForm] IFormFile file)
+	public async Task<IResult> ImportOrganization(string organizationId, [FromForm] IFormFile file, CancellationToken cancellationToken)
 	{
 		if (string.IsNullOrEmpty(organizationId))
 		{
@@ -39,22 +39,22 @@ public class OrganizationsController : ControllerBase
 		}
 
 		using var stream = file.OpenReadStream();
-		var result = await _mediator.Send(new ImportOrganizationCommand(organizationId, stream));
+		var result = await _mediator.Send(new ImportOrganizationCommand(organizationId, stream), cancellationToken);
 		return result.ToHttpResult("Organization tree imported successfully.");
 	}
 
 	[OrganizationMemberOnly]
 	[HttpGet("{organizationId}")]
-	public async Task<IResult> GetOrganization(string organizationId) =>
-		(await _mediator.Send(new GetOrganizationQuery(organizationId))).ToHttpResult();
+	public async Task<IResult> GetOrganization(string organizationId, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new GetOrganizationQuery(organizationId), cancellationToken)).ToHttpResult();
 
 	[AdminOnly]
 	[HttpPut("{organizationId}")]
-	public async Task<IResult> UpdateOrganization(int organizationId, [FromBody] OrganizationUpdateDTO organizationUpdate) =>
-		(await _mediator.Send(new UpdateOrganizationCommand(organizationId, organizationUpdate))).ToHttpResult();
+	public async Task<IResult> UpdateOrganization(int organizationId, [FromBody] OrganizationUpdateDTO organizationUpdate, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new UpdateOrganizationCommand(organizationId, organizationUpdate), cancellationToken)).ToHttpResult();
 
 	[AdminOnly]
 	[HttpDelete("{organizationId}")]
-	public async Task<IResult> DeleteOrganization(string organizationId) =>
-		(await _mediator.Send(new DeleteOrganizationCommand(organizationId))).ToHttpResult();
+	public async Task<IResult> DeleteOrganization(string organizationId, CancellationToken cancellationToken) =>
+		(await _mediator.Send(new DeleteOrganizationCommand(organizationId), cancellationToken)).ToHttpResult();
 }

@@ -50,14 +50,14 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
 		_transaction = null;
 	}
 
-	public async Task RollbackTransactionAsync(CancellationToken cancellationToken)
+	public async Task RollbackTransactionAsync(CancellationToken _)
 	{
 		if (_transaction == null)
 		{
 			return;
 		}
 
-		await _transaction.RollbackAsync(cancellationToken);
+		await _transaction.RollbackAsync(CancellationToken.None);
 		await _transaction.DisposeAsync();
 		_transaction = null;
 	}

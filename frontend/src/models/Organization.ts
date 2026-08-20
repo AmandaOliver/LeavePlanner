@@ -24,7 +24,10 @@ export const useOrganizationModel = () => {
   const { user, getAccessTokenSilently } = useAuth0()
   const queryClient = useQueryClient()
 
-  const fetchOrganization = async (organizationId: number) => {
+  const fetchOrganization = async (
+    organizationId: number,
+    signal: AbortSignal
+  ) => {
     const accessToken = await getAccessTokenSilently()
     if (!user) return false
     const response = await fetch(
@@ -35,6 +38,7 @@ export const useOrganizationModel = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
+        signal,
       }
     )
     if (response.status === 200) {
@@ -46,9 +50,9 @@ export const useOrganizationModel = () => {
 
   const organizationQuery: UseQueryResult<OrganizationType, Error> = useQuery({
     queryKey: ['organization', currentEmployee?.organization],
-    queryFn: () => {
+    queryFn: ({ signal }) => {
       if (currentEmployee?.organization) {
-        return fetchOrganization(currentEmployee.organization)
+        return fetchOrganization(currentEmployee.organization, signal)
       }
       return Promise.reject('Organization ID is undefined')
     },

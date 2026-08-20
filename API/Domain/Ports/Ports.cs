@@ -48,7 +48,7 @@ public interface ICountryRepository
 
 public interface IEmailSender
 {
-	Task SendAsync(string toEmail, string subject, string body);
+	Task SendAsync(string toEmail, string subject, string body, CancellationToken cancellationToken);
 }
 
 public interface IPublicHolidayCalendar

@@ -15,6 +15,10 @@ public class UnhandledExceptionBehavior<TRequest, TResponse> : IPipelineBehavior
 		{
 			return await next();
 		}
+		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+		{
+			throw;
+		}
 		catch (Exception exception)
 		{
 			_logger.LogError(exception, "{Request} threw an unhandled exception", typeof(TRequest).Name);
