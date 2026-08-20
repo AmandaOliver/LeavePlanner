@@ -10,7 +10,7 @@ React + TypeScript SPA · ASP.NET Core 8 API · MySQL · Auth0
 -->
 ![LeavePlanner calendar — team leave across a month](docs/calendar.png)
 
-Built as a complete product I would be comfortable owning as a full-stack engineering manager: domain model, UX, architecture, and the operational details that keep it safe to run.
+Built as a complete product I would be comfortable owning as a full-stack engineer: domain model, UX, architecture, and the operational details that keep it safe to run.
 
 ---
 
