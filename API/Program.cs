@@ -10,12 +10,8 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- Configuration -----------------------------------------------------------------
-// Every setting below is bound from configuration and validated at startup, so a missing
-// or malformed value fails the boot with a message naming the key rather than surfacing
-// as a confusing 500 later. Secrets never live in appsettings.json: use user-secrets
-// locally and environment variables (Section__Key) when deployed. See README.md.
-
+// Settings are validated at startup so a missing key fails the boot with a message
+// naming it, rather than surfacing as a 500 later. See README.md > Configuration.
 builder.Services.AddOptions<AppOptions>()
     .Bind(builder.Configuration.GetSection(AppOptions.SectionName))
     .ValidateDataAnnotations()
@@ -35,17 +31,12 @@ var connectionString = builder.Configuration.GetConnectionString("LeavePlannerDB
 if (string.IsNullOrWhiteSpace(connectionString))
 {
     throw new InvalidOperationException(
-        "Connection string 'LeavePlannerDB' is not configured. Set it with " +
-        "'dotnet user-secrets set \"ConnectionStrings:LeavePlannerDB\" \"...\"' for local " +
-        "development, or the ConnectionStrings__LeavePlannerDB environment variable when " +
-        "deployed. See README.md > Configuration.");
+        "Connection string 'LeavePlannerDB' is not configured. See README.md > Configuration.");
 }
 
-// CORS and authentication must be configured before the container is built, which is
-// earlier than ValidateOnStart runs. Bind and validate those two sections eagerly so a
-// missing key still fails the boot with a readable message rather than a null reference.
-// BindAndValidate reuses the same DataAnnotations as the IOptions<T> registrations above,
-// so there is one set of rules per option, not two.
+// CORS and authentication are configured before the container is built, which is earlier
+// than ValidateOnStart runs, so these two sections are bound and validated eagerly. The
+// same DataAnnotations are reused, keeping one set of rules per option.
 var appSettings = BindAndValidate<AppOptions>(builder.Configuration, AppOptions.SectionName);
 var auth0 = BindAndValidate<Auth0Options>(builder.Configuration, Auth0Options.SectionName);
 
@@ -63,8 +54,6 @@ static T BindAndValidate<T>(IConfiguration configuration, string sectionName) wh
     return bound;
 }
 
-// --- Services ----------------------------------------------------------------------
-
 builder.Services.AddControllers();
 builder.Services.AddScoped<OrganizationsService>();
 builder.Services.AddScoped<LeavesService>();
@@ -79,7 +68,6 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "LeavePlanner API", Version = "v1" });
 
-    // Define the security scheme for JWT
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
@@ -89,7 +77,6 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer"
     });
 
-    // Add the security requirement
     c.AddSecurityRequirement(new OpenApiSecurityRequirement()
     {
         {
@@ -113,7 +100,6 @@ builder.Services.AddEntityFrameworkMySQL()
                 {
                     options.UseMySQL(connectionString);
                 });
-// Add CORS policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", policy =>

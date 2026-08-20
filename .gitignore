@@ -9,17 +9,17 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 
-# Cached Playwright auth state -- contains a live session token
+# Cached Playwright session state
 auth.json
 
-# Secrets and environment-specific configuration.
-# Templates live in frontend/.env.example and API/appsettings.Example.json.
+# Environment-specific configuration and secrets. Templates: frontend/.env.example,
+# API/appsettings.Example.json
 .env
 .env.*
 !.env.example
 appsettings.*.local.json
 
-# Locally generated TLS material for https://localhost (see `yarn setup:certs`)
+# Locally generated TLS material for https://localhost
 *.key
 *.crt
 *.pem

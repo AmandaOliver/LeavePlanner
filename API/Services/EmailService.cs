@@ -23,8 +23,7 @@ public class EmailService
 			return;
 		}
 
-		// EmailOptions.Validate guarantees both are present whenever Enabled is true,
-		// which the early return above has already established.
+		// Guaranteed non-null once Enabled is true.
 		var fromAddress = _options.FromAddress!;
 
 		var sender = new SmtpSender(() => new SmtpClient(_options.Host)
@@ -46,8 +45,7 @@ public class EmailService
 
 		if (!email.Successful)
 		{
-			// Notification delivery is best-effort: a failed email must not roll back the
-			// leave operation that triggered it, so this is logged rather than thrown.
+			// Best-effort: a failed notification must not roll back the leave operation.
 			_logger.LogError("Failed to send \"{Subject}\" to {Recipient}: {Errors}",
 				subject, toEmail, string.Join("; ", email.ErrorMessages));
 		}

@@ -2,12 +2,8 @@ import { defineConfig, devices } from '@playwright/test'
 import dotenv from 'dotenv'
 import path from 'path'
 
-/**
- * Test credentials come from the environment, never from source.
- * .env.local is gitignored and holds E2E_USER / E2E_PASSWORD locally; in CI the same
- * variables are supplied as repository secrets and this file simply finds nothing to
- * load. See README.md > Running the e2e tests.
- */
+// Loads E2E_USER / E2E_PASSWORD locally; in CI they come from repository secrets and
+// this finds nothing to load.
 dotenv.config({ path: path.resolve(__dirname, '.env.local') })
 
 /**
