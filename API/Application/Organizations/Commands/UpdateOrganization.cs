@@ -1,5 +1,6 @@
 using LeavePlanner.Application.Common;
 using LeavePlanner.Data;
+using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
 
@@ -10,23 +11,31 @@ public record UpdateOrganizationCommand(int OrganizationId, OrganizationUpdateDT
 public class UpdateOrganizationCommandHandler : IRequestHandler<UpdateOrganizationCommand, Result<Organization>>
 {
 	private readonly LeavePlannerContext _context;
+	private readonly IOrganizationRepository _organizations;
+	private readonly IUnitOfWork _unitOfWork;
 
-	public UpdateOrganizationCommandHandler(LeavePlannerContext context) => _context = context;
+	public UpdateOrganizationCommandHandler(
+		LeavePlannerContext context,
+		IOrganizationRepository organizations,
+		IUnitOfWork unitOfWork)
+	{
+		_context = context;
+		_organizations = organizations;
+		_unitOfWork = unitOfWork;
+	}
 
 	public async Task<Result<Organization>> Handle(UpdateOrganizationCommand command, CancellationToken cancellationToken)
 	{
 		var update = command.Organization;
-
 		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
-		var organization = await _context.Organizations.FindAsync(new object?[] { command.OrganizationId }, cancellationToken);
-		if (organization == null)
-		{
-			return Result<Organization>.Invalid("Organization not found with that Id");
-		}
-
 		try
 		{
+			var organization = await _organizations.GetByIdAsync(command.OrganizationId, cancellationToken);
+			if (organization == null)
+			{
+				return Result<Organization>.Invalid("Organization not found with that Id");
+			}
+
 			if (update.Name == null && update.WorkingDays == null)
 			{
 				return Result<Organization>.Invalid("name or working days needs to be specified");
@@ -34,24 +43,23 @@ public class UpdateOrganizationCommandHandler : IRequestHandler<UpdateOrganizati
 
 			if (update.Name != null)
 			{
-				organization.Name = update.Name;
+				organization.Rename(update.Name);
 			}
 
 			if (update.WorkingDays != null)
 			{
-				if (update.WorkingDays.Length < 1 || !update.WorkingDays.All(day => day >= 1 && day <= 7))
-				{
-					return Result<Organization>.Invalid("Working days must be defined.");
-				}
-
-				organization.WorkingDays = update.WorkingDays;
+				organization.ChangeWorkingDays(update.WorkingDays);
 			}
 
-			_context.Organizations.Update(organization);
-			await _context.SaveChangesAsync(cancellationToken);
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
 
 			return Result<Organization>.Success(organization);
+		}
+		catch (DomainException ex)
+		{
+			await transaction.RollbackAsync(cancellationToken);
+			return Result<Organization>.Invalid(ex.Message);
 		}
 		catch (Exception ex)
 		{

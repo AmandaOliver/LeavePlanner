@@ -15,6 +15,7 @@ Nothing secret is committed. ASP.NET Core reads configuration from `appsettings.
 | Setting | Secret | Local | Deployed |
 | --- | --- | --- | --- |
 | `ConnectionStrings:LeavePlannerDB` | **yes** | user-secrets | `ConnectionStrings__LeavePlannerDB` |
+| `GoogleCalendar:ApiKey` | **yes** | user-secrets | `GoogleCalendar__ApiKey` |
 | `Email:Password` | **yes** | user-secrets | `Email__Password` |
 | `Email:FromAddress` | no | `appsettings.Development.json` | `appsettings.json` |
 | `App:FrontendUrl` | no | `appsettings.Development.json` | `appsettings.json` |
@@ -76,6 +77,7 @@ cd API
 dotnet user-secrets init
 dotnet user-secrets set "ConnectionStrings:LeavePlannerDB" \
   "server=127.0.0.1;port=3306;user=leaveplanner_app;password=...;database=LeavePlanner"
+dotnet user-secrets set "GoogleCalendar:ApiKey" "your-google-calendar-api-key"
 
 dotnet run
 ```
@@ -108,6 +110,7 @@ Set the secrets as environment variables on the host, replacing `:` with `__`:
 
 ```bash
 ConnectionStrings__LeavePlannerDB="server=...;user=leaveplanner_app;password=...;database=LeavePlanner"
+GoogleCalendar__ApiKey="..."
 Email__Password="..."
 ```
 

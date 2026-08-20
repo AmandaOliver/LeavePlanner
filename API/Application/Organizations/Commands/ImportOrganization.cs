@@ -1,12 +1,11 @@
 using System.Globalization;
 using CsvHelper;
+using LeavePlanner.Application.Calendar;
 using LeavePlanner.Application.Common;
-using LeavePlanner.Configuration;
 using LeavePlanner.Data;
+using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace LeavePlanner.Application.Organizations.Commands;
 
@@ -15,19 +14,23 @@ public record ImportOrganizationCommand(string OrganizationId, Stream File) : IC
 public class ImportOrganizationCommandHandler : IRequestHandler<ImportOrganizationCommand, Result>
 {
 	private readonly LeavePlannerContext _context;
-	private readonly EmployeesService _employeesService;
-	private readonly CountriesService _countriesService;
-	private readonly EmailService _emailService;
-	private readonly string _leavePlannerUrl;
+	private readonly IEmployeeRepository _employees;
+	private readonly ICountryRepository _countries;
+	private readonly PublicHolidayGenerator _holidays;
+	private readonly IUnitOfWork _unitOfWork;
 
-	public ImportOrganizationCommandHandler(LeavePlannerContext context, EmployeesService employeesService,
-		CountriesService countriesService, EmailService emailService, IOptions<AppOptions> appOptions)
+	public ImportOrganizationCommandHandler(
+		LeavePlannerContext context,
+		IEmployeeRepository employees,
+		ICountryRepository countries,
+		PublicHolidayGenerator holidays,
+		IUnitOfWork unitOfWork)
 	{
 		_context = context;
-		_employeesService = employeesService;
-		_countriesService = countriesService;
-		_emailService = emailService;
-		_leavePlannerUrl = appOptions.Value.FrontendUrl;
+		_employees = employees;
+		_countries = countries;
+		_holidays = holidays;
+		_unitOfWork = unitOfWork;
 	}
 
 	public async Task<Result> Handle(ImportOrganizationCommand command, CancellationToken cancellationToken)
@@ -37,12 +40,12 @@ public class ImportOrganizationCommandHandler : IRequestHandler<ImportOrganizati
 		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 		try
 		{
-			List<EmployeeCsvDTO> employees;
+			List<EmployeeCsvDTO> rows;
 			try
 			{
 				using var reader = new StreamReader(command.File);
 				using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-				employees = csv.GetRecords<EmployeeCsvDTO>().ToList();
+				rows = csv.GetRecords<EmployeeCsvDTO>().ToList();
 			}
 			catch
 			{
@@ -50,9 +53,9 @@ public class ImportOrganizationCommandHandler : IRequestHandler<ImportOrganizati
 			}
 
 			var headFound = false;
-			foreach (var employee in employees)
+			foreach (var row in rows)
 			{
-				if (string.IsNullOrEmpty(employee.ManagerEmail))
+				if (string.IsNullOrEmpty(row.ManagerEmail))
 				{
 					if (headFound)
 					{
@@ -62,88 +65,61 @@ public class ImportOrganizationCommandHandler : IRequestHandler<ImportOrganizati
 					headFound = true;
 				}
 
-				var validationResult = await _employeesService.ValidateEmployee(new EmployeeCreateDTO
+				var existing = await _employees.GetByEmailAsync(row.Email, cancellationToken);
+				var country = await _countries.GetByNameAsync(row.Country, cancellationToken);
+				try
 				{
-					Email = employee.Email,
-					Name = employee.Name,
-					Title = employee.Title,
-					Country = employee.Country,
-					PaidTimeOff = employee.PaidTimeOff,
-					Organization = organizationId,
-					IsOrgOwner = employee.IsAdmin
-				});
-
-				if (validationResult != "success")
+					EmployeePolicy.AssertCanHire(
+						row.Email, row.Name, row.Title, row.Country, row.PaidTimeOff, existing, manager: null, country != null);
+				}
+				catch (DomainException ex)
 				{
-					throw new InvalidOperationException("Error in Employee " + employee.Email + ": " + validationResult);
+					throw new InvalidOperationException("Error in Employee " + row.Email + ": " + ex.Message);
 				}
 
-				var existingEmployee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == employee.Email, cancellationToken);
-				if (existingEmployee == null)
+				if (existing == null)
 				{
-					_context.Employees.Add(new Employee
-					{
-						Email = employee.Email,
-						Name = employee.Name,
-						Title = employee.Title,
-						Country = employee.Country,
-						PaidTimeOff = employee.PaidTimeOff,
-						Organization = organizationId,
-						IsOrgOwner = employee.IsAdmin
-					});
+					_employees.Add(Employee.Hire(
+						row.Email, row.Name, row.Title, row.Country, organizationId, null, row.PaidTimeOff, row.IsAdmin));
 				}
 				else
 				{
-					existingEmployee.Country = employee.Country;
-					existingEmployee.Organization = organizationId;
-					existingEmployee.PaidTimeOff = employee.PaidTimeOff;
-					existingEmployee.Title = employee.Title;
-					existingEmployee.Name = employee.Name;
-
-					_context.Employees.Update(existingEmployee);
+					existing.Reactivate(row.Name, row.Title, row.Country, organizationId, null, row.PaidTimeOff);
+					if (!existing.DomainEvents.OfType<EmployeeJoined>().Any())
+					{
+						existing.NotifyJoined();
+					}
 				}
 			}
 
-			await _context.SaveChangesAsync(cancellationToken);
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-			foreach (var employee in employees)
+			foreach (var row in rows)
 			{
-				var employeeToUpdate = await _context.Employees.FirstOrDefaultAsync(e => e.Email == employee.Email, cancellationToken);
-				if (employeeToUpdate == null)
+				var employee = await _employees.GetByEmailAsync(row.Email, cancellationToken);
+				if (employee == null)
 				{
 					continue;
 				}
 
-				if (!string.IsNullOrEmpty(employee.ManagerEmail))
+				if (!string.IsNullOrEmpty(row.ManagerEmail))
 				{
-					var manager = await _context.Employees.FirstOrDefaultAsync(e => e.Email == employee.ManagerEmail, cancellationToken);
+					var manager = await _employees.GetByEmailAsync(row.ManagerEmail, cancellationToken);
 					if (manager == null)
 					{
-						throw new InvalidOperationException("Error in Employee " + employee.Email + ": manager not found");
+						throw new InvalidOperationException("Error in Employee " + row.Email + ": manager not found");
 					}
 
-					employeeToUpdate.ManagedBy = manager.Id;
-					_context.Employees.Update(employeeToUpdate);
+					employee.AssignManager(manager.Id);
 				}
 
-				await _countriesService.GenerateEmployeeBankHolidays(employeeToUpdate);
+				await _holidays.GenerateFor(employee, cancellationToken);
 			}
 
-			await _context.SaveChangesAsync(cancellationToken);
+			var events = _unitOfWork.CollectEvents();
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
-
-			var organization = await _context.Organizations.FindAsync(new object?[] { organizationId }, cancellationToken);
-			if (organization != null)
-			{
-				foreach (var employee in employees)
-				{
-					string emailBody = $@"
-Hello {employee.Name}, 
-	You have been added as an Employee of {organization.Name} organization in LeavePlanner App. 
-    Please log in with this email in {_leavePlannerUrl} to see your dashboard.";
-					await _emailService.SendEmail(employee.Email, $"You have been added to LeavePlanner", emailBody);
-				}
-			}
+			await _unitOfWork.DispatchAsync(events, cancellationToken);
 
 			return Result.Success();
 		}

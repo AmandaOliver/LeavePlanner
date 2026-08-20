@@ -1,10 +1,9 @@
+using LeavePlanner.Application.Calendar;
 using LeavePlanner.Application.Common;
-using LeavePlanner.Configuration;
 using LeavePlanner.Data;
+using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace LeavePlanner.Application.Employees.Commands;
 
@@ -13,89 +12,91 @@ public record CreateEmployeeCommand(EmployeeCreateDTO Employee) : ICommand<Resul
 public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeCommand, Result<Employee>>
 {
 	private readonly LeavePlannerContext _context;
-	private readonly EmployeesService _employeesService;
-	private readonly CountriesService _countriesService;
-	private readonly EmailService _emailService;
-	private readonly string _leavePlannerUrl;
+	private readonly IEmployeeRepository _employees;
+	private readonly ICountryRepository _countries;
+	private readonly ILeaveRepository _leaves;
+	private readonly PublicHolidayGenerator _holidays;
+	private readonly IUnitOfWork _unitOfWork;
 
-	public CreateEmployeeCommandHandler(LeavePlannerContext context, EmployeesService employeesService,
-		CountriesService countriesService, EmailService emailService, IOptions<AppOptions> appOptions)
+	public CreateEmployeeCommandHandler(
+		LeavePlannerContext context,
+		IEmployeeRepository employees,
+		ICountryRepository countries,
+		ILeaveRepository leaves,
+		PublicHolidayGenerator holidays,
+		IUnitOfWork unitOfWork)
 	{
 		_context = context;
-		_employeesService = employeesService;
-		_countriesService = countriesService;
-		_emailService = emailService;
-		_leavePlannerUrl = appOptions.Value.FrontendUrl;
+		_employees = employees;
+		_countries = countries;
+		_leaves = leaves;
+		_holidays = holidays;
+		_unitOfWork = unitOfWork;
 	}
 
 	public async Task<Result<Employee>> Handle(CreateEmployeeCommand request, CancellationToken cancellationToken)
 	{
 		var model = request.Employee;
-
-		var validationResult = await _employeesService.ValidateEmployee(model);
-		if (validationResult != "success")
+		try
 		{
-			return Result<Employee>.Invalid(validationResult);
+			await AssertCanHire(model, cancellationToken);
+		}
+		catch (DomainException ex)
+		{
+			return Result<Employee>.Invalid(ex.Message);
 		}
 
 		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 		try
 		{
+			var existing = await _employees.GetByEmailAsync(model.Email, cancellationToken);
 			Employee employee;
-			var existingEmployee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == model.Email, cancellationToken);
-			if (existingEmployee != null)
+			if (existing != null)
 			{
-				existingEmployee.Country = model.Country;
-				existingEmployee.Organization = model.Organization;
-				existingEmployee.ManagedBy = model.ManagedBy;
-				existingEmployee.PaidTimeOff = model.PaidTimeOff;
-				existingEmployee.Title = model.Title;
-				existingEmployee.Name = model.Name;
-
-				_context.Employees.Update(existingEmployee);
-				var leaves = await _context.Leaves
-					.Where(l => l.Owner == existingEmployee.Id && l.Type == "bankHoliday")
-					.ToListAsync(cancellationToken);
-				_context.Leaves.RemoveRange(leaves);
-				employee = existingEmployee;
+				_leaves.RemoveRange(await _leaves.GetPublicHolidaysOwnedByAsync(existing.Id, cancellationToken));
+				existing.Reactivate(model.Name, model.Title, model.Country, model.Organization, model.ManagedBy, model.PaidTimeOff);
+				employee = existing;
 			}
 			else
 			{
-				employee = new Employee
-				{
-					Email = model.Email,
-					Country = model.Country,
-					Organization = model.Organization,
-					ManagedBy = model.ManagedBy,
-					IsOrgOwner = model.IsOrgOwner,
-					PaidTimeOff = model.PaidTimeOff,
-					Title = model.Title,
-					Name = model.Name,
-				};
-
-				_context.Employees.Add(employee);
+				employee = Employee.Hire(
+					model.Email, model.Name, model.Title, model.Country, model.Organization, model.ManagedBy, model.PaidTimeOff, model.IsOrgOwner);
+				_employees.Add(employee);
 			}
 
-			await _context.SaveChangesAsync(cancellationToken);
-			await _countriesService.GenerateEmployeeBankHolidays(employee);
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
+			await _holidays.GenerateFor(employee, cancellationToken);
+			var events = _unitOfWork.CollectEvents();
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
-
-			var organization = await _context.Organizations.FindAsync(new object?[] { employee.Organization }, cancellationToken);
-			if (organization != null)
-			{
-				string emailBody = $@"
-Hello {employee.Name}, 
-	You have been added as an Employee of {organization.Name} organization in LeavePlanner App. 
-    Please log in with this email in {_leavePlannerUrl} to see your dashboard.";
-				await _emailService.SendEmail(employee.Email, $"You have been added to LeavePlanner", emailBody);
-			}
+			await _unitOfWork.DispatchAsync(events, cancellationToken);
 
 			return Result<Employee>.Success(employee);
+		}
+		catch (DomainException ex)
+		{
+			await transaction.RollbackAsync(cancellationToken);
+			return Result<Employee>.Invalid(ex.Message);
 		}
 		catch (Exception ex)
 		{
 			await transaction.RollbackAsync(cancellationToken);
 			return Result<Employee>.Invalid(ex.Message);
 		}
+	}
+
+	private async Task AssertCanHire(EmployeeCreateDTO model, CancellationToken cancellationToken)
+	{
+		var existing = await _employees.GetByEmailAsync(model.Email, cancellationToken);
+		Employee? manager = null;
+		if (model.ManagedBy != null)
+		{
+			manager = await _employees.GetByIdAsync(model.ManagedBy.Value, cancellationToken);
+			EmployeePolicy.AssertManagerExists(manager, true);
+		}
+
+		var country = await _countries.GetByNameAsync(model.Country, cancellationToken);
+		EmployeePolicy.AssertCanHire(
+			model.Email, model.Name, model.Title, model.Country, model.PaidTimeOff, existing, manager, country != null);
 	}
 }

@@ -1,5 +1,6 @@
 using LeavePlanner.Application.Common;
-using LeavePlanner.Data;
+using LeavePlanner.Application.Leaves;
+using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
 
@@ -9,24 +10,23 @@ public record GetRequestQuery(string RequestId) : IQuery<Result<LeaveDTO>>;
 
 public class GetRequestQueryHandler : IRequestHandler<GetRequestQuery, Result<LeaveDTO>>
 {
-	private readonly LeavePlannerContext _context;
-	private readonly LeavesService _leavesService;
+	private readonly ILeaveRepository _leaves;
+	private readonly LeaveEvaluator _evaluator;
 
-	public GetRequestQueryHandler(LeavePlannerContext context, LeavesService leavesService)
+	public GetRequestQueryHandler(ILeaveRepository leaves, LeaveEvaluator evaluator)
 	{
-		_context = context;
-		_leavesService = leavesService;
+		_leaves = leaves;
+		_evaluator = evaluator;
 	}
 
 	public async Task<Result<LeaveDTO>> Handle(GetRequestQuery request, CancellationToken cancellationToken)
 	{
-		var leave = await _context.Leaves.FindAsync(new object?[] { int.Parse(request.RequestId) }, cancellationToken);
+		var leave = await _leaves.GetByIdAsync(int.Parse(request.RequestId), cancellationToken);
 		if (leave == null)
 		{
 			return Result<LeaveDTO>.NotFound("Request not found");
 		}
 
-		var leaveDTO = await _leavesService.GetLeaveDynamicInfo(leave, true);
-		return Result<LeaveDTO>.Success(leaveDTO);
+		return Result<LeaveDTO>.Success(await _evaluator.ComposeDto(leave, true, cancellationToken));
 	}
 }

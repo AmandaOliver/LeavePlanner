@@ -1,3 +1,5 @@
+using LeavePlanner.Domain;
+
 namespace LeavePlanner.Models;
 
 public class ConflictDTO

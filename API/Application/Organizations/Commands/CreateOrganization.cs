@@ -1,5 +1,6 @@
 using LeavePlanner.Application.Common;
 using LeavePlanner.Data;
+using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
 
@@ -10,13 +11,25 @@ public record CreateOrganizationCommand(OrganizationCreateDTO Organization) : IC
 public class CreateOrganizationCommandHandler : IRequestHandler<CreateOrganizationCommand, Result<int>>
 {
 	private readonly LeavePlannerContext _context;
+	private readonly IOrganizationRepository _organizations;
+	private readonly IEmployeeRepository _employees;
+	private readonly IUnitOfWork _unitOfWork;
 
-	public CreateOrganizationCommandHandler(LeavePlannerContext context) => _context = context;
+	public CreateOrganizationCommandHandler(
+		LeavePlannerContext context,
+		IOrganizationRepository organizations,
+		IEmployeeRepository employees,
+		IUnitOfWork unitOfWork)
+	{
+		_context = context;
+		_organizations = organizations;
+		_employees = employees;
+		_unitOfWork = unitOfWork;
+	}
 
 	public async Task<Result<int>> Handle(CreateOrganizationCommand command, CancellationToken cancellationToken)
 	{
 		var model = command.Organization;
-
 		if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.OrganizationName))
 		{
 			return Result<int>.Invalid("Invalid data.");
@@ -25,21 +38,20 @@ public class CreateOrganizationCommandHandler : IRequestHandler<CreateOrganizati
 		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 		try
 		{
-			var organization = new Organization { Name = model.OrganizationName };
-			_context.Organizations.Add(organization);
-			await _context.SaveChangesAsync(cancellationToken);
+			var organization = Organization.Create(model.OrganizationName);
+			_organizations.Add(organization);
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-			_context.Employees.Add(new Employee
-			{
-				Email = model.Email,
-				IsOrgOwner = true,
-				Organization = organization.Id
-			});
-
+			_employees.Add(Employee.CreateOwner(model.Email, organization.Id));
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
-			await _context.SaveChangesAsync(cancellationToken);
 
 			return Result<int>.Success(organization.Id);
+		}
+		catch (DomainException ex)
+		{
+			await transaction.RollbackAsync(cancellationToken);
+			return Result<int>.Invalid(ex.Message);
 		}
 		catch (Exception ex)
 		{
