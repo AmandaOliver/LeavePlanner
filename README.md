@@ -1,152 +1,147 @@
 # LeavePlanner
 
-Leave and absence planning for small organisations — a full-stack product covering calendar UX, org hierarchy, approval workflows, and the domain rules that make those safe.
+A leave-management system for small organisations, built the way I'd build any product I had to own long-term: a real domain model underneath a calendar people actually want to use.
 
-React + TypeScript SPA · ASP.NET Core 8 API · MySQL · Auth0
+**React 18 + TypeScript · ASP.NET Core 8 · MySQL · Auth0 · CQRS via MediatR**
 
-<!--
-  SCREENSHOT: save the capture as docs/calendar.png (see “Screenshot” below).
-  Until that file exists, GitHub will show a broken image — that is expected.
--->
-![LeavePlanner calendar — team leave across a month](docs/calendar.png)
+Originally designed and documented as a formal Final Degree Project in Computer Engineering (University of Cádiz, 2025) — modeled with the [C4 approach](https://c4model.com/), specified with 15 numbered business rules and 13 non-functional requirements, and evaluated against WCAG 2.1 AA and Lighthouse. The full 211-page writeup is in [`International Staff Holiday Planner.pdf`](International%20Staff%20Holiday%20Planner.pdf); this README pulls out what's relevant to reading the code.
 
-Built as a complete product I would be comfortable owning as a full-stack engineer: domain model, UX, architecture, and the operational details that keep it safe to run.
+![LeavePlanner — home calendar](docs/screenshot-home.png)
 
 ---
 
-## Screenshot
+## Why this repo
 
-**Put one hero image here: the home calendar on “My Circle’s Leaves”.**
+Most portfolio CRUD apps stop at forms over tables. This one exists to show the parts of full-stack work that CRUD apps skip: a domain layer with rules that are actually enforced, authorisation that can't be bypassed from the client, transactional writes that survive a cancelled request, and a calendar UI that reflects an org hierarchy instead of a flat list.
 
-That view is the product in a single frame. Capture a month that is visually full:
-
-- Four to six teammates with overlapping PTO bars (not a sparse empty grid)
-- A public holiday and a statutory leave so the three types are obvious
-- The month title, filter, and “Go to Today” visible
-- The nav showing a pending-review badge if you are signed in as a manager
-
-Use a wide desktop window (around 1440px), real-looking names, and a month that is not empty. Avoid Auth0 chrome, browser debug bars, and dummy emails like `test@test.com`.
-
-A second image is optional, not required. If you add one, the **organisation tree** on Setup organisation is the strongest follow-up — it shows hierarchy, admin, and CSV import as a designed workflow rather than a CRUD list. Save it as `docs/org-tree.png` and link it under [Product](#product).
+It's a single deployable — one API, one SPA — but internally it's laid out the way a larger system would be, so the architecture is visible without the operational overhead of running one.
 
 ---
 
 ## What it demonstrates
 
-| Area | In this repo |
+| | |
 | --- | --- |
-| **Product** | Self-serve org bootstrap, role-aware navigation, calendar as the primary surface, conflict-aware approvals |
-| **Architecture** | CQRS + MediatR, a real domain layer (aggregates, policies, events), ports & adapters inside one deployable |
-| **Frontend** | Auth0 SPA, TanStack Query, a custom month calendar, NextUI + Tailwind |
-| **Safety** | JWT on every endpoint, authorisation in the domain, secrets out of source, fail-fast config, gitleaks in CI |
-| **Quality** | Domain unit tests for the rules that hurt if they drift; Playwright e2e for admin and employee journeys |
+| **Domain-driven design** | Aggregates (`Leave`, `Employee`, `Organization`) own their invariants; `LeavePolicy` and `AccessPolicy` are first-class types with unit tests, not scattered `if`s in controllers |
+| **CQRS** | Every write is a MediatR command against an aggregate; every read is a query building a DTO — reads never bypass the policies that reads and writes share |
+| **Ports & adapters** | Handlers depend on `ILeaveRepository`, `IEmailSender`, `IPublicHolidayCalendar` — EF Core, SMTP, and Google Calendar are swappable adapters behind them |
+| **Formal architecture modeling** | System documented with C4 Context/Container/Component diagrams and an ER diagram before implementation, not reverse-engineered after |
+| **Correctness under real conditions** | Requests honour `HttpContext.RequestAborted`; failed commands roll back; email is a side effect of a committed domain event, not of a controller |
+| **Frontend architecture** | Server state isolated to `src/models/*` hooks (TanStack Query owns cache/invalidation/abort); pages stay presentational |
+| **Security posture** | JWT on every endpoint, authorisation resolved server-side and org-scoped, no passwords stored, secrets kept out of git with gitleaks in CI |
+| **Quality bar with numbers behind it** | 100/93/100 Lighthouse accessibility across the three main pages, WCAG 2.1 AA, cross-browser/cross-device Playwright e2e |
 
 ---
 
-## Product
+## The product
 
-LeavePlanner is for a company that is small enough to care who is off next week, and structured enough to have managers.
+LeavePlanner is for a company small enough that someone still needs to know who's off next week, and structured enough to have managers. The motivation was direct: as a team lead managing people across countries, I kept discovering a teammate was on a national holiday I hadn't accounted for, and kept manually cross-checking leave balances and team overlap before approving a request.
 
-**Roles** fall out of the org tree, not a separate permission matrix:
+Roles fall out of the org tree rather than a separate permissions table:
 
-- **Org owner** — sets working days, hires and imports people, remains the last admin
-- **Manager** — reviews direct reports’ requests, with a badge for what is waiting
-- **Employee** — requests PTO or statutory leave, sees remaining days, cannot invent public holidays
+- **Org owner** — configures working days, hires and imports people, is always the last admin standing (can't delete themselves into an orgless org)
+- **Manager** — reviews their direct reports' requests, sees a pending-review badge in nav
+- **Employee** — requests leave, sees remaining balance, cannot invent a public holiday
 
-**First-run.** A signed-in Auth0 user with no employee record is prompted to create an organisation. That is a product decision: the empty state is a founder flow, not a 404.
+**Onboarding is a founder flow, not a 404.** A signed-in Auth0 user with no employee record is routed to "create an organisation" — the empty state is treated as a first-class product moment.
 
-**Calendar** is the home screen. Filters are *My leaves*, *My circle* (manager + peers), and *All leaves* in the organisation. Public holidays are pulled from Google Calendar for the employee’s country and stored as approved bank-holiday leaves, so they occupy the same timeline as PTO.
+**The calendar is the home screen**, not a settings page bolted on. Filters are *My leaves*, *My circle* (you + your manager's team), and *All leaves*. Public holidays come from the Google Calendar API for the employee's country and are stored as pre-approved leaves, so they sit on the same timeline as everything else instead of living in a separate widget.
 
-**Requesting leave** validates before submit: no past dates, no more days than remaining (including ranges that cross a year boundary), working days minus already-blocking leave. The preview also surfaces **team conflicts** so a manager is not the first person to notice two people in the same team are off together.
+**Requesting leave validates before submit**: no past dates, no exceeding remaining balance (correct across a year boundary), working days minus already-blocking leave — and the preview surfaces **team conflicts** so a manager isn't the first to notice two people on the same team booked the same week.
 
-**Org head leave** auto-approves — there is no manager above them. Everyone else raises a domain event; the manager is emailed and reviews from a dedicated queue.
+**Leave taken by the org head auto-approves** (there's no one above them to ask); every other request raises a domain event that emails the manager and lands in a review queue.
+
+| My Leaves | Reviewing a request |
+| --- | --- |
+| ![My Leaves — balance and upcoming leaves](docs/screenshot-my-leaves.png) | ![Manager reviewing a leave request](docs/screenshot-review-requests.png) |
+
+### A sample of the business rules
+
+Specifying the domain as numbered rules up front — rather than discovering them as edge cases in production — is what keeps `LeavePolicy` and `AccessPolicy` short and testable:
+
+- Each organisation has exactly one head, the sole employee without a manager; organisations must always have at least one admin
+- Employees can't have more than one manager, and only admins can edit employee details
+- Paid time off must be between 1 and 365 days/year; leave can't be requested in the past or more than two years ahead
+- Bank holidays are assigned per employee based on country and can be moved but not deleted or invented by the employee
+- Non-working days and bank holidays never subtract from an employee's PTO balance
+- There's no cap on statutory leave — it's not the same budget as PTO
 
 ---
 
 ## Architecture
 
-One ASP.NET app, layered in-process. That is intentional: this is a product, not a platform. CQRS, DDD, and ports live as folders and types, not as extra services to operate.
+The system was modeled with [C4 diagrams](https://c4model.com/) before the first commit — context first, then containers, then components — which is the same order they're useful for a reader here.
 
-```mermaid
-flowchart LR
-  subgraph Client
-    SPA["React SPA\nAuth0 · TanStack Query"]
-  end
+**Context** — who and what the system talks to:
 
-  subgraph API["ASP.NET Core 8"]
-    HTTP["Controllers +\naccess filters"]
-    App["Application\nMediatR commands / queries"]
-    Domain["Domain\naggregates · policies · events"]
-    Infra["Infrastructure"]
-  end
+![C4 context diagram](docs/architecture-context.png)
 
-  Auth0["Auth0"]
-  MySQL[(MySQL)]
-  Google["Google Calendar"]
-  SMTP["SMTP"]
+**Containers** — the SPA and API are the only two deployables; everything else is a managed dependency:
 
-  SPA -->|JWT| Auth0
-  SPA -->|HTTPS + bearer| HTTP
-  HTTP --> App
-  App --> Domain
-  App --> Infra
-  Infra --> MySQL
-  Infra --> Google
-  Infra --> SMTP
-```
+![C4 container diagram](docs/architecture-container.png)
 
-**Request path.** Controllers are thin. They bind the HTTP abort token, send a MediatR request, and map a `Result` to an HTTP status. Authorisation attributes (`AdminOnly`, `SelfAccessOnly`, `ManagerOnly`, …) run first and consult the same `AccessPolicy` the domain uses — so “can this manager approve this leave?” is not reinvented in the UI.
+Clean architecture without extra assemblies: Domain, Application, and Infrastructure are folders inside one ASP.NET Core project, not separately-deployed services. Splitting them into their own assemblies wouldn't have changed the design — the seam that matters is that `Application` handlers only ever talk to interfaces defined in `Domain/Ports`, and `Infrastructure` is the only layer that knows EF Core, SMTP, or Google exist.
 
-**Writes.** Commands open a transaction, mutate an aggregate (`Leave.Submit`, `Employee.Hire`, `Organization.Rename`, …), collect domain events, commit, then dispatch. Email is a side effect of the event, not of the controller. If the client disconnects mid-flight, EF, Google Calendar, and SMTP observe the cancellation token; rollbacks still complete so a cancelled request cannot leave a half-written row.
+**Request path.** Controllers are deliberately thin — they bind the request's `CancellationToken`, dispatch a MediatR command or query, and translate a `Result<T>` into an HTTP status. `[AdminOnly]`, `[SelfAccessOnly]`, `[ManagerOnly]` filters run before the handler and consult the same `AccessPolicy` the domain uses internally, so "can this manager approve this leave" has exactly one implementation, not one in the API layer and a second one the UI assumes.
 
-**Reads.** Queries compose DTOs for the calendar, remaining PTO, and conflict lists. They do not bypass policy: remaining days and blocking dates go through `LeavePolicy` and `WorkingDayCalculator`.
+**Writes.** A command opens a transaction (`IUnitOfWork`), mutates an aggregate — `Leave.Submit`, `Employee.Hire`, `Organization.Rename` — collects the domain events that mutation raised, commits, then dispatches those events. Email goes out *after* commit, as a reaction to `LeaveSubmitted`, not as something the controller remembers to do. The cancellation token flows through EF, the Google Calendar client, and SMTP, so a client that disconnects mid-request actually stops the work instead of completing it silently.
 
-### Repository layout
+**Reads.** Queries build DTOs directly but still go through `LeavePolicy` and `WorkingDayCalculator` for anything derived — remaining balance and "which dates are blocked" are computed once, not reimplemented per query.
+
+**Results, not exceptions, for expected failures.** Handlers return `Result<T>` (`Success` / `Invalid` / `NotFound`); an `UnhandledExceptionBehavior` MediatR pipeline step is the backstop for anything that *isn't* expected, and cancellation is never logged as a crash.
+
+### Data model
+
+`Leave` and leave-review-`Request` share one table by design — both are the same shape (type, date range, owner, approver, description) and splitting them would have meant duplicating that shape and reconciling two tables on every query that needs "everything blocking this date range." `Employee` carries its own hierarchy (`managedBy`) rather than a separate org-chart table, which is what lets a manager's reports, an org's headcount, and "who approves this" all fall out of one self-referencing relationship instead of three.
+
+![Entity-relationship diagram](docs/er-diagram.png)
+
+### Layout
 
 ```
 LeavePlanner/
-├── frontend/          React 18 SPA (Create React App, NextUI, Tailwind, Playwright)
+├── frontend/          React 18 SPA — CRA, NextUI, Tailwind, Playwright
 ├── API/
-│   ├── Controllers/   HTTP + auth attributes
-│   ├── Application/   CQRS handlers, LeaveEvaluator, org import
-│   ├── Domain/        Leave, Employee, Organization, policies, events
-│   ├── Infrastructure Persistence, Auth0-unaware email/calendar adapters
+│   ├── Controllers/   HTTP entrypoints + authorisation attributes
+│   ├── Application/   MediatR commands/queries, LeaveEvaluator, org import
+│   ├── Domain/        Leave, Employee, Organization, policies, events, ports
+│   ├── Infrastructure Persistence (EF/MySQL) + Auth0-unaware email/calendar adapters
 │   ├── Middlewares/   Access filters
-│   └── Models/        API DTOs (not domain entities)
-├── tests/             Domain unit tests (xUnit) — the rules, not the framework
+│   └── Models/        API DTOs — never the domain entities themselves
+├── tests/             xUnit — domain rules, not framework plumbing
 ├── DB/                Schema
-└── docs/              README screenshots
+└── docs/              README assets
 ```
-
-The frontend keeps server communication in `src/models/*` hooks. Pages do not fetch. React Query owns cache, invalidation, and aborting in-flight GETs when a view unmounts or the calendar month changes.
 
 ---
 
 ## Decisions worth reading
 
-**Clean architecture inside one project.** Splitting Domain/Application/Infrastructure into extra assemblies would not have changed the design, only the solution file. The seam that matters is that handlers talk to ports (`ILeaveRepository`, `IEmailSender`, `IPublicHolidayCalendar`), and EF / SMTP / Google live behind those ports.
+A few choices that were deliberate trade-offs, not defaults:
 
-**Domain owns the rules.** “You cannot take more PTO than you have left”, “org head leave is auto-approved”, “you cannot delete the last admin”, “a manager only reviews their own reports in the same org” are not scattered if-statements in controllers. They are policies and aggregate methods with unit tests. That is what lets a calendar UI stay dumb and still be correct.
-
-**Auth0 holds passwords; this app never does.** The API validates a bearer token and resolves the caller by email claim. There is no password column. The trade-off is an Auth0 tenant and a Post-Login action that copies `email` onto the access token — documented below because it is required, not optional.
-
-**Typed results, not exception-as-control-flow for expected failures.** Handlers return `Result<T>` (`Invalid`, `NotFound`, `Success`). Unexpected exceptions are logged and fail the request. Cancellation is not logged as a crash.
-
-**One long-lived `HttpClient` for Google Calendar.** A new client per resolve is how you exhaust sockets. The process-lifetime client uses `PooledConnectionLifetime` so DNS can still refresh.
-
-**Right-sized secrets.** User-secrets locally, environment variables in deploy, gitleaks on every push. A vault is the right next step when credential *distribution* becomes a process problem — not before.
-
-**Config fails at boot.** Missing `Auth0:Domain` or a connection string does not become a 500 on the first leave request. Options are validated with DataAnnotations at startup.
+- **One deployable, not a service mesh.** DDD and CQRS earn their keep by making a codebase's seams honest, not by requiring separately-operated services. Splitting this into microservices would add deployment surface without adding a single capability.
+- **One `Leaves` table, not two.** See [Data model](#data-model) — collapsing `Leave` and `Request` into one shape traded a small amount of column reuse for not having to reconcile two tables every time something needs "all entries blocking this date range."
+- **Auth0 owns passwords; this app never touches one.** There's no password column in the schema. The API validates a bearer token and resolves the caller from the `email` claim — which means a Post-Login Action in Auth0 that copies `email` onto the access token is required infrastructure, not an optional nicety (see [Run it locally](#run-it-locally)).
+- **A process-lifetime `HttpClient` for Google Calendar**, registered as a singleton with `PooledConnectionLifetime` — a new client per call is the textbook way to exhaust sockets under load; the pooled lifetime keeps DNS changes from getting stuck.
+- **Config fails at boot, not on the first request.** `AppOptions`, `Auth0Options`, `EmailOptions`, and `GoogleCalendarOptions` are bound and validated with `ValidateOnStart()` before the app accepts traffic — a missing `Auth0:Domain` is a startup error naming the key, never a 500 the first time someone requests leave.
+- **Secrets sized to the actual risk.** User-secrets locally, environment variables in deploy, gitleaks scanning every push in CI. A secrets vault is the right next step once credential *distribution* is the bottleneck — introducing one before that point is process for its own sake.
 
 ---
 
-## Strengths of the system
+## Quality
 
-- **The calendar is a product, not a date picker.** Circle vs org vs self, public holidays on the same grid, remaining-day math that respects working days and already-approved leave.
-- **Hierarchy is data.** Managers, badges, auto-approval, and admin scope all derive from who reports to whom — including CSV import of a whole tree.
-- **Authorisation is server-side and org-scoped.** An org owner cannot administer another organisation; a manager cannot approve a stranger’s request. The SPA hiding a menu is not the security boundary.
-- **Cancellations and transactions are honest.** Aborted HTTP work stops; a failed command rolls back; emails go out after commit.
-- **The test split matches the risk.** Domain tests cover PTO math, access, hiring, and conflicts. Playwright covers the two user journeys that must not regress (admin setup, employee request). CI scans history for leaked secrets.
+Numbers from the project's own accessibility, performance, and cross-platform testing, run with Google Lighthouse and Playwright and written up in the thesis (§8):
+
+| | Home | My Leaves | Setup Organisation |
+| --- | --- | --- | --- |
+| Accessibility (WCAG 2.1 AA) | 100 | 93¹ | 100 |
+| Performance | 94 | 92 | 93 |
+
+¹ The remaining gap on My Leaves is contrast and markup inside a NextUI pagination component that isn't customisable from application code.
+
+Getting to 100 wasn't automatic — it came from fixing specific, named issues: low-contrast text on secondary-coloured buttons, and a navigation bar whose list items weren't wrapped correctly for screen readers. Both fixes are in the current codebase, not just the writeup.
+
+E2E coverage runs the two journeys that must not regress (organisation setup, employee leave request) with Playwright across Chromium, Firefox, and WebKit, at both desktop and mobile viewports (Pixel 5, iPhone 12) — manager-review journeys are covered manually rather than in CI, a scoping call made explicit rather than left unstated.
 
 ---
 
@@ -155,30 +150,26 @@ The frontend keeps server communication in `src/models/*` hooks. Pages do not fe
 | Layer | Choice |
 | --- | --- |
 | SPA | React 18, TypeScript, React Router, NextUI, Tailwind, Luxon |
-| Data fetching | TanStack Query v5 (`signal` passed to `fetch`) |
-| Auth | Auth0 SPA + JWT bearer (`email` as name claim) |
-| API | ASP.NET Core 8, MediatR 12, EF Core + MySQL |
-| Mail | FluentEmail / SMTP (off by default in development) |
-| Holidays | Google Calendar public-holiday calendars |
-| Tests | xUnit (domain), Playwright (e2e), gitleaks (CI) |
+| Data fetching | TanStack Query v5 — `AbortSignal` wired to `fetch`, cache/invalidation owned per model |
+| Auth | Auth0 SPA SDK + JWT bearer, `email` claim as the identity |
+| API | ASP.NET Core 8, MediatR 12, EF Core 8 + MySQL |
+| Mail | FluentEmail / SMTP — off by default in development, logs what it would have sent |
+| Holidays | Google Calendar public-holiday calendars, per employee country |
+| Testing | xUnit (domain), Playwright (e2e), gitleaks (CI secret scanning) |
 
 ---
 
 ## Run it locally
 
-You need **.NET 8**, **Node 18+ / Yarn**, **MySQL**, and an **Auth0** tenant.
+Needs **.NET 8**, **Node 18+ / Yarn**, **MySQL**, and an **Auth0** tenant.
 
 ### 1. Auth0
 
-Create two tenants if you will run e2e — one for development, one for tests — so test users never share a directory with real ones.
-
-In each tenant:
-
-1. **Applications → Create Application** → *Single Page Application*. Note the **Client ID** (public).
-   - *Allowed Callback URLs*: `https://localhost:3000/home`
-   - *Allowed Logout URLs* and *Allowed Web Origins*: `https://localhost:3000`
-2. **APIs → Create API**. Set the *Identifier* to `https://api.leaveplanner.org` — this is the `Audience`.
-3. Add the user's email to the access token. Under **Actions → Library → Build Custom**, add a Login / Post Login action and deploy it:
+1. **Applications → Create Application** → *Single Page Application*, note the **Client ID**.
+   - Allowed Callback URLs: `https://localhost:3000/home`
+   - Allowed Logout URLs / Web Origins: `https://localhost:3000`
+2. **APIs → Create API**, set *Identifier* to `https://api.leaveplanner.org` (this becomes `Audience`).
+3. Under **Actions → Library → Build Custom**, add and deploy a Login / Post Login action:
 
    ```js
    exports.onExecutePostLogin = async (event, api) => {
@@ -186,8 +177,8 @@ In each tenant:
    }
    ```
 
-   The API resolves the caller by the `email` claim (`NameClaimType = "email"`), so this action is required.
-4. For the test tenant, enable a **Username-Password-Authentication** database connection and create one test user. The e2e suite must not drive a real Google account.
+   The API resolves the caller by the `email` claim (`NameClaimType = "email"`), so this step isn't optional.
+4. If you'll run e2e tests, use a second tenant with a Username-Password-Authentication connection and one dedicated test user — don't point Playwright at a real account.
 
 ### 2. Database
 
@@ -195,7 +186,7 @@ In each tenant:
 mysql -u root -p < DB/database_schema.sql
 ```
 
-Then create a least-privilege application user. The API should never connect as `root`:
+Then create a least-privilege application user — the API should never connect as `root`:
 
 ```sql
 CREATE USER 'leaveplanner_app'@'%' IDENTIFIED BY 'a-strong-generated-password';
@@ -205,9 +196,9 @@ FLUSH PRIVILEGES;
 
 ### 3. API
 
-Nothing secret is committed. ASP.NET Core reads `appsettings.json`, then environment variables, then user-secrets in development.
+Nothing secret is committed. Configuration is read in order: `appsettings.json` → environment variables → user-secrets (development).
 
-Fill in the non-secret values in `API/appsettings.Development.json` (`Auth0:Domain`, `Auth0:Audience`). Templates: `API/appsettings.Example.json`. Then store secrets outside the repository:
+Fill in the non-secret values in `API/appsettings.Development.json` (`Auth0:Domain`, `Auth0:Audience`) — a template is at `API/appsettings.Example.json`. Then store secrets outside the repo:
 
 ```bash
 cd API
@@ -219,17 +210,13 @@ dotnet user-secrets set "GoogleCalendar:ApiKey" "your-google-calendar-api-key"
 dotnet run
 ```
 
-The HTTPS profile listens on `https://localhost:7247`. User-secrets are written to `~/.microsoft/usersecrets/`, outside the working tree.
-
-Email is off by default (`Email:Enabled: false`); the service logs what it would have sent. To send for real, set `Email:Enabled` to `true`, set `Email:FromAddress`, and add the password:
+HTTPS listens on `https://localhost:7247`. Email is off by default (`Email:Enabled: false`, logs instead of sending); to send for real:
 
 ```bash
 dotnet user-secrets set "Email:Password" "your-smtp-app-password"
 ```
 
-For Gmail this is an **App Password** (Google Account → Security → 2-Step Verification → App passwords), not the account password.
-
-Any missing or malformed setting **fails the boot** with a message naming the key.
+For Gmail this is an **App Password**, not the account password. Any missing or malformed setting fails the boot with a message naming the key.
 
 ### 4. Frontend
 
@@ -237,29 +224,25 @@ Any missing or malformed setting **fails the boot** with a message naming the ke
 cd frontend
 yarn install
 cp .env.example .env.development   # fill in REACT_APP_AUTH0_*
-yarn setup:certs                   # generates localhost.key / localhost.crt
+yarn setup:certs                   # generates a self-signed localhost cert
 yarn start
 ```
 
-The app is at `https://localhost:3000`. Auth0 requires HTTPS for the callback. The certificate is self-signed and gitignored; the browser will ask you to trust it once.
+Runs at `https://localhost:3000` — Auth0 requires HTTPS for the callback. The browser will ask you to trust the self-signed cert once.
 
-### 5. Domain tests
-
-```bash
-dotnet test tests/LeavePlanner.Domain.Tests
-```
-
-### 6. E2E tests
-
-Playwright signs in once in `globalSetup.ts` and caches the session in `auth.json` (gitignored). The API and frontend must already be running.
+### 5. Tests
 
 ```bash
+dotnet test tests/LeavePlanner.Domain.Tests     # domain rules
+
 cd frontend
-cp .env.example .env.local   # fill in E2E_USER and E2E_PASSWORD
-yarn test
+cp .env.example .env.local                      # fill in E2E_USER / E2E_PASSWORD
+yarn test                                        # Playwright — API + frontend must be running
 ```
 
-### 7. Deployment
+Playwright authenticates once in `globalSetup.ts` and reuses the session from a gitignored `auth.json`.
+
+### 6. Deployment
 
 Set secrets as environment variables on the host, replacing `:` with `__`:
 
@@ -269,7 +252,7 @@ GoogleCalendar__ApiKey="..."
 Email__Password="..."
 ```
 
-Everything else comes from `appsettings.json`.
+Everything else is read from `appsettings.json`. (The thesis documents an earlier deployment on AWS — CloudFront + S3 for the SPA, EC2 for the API, RDS for MySQL, Route 53 + Certificate Manager for TLS — as one concrete way to run this in production; it isn't the only one.)
 
 ---
 
@@ -277,27 +260,21 @@ Everything else comes from `appsettings.json`.
 
 | Setting | Secret | Local | Deployed |
 | --- | --- | --- | --- |
-| `ConnectionStrings:LeavePlannerDB` | **yes** | user-secrets | `ConnectionStrings__LeavePlannerDB` |
-| `GoogleCalendar:ApiKey` | **yes** | user-secrets | `GoogleCalendar__ApiKey` |
-| `Email:Password` | **yes** | user-secrets | `Email__Password` |
+| `ConnectionStrings:LeavePlannerDB` | yes | user-secrets | `ConnectionStrings__LeavePlannerDB` |
+| `GoogleCalendar:ApiKey` | yes | user-secrets | `GoogleCalendar__ApiKey` |
+| `Email:Password` | yes | user-secrets | `Email__Password` |
 | `Email:FromAddress` | no | `appsettings.Development.json` | `appsettings.json` |
 | `App:FrontendUrl` | no | `appsettings.Development.json` | `appsettings.json` |
 | `Auth0:Domain` / `Auth0:Audience` | no | `appsettings.Development.json` | `appsettings.json` |
 | `REACT_APP_AUTH0_*` | no | `frontend/.env.development` | build environment |
-| `E2E_USER` / `E2E_PASSWORD` | **password only** | `frontend/.env.local` | CI repository secrets |
+| `E2E_USER` / `E2E_PASSWORD` | password only | `frontend/.env.local` | CI repository secrets |
 
-The Auth0 domain and SPA client ID are public identifiers that ship in the browser bundle. They live in configuration because they are environment-specific, not because they are confidential.
+The Auth0 domain and SPA client ID ship in the browser bundle and live in configuration because they're environment-specific — not because they're confidential.
+
+CI runs [gitleaks](.github/workflows/secret-scan.yml) over full history on every push (`gitleaks protect --staged` locally). If a credential is ever exposed, rotate it — a published secret is compromised regardless of what happens to the history afterward.
 
 ---
 
-## Secret handling
+## License
 
-CI scans the full history with [gitleaks](.github/workflows/secret-scan.yml) on every push:
-
-```bash
-gitleaks protect --staged
-```
-
-Enabling GitHub **push protection** (Settings → Code security) adds a server-side block.
-
-If a credential is ever exposed, rotate it first. A published secret stays compromised no matter what the history says afterwards.
+See [LICENSE](LICENSE).
