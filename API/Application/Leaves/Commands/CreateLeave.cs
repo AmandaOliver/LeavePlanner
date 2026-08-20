@@ -1,9 +1,9 @@
 using LeavePlanner.Application.Common;
-using LeavePlanner.Configuration;
+using LeavePlanner.Application.Leaves;
 using LeavePlanner.Data;
+using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
-using Microsoft.Extensions.Options;
 
 namespace LeavePlanner.Application.Leaves.Commands;
 
@@ -12,82 +12,58 @@ public record CreateLeaveCommand(string EmployeeId, LeaveCreateDTO Leave) : ICom
 public class CreateLeaveCommandHandler : IRequestHandler<CreateLeaveCommand, Result<Leave>>
 {
 	private readonly LeavePlannerContext _context;
-	private readonly LeavesService _leavesService;
-	private readonly EmailService _emailService;
-	private readonly string _leavePlannerUrl;
+	private readonly IEmployeeRepository _employees;
+	private readonly ILeaveRepository _leaves;
+	private readonly LeaveEvaluator _evaluator;
+	private readonly IUnitOfWork _unitOfWork;
+	private readonly IClock _clock;
 
-	public CreateLeaveCommandHandler(LeavePlannerContext context, LeavesService leavesService,
-		EmailService emailService, IOptions<AppOptions> appOptions)
+	public CreateLeaveCommandHandler(
+		LeavePlannerContext context,
+		IEmployeeRepository employees,
+		ILeaveRepository leaves,
+		LeaveEvaluator evaluator,
+		IUnitOfWork unitOfWork,
+		IClock clock)
 	{
 		_context = context;
-		_leavesService = leavesService;
-		_emailService = emailService;
-		_leavePlannerUrl = appOptions.Value.FrontendUrl;
+		_employees = employees;
+		_leaves = leaves;
+		_evaluator = evaluator;
+		_unitOfWork = unitOfWork;
+		_clock = clock;
 	}
 
 	public async Task<Result<Leave>> Handle(CreateLeaveCommand command, CancellationToken cancellationToken)
 	{
-		var employeeId = int.Parse(command.EmployeeId);
-		var model = command.Leave;
-
 		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 		try
 		{
-			var employee = await _context.Employees.FindAsync(new object?[] { employeeId }, cancellationToken);
+			var employeeId = int.Parse(command.EmployeeId);
+			var employee = await _employees.GetByIdAsync(employeeId, cancellationToken);
 			if (employee == null)
 			{
 				return Result<Leave>.Invalid("Employee not found.");
 			}
 
-			var validationResult = await _leavesService.ValidateLeave(model.DateStart, model.DateEnd, employeeId, null, model.Type);
-			if (validationResult != "success")
-			{
-				return Result<Leave>.Invalid(validationResult);
-			}
+			await _evaluator.AssertCanRequest(
+				command.Leave.DateStart, command.Leave.DateEnd, employeeId, null, command.Leave.Type, cancellationToken);
 
-			var leave = new Leave
-			{
-				Description = model.Description,
-				DateStart = model.DateStart,
-				DateEnd = model.DateEnd,
-				Type = model.Type,
-				Owner = employeeId,
-				OwnerNavigation = employee,
-				CreatedAt = DateTime.UtcNow
-			};
+			var leave = Leave.Submit(
+				employee, command.Leave.Type, command.Leave.DateStart, command.Leave.DateEnd, command.Leave.Description, _clock.UtcNow);
+			_leaves.Add(leave);
 
-			if (employee.ManagedBy == null)
-			{
-				leave.ApprovedBy = employeeId;
-			}
-
-			_context.Leaves.Add(leave);
-
-			await _context.SaveChangesAsync(cancellationToken);
+			var events = _unitOfWork.CollectEvents();
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
-
-			if (employee.ManagedBy != null)
-			{
-				var manager = await _context.Employees.FindAsync(new object?[] { employee.ManagedBy }, cancellationToken);
-				if (manager != null)
-				{
-					var leaveWithDynamicInfo = await _leavesService.GetLeaveDynamicInfo(leave, true);
-					string emailBody = $@"
-Hello {manager.Name}, 
-	You have a new leave request from {employee.Name}.
-	Number of days requested: {leaveWithDynamicInfo.DaysRequested} days.
-	Description: {leave.Description}						
-	Start Date: {leave.DateStart.ToShortDateString()}
-	End Date: {leave.DateEnd.ToShortDateString()}
-	{LeavesService.DescribeConflicts(leaveWithDynamicInfo)}
-	To review go to {_leavePlannerUrl}/requests/{manager.Email}
-
-						";
-					await _emailService.SendEmail(manager.Email, $"New Leave Request from {employee.Name}", emailBody);
-				}
-			}
+			await _unitOfWork.DispatchAsync(events, cancellationToken);
 
 			return Result<Leave>.Success(leave);
+		}
+		catch (DomainException ex)
+		{
+			await transaction.RollbackAsync(cancellationToken);
+			return Result<Leave>.Invalid(ex.Message);
 		}
 		catch (Exception ex)
 		{

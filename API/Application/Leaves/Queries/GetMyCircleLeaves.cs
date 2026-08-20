@@ -1,5 +1,7 @@
 using LeavePlanner.Application.Common;
+using LeavePlanner.Application.Employees;
 using LeavePlanner.Data;
+using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,12 +13,17 @@ public record GetMyCircleLeavesQuery(string EmployeeId, string? Start, string? E
 public class GetMyCircleLeavesQueryHandler : IRequestHandler<GetMyCircleLeavesQuery, Result<List<LeaveDTO>>>
 {
 	private readonly LeavePlannerContext _context;
-	private readonly EmployeesService _employeesService;
+	private readonly IEmployeeRepository _employees;
+	private readonly EmployeeHierarchy _hierarchy;
 
-	public GetMyCircleLeavesQueryHandler(LeavePlannerContext context, EmployeesService employeesService)
+	public GetMyCircleLeavesQueryHandler(
+		LeavePlannerContext context,
+		IEmployeeRepository employees,
+		EmployeeHierarchy hierarchy)
 	{
 		_context = context;
-		_employeesService = employeesService;
+		_employees = employees;
+		_hierarchy = hierarchy;
 	}
 
 	public async Task<Result<List<LeaveDTO>>> Handle(GetMyCircleLeavesQuery request, CancellationToken cancellationToken)
@@ -27,14 +34,16 @@ public class GetMyCircleLeavesQueryHandler : IRequestHandler<GetMyCircleLeavesQu
 		}
 
 		var employeeId = int.Parse(request.EmployeeId);
-		var employee = await _context.Employees.FindAsync(new object?[] { employeeId }, cancellationToken);
+		var employee = await _employees.GetByIdAsync(employeeId, cancellationToken);
 		if (employee == null)
 		{
 			return Result<List<LeaveDTO>>.Invalid("employee not found");
 		}
 
 		var allLeaves = new List<Leave>();
-		var manager = await _context.Employees.FindAsync(new object?[] { employee.ManagedBy }, cancellationToken);
+		var manager = employee.ManagedBy == null
+			? null
+			: await _employees.GetByIdAsync(employee.ManagedBy.Value, cancellationToken);
 
 		if (manager == null)
 		{
@@ -44,14 +53,14 @@ public class GetMyCircleLeavesQueryHandler : IRequestHandler<GetMyCircleLeavesQu
 		{
 			allLeaves.AddRange(await ApprovedLeavesOf(employee.ManagedBy, cancellationToken));
 
-			var managerWithSubordinates = await _employeesService.GetEmployeeWithSubordinates(manager);
+			var managerWithSubordinates = await _hierarchy.GetWithSubordinates(manager, cancellationToken);
 			foreach (var subordinate in managerWithSubordinates.Subordinates!)
 			{
 				allLeaves.AddRange(await ApprovedLeavesOf(subordinate.Id, cancellationToken));
 			}
 		}
 
-		var employeeWithSubordinates = await _employeesService.GetEmployeeWithSubordinates(employee);
+		var employeeWithSubordinates = await _hierarchy.GetWithSubordinates(employee, cancellationToken);
 		foreach (var subordinate in employeeWithSubordinates.Subordinates!)
 		{
 			allLeaves.AddRange(await ApprovedLeavesOf(subordinate.Id, cancellationToken));
@@ -59,7 +68,7 @@ public class GetMyCircleLeavesQueryHandler : IRequestHandler<GetMyCircleLeavesQu
 
 		if (allLeaves.Count == 0)
 		{
-			return Result<List<LeaveDTO>>.Success(new List<LeaveDTO>());
+			return Result<List<LeaveDTO>>.Success([]);
 		}
 
 		var start = DateTime.Parse(request.Start);
@@ -68,7 +77,7 @@ public class GetMyCircleLeavesQueryHandler : IRequestHandler<GetMyCircleLeavesQu
 		var leaveDTOs = new List<LeaveDTO>();
 		foreach (var leave in allLeaves.Where(leave => leave.DateEnd >= start && leave.DateStart <= end))
 		{
-			var leaveOwner = await _context.Employees.FindAsync(new object?[] { leave.Owner }, cancellationToken);
+			var leaveOwner = await _employees.GetByIdAsync(leave.Owner, cancellationToken);
 			if (leaveOwner == null)
 			{
 				return Result<List<LeaveDTO>>.Invalid("error getting owner");

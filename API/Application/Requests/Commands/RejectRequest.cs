@@ -1,6 +1,6 @@
 using LeavePlanner.Application.Common;
 using LeavePlanner.Data;
-using LeavePlanner.Models;
+using LeavePlanner.Domain;
 using MediatR;
 
 namespace LeavePlanner.Application.Requests.Commands;
@@ -10,12 +10,14 @@ public record RejectRequestCommand(string RequestId, string EmployeeId) : IComma
 public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand, Result<Leave>>
 {
 	private readonly LeavePlannerContext _context;
-	private readonly EmailService _emailService;
+	private readonly ILeaveRepository _leaves;
+	private readonly IUnitOfWork _unitOfWork;
 
-	public RejectRequestCommandHandler(LeavePlannerContext context, EmailService emailService)
+	public RejectRequestCommandHandler(LeavePlannerContext context, ILeaveRepository leaves, IUnitOfWork unitOfWork)
 	{
 		_context = context;
-		_emailService = emailService;
+		_leaves = leaves;
+		_unitOfWork = unitOfWork;
 	}
 
 	public async Task<Result<Leave>> Handle(RejectRequestCommand command, CancellationToken cancellationToken)
@@ -28,25 +30,17 @@ public class RejectRequestCommandHandler : IRequestHandler<RejectRequestCommand,
 		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 		try
 		{
-			var request = await _context.Leaves.FindAsync(new object?[] { int.Parse(command.RequestId) }, cancellationToken);
+			var request = await _leaves.GetByIdAsync(int.Parse(command.RequestId), cancellationToken);
 			if (request == null)
 			{
 				return Result<Leave>.Invalid("request not found");
 			}
 
-			request.RejectedBy = int.Parse(command.EmployeeId);
-			await _context.SaveChangesAsync(cancellationToken);
+			request.Reject(int.Parse(command.EmployeeId));
+			var events = _unitOfWork.CollectEvents();
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
-
-			var employee = await _context.Employees.FindAsync(new object?[] { request.Owner }, cancellationToken);
-			if (employee != null)
-			{
-				string emailBody = $@"
-Hello {employee.Name}, 
-	Your leave request from {request.DateStart.ToShortDateString()} to {request.DateEnd.ToShortDateString()} 
-	has been rejected. ";
-				await _emailService.SendEmail(employee.Email, $"Leave Request rejected", emailBody);
-			}
+			await _unitOfWork.DispatchAsync(events, cancellationToken);
 
 			return Result<Leave>.Success(request);
 		}

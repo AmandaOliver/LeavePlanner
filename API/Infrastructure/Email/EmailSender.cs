@@ -1,21 +1,24 @@
 using FluentEmail.Core;
 using FluentEmail.Smtp;
 using LeavePlanner.Configuration;
+using LeavePlanner.Domain;
 using Microsoft.Extensions.Options;
 using System.Net.Mail;
 
-public class EmailService
+namespace LeavePlanner.Infrastructure.Email;
+
+public class EmailSender : IEmailSender
 {
 	private readonly EmailOptions _options;
-	private readonly ILogger<EmailService> _logger;
+	private readonly ILogger<EmailSender> _logger;
 
-	public EmailService(IOptions<EmailOptions> options, ILogger<EmailService> logger)
+	public EmailSender(IOptions<EmailOptions> options, ILogger<EmailSender> logger)
 	{
 		_options = options.Value;
 		_logger = logger;
 	}
 
-	public async Task SendEmail(string toEmail, string subject, string body)
+	public async Task SendAsync(string toEmail, string subject, string body)
 	{
 		if (!_options.Enabled)
 		{
@@ -23,7 +26,6 @@ public class EmailService
 			return;
 		}
 
-		// Guaranteed non-null once Enabled is true.
 		var fromAddress = _options.FromAddress!;
 
 		var sender = new SmtpSender(() => new SmtpClient(_options.Host)
@@ -34,9 +36,9 @@ public class EmailService
 			Port = _options.Port
 		});
 
-		Email.DefaultSender = sender;
+		FluentEmail.Core.Email.DefaultSender = sender;
 
-		var email = await Email
+		var email = await FluentEmail.Core.Email
 			.From(fromAddress)
 			.To(toEmail)
 			.Subject(subject)
@@ -45,7 +47,6 @@ public class EmailService
 
 		if (!email.Successful)
 		{
-			// Best-effort: a failed notification must not roll back the leave operation.
 			_logger.LogError("Failed to send \"{Subject}\" to {Recipient}: {Errors}",
 				subject, toEmail, string.Join("; ", email.ErrorMessages));
 		}

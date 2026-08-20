@@ -1,5 +1,14 @@
+using LeavePlanner.Application.Calendar;
+using LeavePlanner.Application.Common;
 using LeavePlanner.Application.Common.Behaviors;
+using LeavePlanner.Application.Employees;
+using LeavePlanner.Application.Leaves;
 using LeavePlanner.Configuration;
+using LeavePlanner.Domain;
+using LeavePlanner.Infrastructure.Calendar;
+using LeavePlanner.Infrastructure.Email;
+using LeavePlanner.Infrastructure.Persistence;
+using LeavePlanner.Infrastructure.Time;
 using System.ComponentModel.DataAnnotations;
 using LeavePlanner.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -25,6 +34,11 @@ builder.Services.AddOptions<Auth0Options>()
 
 builder.Services.AddOptions<EmailOptions>()
     .Bind(builder.Configuration.GetSection(EmailOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddOptions<GoogleCalendarOptions>()
+    .Bind(builder.Configuration.GetSection(GoogleCalendarOptions.SectionName))
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
@@ -62,11 +76,18 @@ builder.Services.AddMediatR(configuration =>
     configuration.AddOpenBehavior(typeof(UnhandledExceptionBehavior<,>));
     configuration.AddOpenBehavior(typeof(LoggingBehavior<,>));
 });
-builder.Services.AddScoped<LeavesService>();
-builder.Services.AddScoped<EmployeesService>();
-builder.Services.AddScoped<CountriesService>();
-builder.Services.AddHttpClient<CountriesService>();
-builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<IClock, SystemClock>();
+builder.Services.AddScoped<ILeaveRepository, LeaveRepository>();
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+builder.Services.AddScoped<ICountryRepository, CountryRepository>();
+builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddHttpClient<IPublicHolidayCalendar, GooglePublicHolidayCalendar>();
+builder.Services.AddScoped<LeaveEvaluator>();
+builder.Services.AddScoped<EmployeeHierarchy>();
+builder.Services.AddScoped<PublicHolidayGenerator>();
+builder.Services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>

@@ -1,8 +1,8 @@
 using LeavePlanner.Application.Common;
+using LeavePlanner.Application.Employees;
 using LeavePlanner.Data;
-using LeavePlanner.Models;
+using LeavePlanner.Domain;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace LeavePlanner.Application.Organizations.Commands;
 
@@ -11,12 +11,23 @@ public record DeleteOrganizationCommand(string OrganizationId) : ICommand<Result
 public class DeleteOrganizationCommandHandler : IRequestHandler<DeleteOrganizationCommand, Result<Organization>>
 {
 	private readonly LeavePlannerContext _context;
-	private readonly EmployeesService _employeesService;
+	private readonly IOrganizationRepository _organizations;
+	private readonly IEmployeeRepository _employees;
+	private readonly EmployeeHierarchy _hierarchy;
+	private readonly IUnitOfWork _unitOfWork;
 
-	public DeleteOrganizationCommandHandler(LeavePlannerContext context, EmployeesService employeesService)
+	public DeleteOrganizationCommandHandler(
+		LeavePlannerContext context,
+		IOrganizationRepository organizations,
+		IEmployeeRepository employees,
+		EmployeeHierarchy hierarchy,
+		IUnitOfWork unitOfWork)
 	{
 		_context = context;
-		_employeesService = employeesService;
+		_organizations = organizations;
+		_employees = employees;
+		_hierarchy = hierarchy;
+		_unitOfWork = unitOfWork;
 	}
 
 	public async Task<Result<Organization>> Handle(DeleteOrganizationCommand command, CancellationToken cancellationToken)
@@ -24,24 +35,20 @@ public class DeleteOrganizationCommandHandler : IRequestHandler<DeleteOrganizati
 		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 		try
 		{
-			var organization = await _context.Organizations.FindAsync(new object?[] { int.Parse(command.OrganizationId) }, cancellationToken);
+			var organization = await _organizations.GetByIdAsync(int.Parse(command.OrganizationId), cancellationToken);
 			if (organization == null)
 			{
 				return Result<Organization>.Invalid("Organization not found.");
 			}
 
-			var employees = await _context.Employees
-				.Where(e => e.Organization.ToString() == command.OrganizationId)
-				.ToListAsync(cancellationToken);
-
+			var employees = await _employees.GetByOrganizationAsync(organization.Id, cancellationToken);
 			foreach (var employee in employees)
 			{
-				await _employeesService.DeleteEmployeeWithSubordinates(employee.Id);
+				await _hierarchy.DeleteWithSubordinates(employee.Id, cancellationToken);
 			}
 
-			_context.Organizations.Remove(organization);
-
-			await _context.SaveChangesAsync(cancellationToken);
+			_organizations.Remove(organization);
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
 
 			return Result<Organization>.Success(organization);

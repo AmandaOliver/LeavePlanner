@@ -1,9 +1,9 @@
 using LeavePlanner.Application.Common;
-using LeavePlanner.Configuration;
+using LeavePlanner.Application.Leaves;
 using LeavePlanner.Data;
+using LeavePlanner.Domain;
 using LeavePlanner.Models;
 using MediatR;
-using Microsoft.Extensions.Options;
 
 namespace LeavePlanner.Application.Leaves.Commands;
 
@@ -12,85 +12,75 @@ public record UpdateLeaveCommand(int LeaveId, LeaveUpdateDTO Leave) : ICommand<R
 public class UpdateLeaveCommandHandler : IRequestHandler<UpdateLeaveCommand, Result<Leave>>
 {
 	private readonly LeavePlannerContext _context;
-	private readonly LeavesService _leavesService;
-	private readonly EmailService _emailService;
-	private readonly string _leavePlannerUrl;
+	private readonly IEmployeeRepository _employees;
+	private readonly ILeaveRepository _leaves;
+	private readonly LeaveEvaluator _evaluator;
+	private readonly IUnitOfWork _unitOfWork;
+	private readonly IClock _clock;
 
-	public UpdateLeaveCommandHandler(LeavePlannerContext context, LeavesService leavesService,
-		EmailService emailService, IOptions<AppOptions> appOptions)
+	public UpdateLeaveCommandHandler(
+		LeavePlannerContext context,
+		IEmployeeRepository employees,
+		ILeaveRepository leaves,
+		LeaveEvaluator evaluator,
+		IUnitOfWork unitOfWork,
+		IClock clock)
 	{
 		_context = context;
-		_leavesService = leavesService;
-		_emailService = emailService;
-		_leavePlannerUrl = appOptions.Value.FrontendUrl;
+		_employees = employees;
+		_leaves = leaves;
+		_evaluator = evaluator;
+		_unitOfWork = unitOfWork;
+		_clock = clock;
 	}
 
 	public async Task<Result<Leave>> Handle(UpdateLeaveCommand command, CancellationToken cancellationToken)
 	{
 		var update = command.Leave;
-
-		var validationResult = await _leavesService.ValidateLeave(
-			update.DateStart, update.DateEnd, update.Owner, update.Id, update.Type);
-		if (validationResult != "success")
+		try
 		{
-			return Result<Leave>.Invalid(validationResult);
+			await _evaluator.AssertCanRequest(
+				update.DateStart, update.DateEnd, update.Owner, update.Id, update.Type, cancellationToken);
+		}
+		catch (DomainException ex)
+		{
+			return Result<Leave>.Invalid(ex.Message);
 		}
 
 		using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
-		var leave = await _context.Leaves.FindAsync(new object?[] { command.LeaveId }, cancellationToken);
-		if (leave == null)
-		{
-			return Result<Leave>.Invalid("Leave not found with that Id");
-		}
-
 		try
 		{
-			leave.Description = update.Description;
-			leave.DateStart = update.DateStart;
-			leave.DateEnd = update.DateEnd;
-			leave.CreatedAt = DateTime.UtcNow;
-			leave.ApprovedBy = null;
-			leave.RejectedBy = null;
+			var leave = await _leaves.GetByIdAsync(command.LeaveId, cancellationToken);
+			if (leave == null)
+			{
+				return Result<Leave>.Invalid("Leave not found with that Id");
+			}
 
-			_context.Leaves.Update(leave);
-			await _context.SaveChangesAsync(cancellationToken);
-
-			var employee = await _context.Employees.FindAsync(new object?[] { leave.Owner }, cancellationToken);
+			var employee = await _employees.GetByIdAsync(leave.Owner, cancellationToken);
 			if (employee == null)
 			{
 				return Result<Leave>.Invalid("Employee not found.");
 			}
 
-			if (employee.ManagedBy != null)
+			int? systemApproverId = null;
+			if (employee.IsOrgHead)
 			{
-				var manager = await _context.Employees.FindAsync(new object?[] { employee.ManagedBy }, cancellationToken);
-				if (manager != null)
-				{
-					var leaveWithDynamicInfo = await _leavesService.GetLeaveDynamicInfo(leave, true);
-					string emailBody = $@"
-Hello {manager.Name}, 
-	{employee.Name} has updated an existing leave request.
-	Number of days requested: {leaveWithDynamicInfo.DaysRequested} days.
-	Description: {leave.Description}						
-	Start Date: {leave.DateStart.ToShortDateString()}
-	End Date: {leave.DateEnd.ToShortDateString()}
-	{LeavesService.DescribeConflicts(leaveWithDynamicInfo)}
-	To review go to {_leavePlannerUrl}/requests/{manager.Email}";
-					await _emailService.SendEmail(manager.Email, $"Leave Request Updated by {employee.Name}", emailBody);
-				}
-			}
-			else
-			{
-				leave.ApprovedBy = 1;
+				systemApproverId = (await _employees.GetSystemAsync(cancellationToken)).Id;
 			}
 
-			_context.Leaves.Update(leave);
+			leave.Amend(update.DateStart, update.DateEnd, update.Description, _clock.UtcNow, employee.IsOrgHead, systemApproverId);
 
-			await _context.SaveChangesAsync(cancellationToken);
+			var events = _unitOfWork.CollectEvents();
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
+			await _unitOfWork.DispatchAsync(events, cancellationToken);
 
 			return Result<Leave>.Success(leave);
+		}
+		catch (DomainException ex)
+		{
+			await transaction.RollbackAsync(cancellationToken);
+			return Result<Leave>.Invalid(ex.Message);
 		}
 		catch (Exception ex)
 		{

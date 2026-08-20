@@ -1,8 +1,6 @@
 using LeavePlanner.Application.Common;
-using LeavePlanner.Data;
-using LeavePlanner.Models;
+using LeavePlanner.Domain;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace LeavePlanner.Application.Countries.Queries;
 
@@ -10,13 +8,10 @@ public record GetCountriesQuery : IQuery<Result<List<Country>>>;
 
 public class GetCountriesQueryHandler : IRequestHandler<GetCountriesQuery, Result<List<Country>>>
 {
-	private readonly LeavePlannerContext _context;
+	private readonly ICountryRepository _countries;
 
-	public GetCountriesQueryHandler(LeavePlannerContext context) => _context = context;
+	public GetCountriesQueryHandler(ICountryRepository countries) => _countries = countries;
 
-	public async Task<Result<List<Country>>> Handle(GetCountriesQuery request, CancellationToken cancellationToken)
-	{
-		var countries = await _context.Countries.ToListAsync(cancellationToken);
-		return Result<List<Country>>.Success(countries);
-	}
+	public async Task<Result<List<Country>>> Handle(GetCountriesQuery request, CancellationToken cancellationToken) =>
+		Result<List<Country>>.Success(await _countries.GetAllAsync(cancellationToken));
 }
