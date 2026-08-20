@@ -27,7 +27,8 @@
     "test": "yarn playwright test",
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "setup:certs": "openssl req -x509 -nodes -days 825 -newkey rsa:2048 -keyout localhost.key -out localhost.crt -config localhost.cnf"
   },
   "eslintConfig": {
     "extends": [
@@ -65,6 +66,7 @@
     "prettier": "^3.2.5",
     "prop-types": "^15.8.1",
     "tailwindcss": "^3.4.14",
-    "webpack": "^5.95.0"
+    "webpack": "^5.95.0",
+    "dotenv": "^10.0.0"
   }
 }

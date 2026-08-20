@@ -1,7 +1,9 @@
 using CsvHelper;
 using System.Globalization;
+using LeavePlanner.Configuration;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
+using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 public class OrganizationTree
 {
@@ -19,19 +21,17 @@ public class OrganizationsService
 	private readonly CountriesService _countriesService;
 	private readonly string _leavePlannerUrl;
 	private readonly EmailService _emailService;
-	private readonly IConfiguration _configuration;
 
 
-	public OrganizationsService(LeavePlannerContext context, EmployeesService employeesService, CountriesService countriesService, IConfiguration configuration, EmailService emailService)
+	public OrganizationsService(LeavePlannerContext context, EmployeesService employeesService, CountriesService countriesService, IOptions<AppOptions> appOptions, EmailService emailService)
 	{
 		_context = context;
 		_employeesService = employeesService;
 		_countriesService = countriesService;
 		_emailService = emailService;
-		_configuration = configuration;
 
-		// Access the LeavePlannerUrl from appsettings.json
-		_leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
+		// Base URL for links embedded in notification emails.
+		_leavePlannerUrl = appOptions.Value.FrontendUrl;
 
 	}
 	private List<EmployeeWithSubordinatesDTO> BuildEmployeeHierarchy(List<Employee> managers, List<Employee> allEmployees)

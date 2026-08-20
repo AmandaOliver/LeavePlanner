@@ -1,5 +1,7 @@
+using LeavePlanner.Configuration;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
+using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -13,16 +15,14 @@ public class LeavesService
 	private readonly LeavePlannerContext _context;
 	private readonly EmployeesService _employeesService;
 	private readonly EmailService _emailService;
-	private readonly IConfiguration _configuration;
 	private readonly string _leavePlannerUrl;
 
-	public LeavesService(LeavePlannerContext context, EmployeesService employeesService, EmailService emailService, IConfiguration configuration)
+	public LeavesService(LeavePlannerContext context, EmployeesService employeesService, EmailService emailService, IOptions<AppOptions> appOptions)
 	{
 		_context = context;
 		_employeesService = employeesService;
 		_emailService = emailService;
-		_configuration = configuration;
-		_leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
+		_leavePlannerUrl = appOptions.Value.FrontendUrl;
 
 	}
 

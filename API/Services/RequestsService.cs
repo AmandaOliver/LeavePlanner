@@ -1,5 +1,7 @@
+using LeavePlanner.Configuration;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 public class PaginatedRequestsResult
@@ -13,17 +15,15 @@ public class RequestsService
 	private readonly EmployeesService _employeesService;
 	private readonly LeavesService _leavesService;
 	private readonly EmailService _emailService;
-	private readonly IConfiguration _configuration;
 	private readonly string _leavePlannerUrl;
 
-	public RequestsService(LeavePlannerContext context, EmployeesService employeesService, EmailService emailService, IConfiguration configuration, LeavesService leavesService)
+	public RequestsService(LeavePlannerContext context, EmployeesService employeesService, EmailService emailService, IOptions<AppOptions> appOptions, LeavesService leavesService)
 	{
 		_context = context;
 		_employeesService = employeesService;
 		_leavesService = leavesService;
 		_emailService = emailService;
-		_configuration = configuration;
-		_leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
+		_leavePlannerUrl = appOptions.Value.FrontendUrl;
 
 	}
 	public async Task<(bool IsSuccess, string? ErrorMessage, PaginatedRequestsResult? requests)> GetReviewedRequestsOfAManager(string employeeId, int page, int pageSize)

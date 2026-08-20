@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
+using LeavePlanner.Configuration;
 using LeavePlanner.Data;
 using LeavePlanner.Models;
+using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -9,20 +11,18 @@ public class EmployeesService
 	private readonly LeavePlannerContext _context;
 	private readonly CountriesService _countriesService;
 	private readonly EmailService _emailService;
-	private readonly IConfiguration _configuration;
 	private readonly string _leavePlannerUrl;
 
 
 	private static readonly Regex _emailRegex = new Regex(
 		 @"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$",
 		 RegexOptions.Compiled | RegexOptions.IgnoreCase);
-	public EmployeesService(LeavePlannerContext context, CountriesService countriesService, IConfiguration configuration, EmailService emailService)
+	public EmployeesService(LeavePlannerContext context, CountriesService countriesService, IOptions<AppOptions> appOptions, EmailService emailService)
 	{
 		_context = context;
 		_countriesService = countriesService;
-		_configuration = configuration;
 		_emailService = emailService;
-		_leavePlannerUrl = _configuration.GetValue<string>("ConnectionStrings:LeavePlannerUrl");
+		_leavePlannerUrl = appOptions.Value.FrontendUrl;
 
 	}
 	public async Task<int> GetPaidTimeOffLeft(int employeeId, int year, int? leaveId)
